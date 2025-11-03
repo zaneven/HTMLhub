@@ -1,24 +1,14 @@
 <template>
   <!-- 移动端抽屉模式 -->
-  <n-drawer
-    v-if="isMobile"
-    v-model:show="drawerVisible"
-    :width="280"
-    placement="left"
-    class="mobile-sidebar"
-  >
-    <n-drawer-content title="文件浏览器" closable>
+  <n-drawer v-if="isMobile" v-model:show="drawerVisible" :width="280" placement="left" class="mobile-sidebar">
+    <n-drawer-content title="HTMLviewer" closable>
       <div class="sidebar-content mobile">
         <!-- 移动端侧边栏内容 -->
         <div class="quick-stats">
           <n-card size="small" embedded>
             <n-statistic label="总文件数" :value="totalFiles" />
             <n-divider style="margin: 8px 0" />
-            <n-statistic 
-              label="总大小" 
-              :value="formatFileSize(totalSize)" 
-              :value-style="{ fontSize: '14px' }"
-            />
+            <n-statistic label="总大小" :value="formatFileSize(totalSize)" :value-style="{ fontSize: '14px' }" />
           </n-card>
         </div>
 
@@ -29,76 +19,47 @@
             </n-icon>
             <span>分类</span>
           </div>
-          
-          <n-menu
-            :options="categoryMenuOptions"
-            :value="selectedCategory"
-            @update:value="handleCategorySelect"
-          />
+
+          <n-menu :options="categoryMenuOptions" :value="selectedCategory" @update:value="handleCategorySelect" />
         </div>
       </div>
     </n-drawer-content>
   </n-drawer>
 
   <!-- 桌面端侧边栏 -->
-  <n-layout-sider
-    v-else
-    bordered
-    collapse-mode="width"
-    :collapsed-width="64"
-    :width="sidebarWidth"
-    :collapsed="collapsed"
-    show-trigger
-    @collapse="collapsed = true"
-    @expand="collapsed = false"
-    class="app-sidebar"
-  >
+  <n-layout-sider v-else bordered :width="sidebarWidth" class="app-sidebar">
     <div class="sidebar-content">
       <!-- 侧边栏头部 -->
       <div class="sidebar-header">
         <n-space align="center" justify="space-between">
-          <div v-if="!collapsed" class="logo">
+          <div class="logo">
             <n-icon size="24" color="#18a058">
               <FolderOpenOutline />
             </n-icon>
-            <span class="logo-text">文件浏览器</span>
+            <span class="logo-text">HTMLviewer</span>
           </div>
-          <n-icon v-else size="24" color="#18a058">
-            <FolderOpenOutline />
-          </n-icon>
         </n-space>
       </div>
 
       <!-- 快速统计 -->
-      <div v-if="!collapsed" class="quick-stats">
+      <div class="quick-stats">
         <n-card size="small" embedded>
           <n-statistic label="总文件数" :value="totalFiles" />
           <n-divider style="margin: 8px 0" />
-          <n-statistic 
-            label="总大小" 
-            :value="formatFileSize(totalSize)" 
-            :value-style="{ fontSize: '14px' }"
-          />
+          <n-statistic label="总大小" :value="formatFileSize(totalSize)" :value-style="{ fontSize: '14px' }" />
         </n-card>
       </div>
 
       <!-- 分类导航 -->
       <div class="category-section">
-        <div v-if="!collapsed" class="section-title">
+        <div class="section-title">
           <n-icon size="16">
             <FolderOutline />
           </n-icon>
           <span>分类</span>
         </div>
-        
-        <n-menu
-          :collapsed="collapsed"
-          :collapsed-width="64"
-          :collapsed-icon-size="22"
-          :options="categoryMenuOptions"
-          :value="selectedCategory"
-          @update:value="handleCategorySelect"
-        />
+
+        <n-menu :options="categoryMenuOptions" :value="selectedCategory" @update:value="handleCategorySelect" />
       </div>
 
 
@@ -108,14 +69,14 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, h } from 'vue'
-import { 
-  NLayoutSider, 
+import {
+  NLayoutSider,
   NDrawer,
   NDrawerContent,
-  NSpace, 
-  NIcon, 
-  NCard, 
-  NStatistic, 
+  NSpace,
+  NIcon,
+  NCard,
+  NStatistic,
   NDivider,
   NMenu,
   type MenuOption
@@ -135,7 +96,6 @@ import { useSearchStore } from '../../stores/search'
 import { formatFileSize } from '../../utils/fileUtils'
 
 // 响应式状态
-const collapsed = ref(false)
 const drawerVisible = ref(false)
 const windowWidth = ref(window.innerWidth)
 
@@ -150,10 +110,6 @@ const sidebarWidth = computed(() => {
 // 窗口大小监听
 function handleResize() {
   windowWidth.value = window.innerWidth
-  // 移动端自动收起侧边栏
-  if (isMobile.value) {
-    collapsed.value = true
-  }
 }
 
 // 暴露给父组件的方法
@@ -226,7 +182,7 @@ const categoryMenuOptions = computed((): MenuOption[] => {
       icon: () => h(NIcon, null, { default: () => h(FolderOpenOutline) })
     }
   ]
-  
+
   categories.forEach(category => {
     const IconComponent = categoryIcons[category.name] || FolderOutline
     options.push({
@@ -235,7 +191,7 @@ const categoryMenuOptions = computed((): MenuOption[] => {
       icon: () => h(NIcon, null, { default: () => h(IconComponent) })
     })
   })
-  
+
   return options
 })
 
@@ -355,11 +311,11 @@ function handleCategorySelect(category: string) {
     padding: 12px;
     gap: 12px;
   }
-  
+
   .tags-container {
     max-height: 120px;
   }
-  
+
   .section-title {
     font-size: 13px;
   }
@@ -368,22 +324,23 @@ function handleCategorySelect(category: string) {
 /* 移动端适配 */
 @media (max-width: 767px) {
   .app-sidebar {
-    display: none; /* 移动端隐藏固定侧边栏 */
+    display: none;
+    /* 移动端隐藏固定侧边栏 */
   }
-  
+
   .sidebar-content.mobile {
     padding: 8px;
     gap: 8px;
   }
-  
+
   .tags-container {
     max-height: 100px;
   }
-  
+
   .quick-stats :deep(.n-card) {
     padding: 8px;
   }
-  
+
   .section-title {
     font-size: 12px;
     margin-bottom: 6px;
@@ -396,7 +353,7 @@ function handleCategorySelect(category: string) {
     padding: 20px;
     gap: 20px;
   }
-  
+
   .tags-container {
     max-height: 250px;
   }
@@ -408,11 +365,11 @@ function handleCategorySelect(category: string) {
     padding: 24px;
     gap: 24px;
   }
-  
+
   .logo-text {
     font-size: 18px;
   }
-  
+
   .section-title {
     font-size: 15px;
   }
@@ -442,6 +399,7 @@ function handleCategorySelect(category: string) {
 
 /* 暗色主题下的滚动条 */
 @media (prefers-color-scheme: dark) {
+
   .tags-container::-webkit-scrollbar-thumb,
   .category-section::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
@@ -459,18 +417,18 @@ function handleCategorySelect(category: string) {
     padding: 0 !important;
     justify-content: center !important;
   }
-  
+
   .n-menu-item-content {
     padding: 8px 0 !important;
     justify-content: center !important;
   }
-  
+
   .n-menu-item-content-header {
     display: flex !important;
     justify-content: center !important;
     align-items: center !important;
   }
-  
+
   .n-icon {
     margin: 0 !important;
   }
