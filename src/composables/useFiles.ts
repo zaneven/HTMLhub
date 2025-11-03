@@ -23,14 +23,16 @@ export function useFiles() {
 
     // 应用搜索筛选
     const filter = searchStore.searchFilter
+    const searchQuery = searchStore.searchQuery
     
-    // 关键词搜索
-    if (filter.keyword) {
-      const keyword = filter.keyword.toLowerCase()
+    // 关键词搜索 - 检查searchQuery和filter.keyword
+    const keyword = searchQuery || filter.keyword
+    if (keyword) {
+      const keywordLower = keyword.toLowerCase()
       result = result.filter(file => 
-        file.name.toLowerCase().includes(keyword) ||
-        file.path.toLowerCase().includes(keyword) ||
-        file.tags.some(tag => tag.toLowerCase().includes(keyword))
+        file.name.toLowerCase().includes(keywordLower) ||
+        file.path.toLowerCase().includes(keywordLower) ||
+        file.tags.some(tag => tag.toLowerCase().includes(keywordLower))
       )
     }
 

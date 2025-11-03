@@ -6,7 +6,7 @@ import path from 'path'
 // 配置
 const config = {
   // 扫描的根目录（相对于项目根目录）
-  scanDirs: ['./html-files', './documents', './examples'],
+  scanDirs: ['./public/html-files'],
   // 忽略的目录
   ignoreDirs: ['node_modules', '.git', 'dist', 'build', '.vscode', '.idea'],
   // 支持的文件扩展名

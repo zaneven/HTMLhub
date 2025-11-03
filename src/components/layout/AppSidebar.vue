@@ -36,40 +36,6 @@
             @update:value="handleCategorySelect"
           />
         </div>
-
-        <div class="quick-actions">
-          <div class="section-title">
-            <n-icon size="16">
-              <FlashOutline />
-            </n-icon>
-            <span>快速操作</span>
-          </div>
-          
-          <n-space vertical size="small">
-            <n-button
-              block
-              secondary
-              size="small"
-              @click="handleRefresh"
-            >
-              <template #icon>
-                <n-icon><RefreshOutline /></n-icon>
-              </template>
-              刷新索引
-            </n-button>
-            <n-button
-              block
-              secondary
-              size="small"
-              @click="handleClearFilters"
-            >
-              <template #icon>
-                <n-icon><TrashOutline /></n-icon>
-              </template>
-              清除筛选
-            </n-button>
-          </n-space>
-        </div>
       </div>
     </n-drawer-content>
   </n-drawer>
@@ -135,43 +101,7 @@
         />
       </div>
 
-      <!-- 快速操作 -->
-      <div v-if="!collapsed" class="quick-actions">
-        <div class="section-title">
-          <n-icon size="16">
-            <FlashOutline />
-          </n-icon>
-          <span>快速操作</span>
-        </div>
-        
-        <n-space vertical size="small">
-          <n-button
-            block
-            secondary
-            size="small"
-            @click="handleRefresh"
-            :loading="loading"
-          >
-            <template #icon>
-              <n-icon><RefreshOutline /></n-icon>
-            </template>
-            刷新索引
-          </n-button>
-          
-          <n-button
-            block
-            secondary
-            size="small"
-            @click="handleClearSelection"
-            :disabled="!selectedFiles.length"
-          >
-            <template #icon>
-              <n-icon><CloseOutline /></n-icon>
-            </template>
-            清除选择 ({{ selectedFiles.length }})
-          </n-button>
-        </n-space>
-      </div>
+
     </div>
   </n-layout-sider>
 </template>
@@ -187,17 +117,12 @@ import {
   NCard, 
   NStatistic, 
   NDivider,
-  NMenu, 
-  NButton,
+  NMenu,
   type MenuOption
 } from 'naive-ui'
 import {
   FolderOpenOutline,
   FolderOutline,
-  FlashOutline,
-  RefreshOutline,
-  CloseOutline,
-  TrashOutline,
   DocumentOutline,
   ImageOutline,
   VideocamOutline,
@@ -265,8 +190,6 @@ const totalSize = computed(() => {
   return stats.totalSize
 })
 const selectedCategory = computed(() => searchStore.searchFilter.category)
-const selectedFiles = computed(() => filesStore.selectedFiles)
-const loading = computed(() => filesStore.loading)
 
 // 分类图标映射
 const categoryIcons: Record<string, unknown> = {
@@ -319,18 +242,6 @@ const categoryMenuOptions = computed((): MenuOption[] => {
 // 事件处理
 function handleCategorySelect(category: string) {
   searchStore.setCategoryFilter(category)
-}
-
-function handleRefresh() {
-  filesStore.reloadIndexData()
-}
-
-function handleClearSelection() {
-  filesStore.clearSelection()
-}
-
-function handleClearFilters() {
-  searchStore.clearSearch()
 }
 </script>
 

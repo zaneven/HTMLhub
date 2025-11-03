@@ -17,53 +17,53 @@
         </n-button>
       </div>
 
-      <!-- 中间：搜索栏 -->
-      <div class="header-center">
-        <n-input-group>
-          <n-input
-            v-model:value="searchInput"
-            placeholder="搜索文件名..."
-            clearable
-            @keyup.enter="handleSearch"
-            @clear="handleClearSearch"
-            class="search-input"
-          >
-            <template #prefix>
-              <n-icon size="16">
-                <SearchOutline />
-              </n-icon>
-            </template>
-          </n-input>
-          <n-button
-            type="primary"
-            @click="handleSearch"
-            :loading="searching"
-          >
-            搜索
-          </n-button>
-        </n-input-group>
-
-        <!-- 搜索建议 -->
-        <div v-if="showSuggestions && suggestions.length" class="search-suggestions">
-          <n-card size="small" embedded>
-            <div
-              v-for="suggestion in suggestions"
-              :key="suggestion"
-              class="suggestion-item"
-              @click="handleSuggestionClick(suggestion)"
-            >
-              <n-icon size="14">
-                <SearchOutline />
-              </n-icon>
-              <span>{{ suggestion }}</span>
-            </div>
-          </n-card>
-        </div>
-      </div>
-
-      <!-- 右侧：操作按钮 -->
+      <!-- 右侧：搜索栏和操作按钮 -->
       <div class="header-right">
-        <n-space align="center">
+        <n-space align="center" size="medium">
+          <!-- 搜索栏 -->
+          <div class="search-container">
+            <n-input-group>
+              <n-input
+                v-model:value="searchInput"
+                placeholder="搜索文件名..."
+                clearable
+                @keyup.enter="handleSearch"
+                @clear="handleClearSearch"
+                class="search-input"
+              >
+                <template #prefix>
+                  <n-icon size="16">
+                    <SearchOutline />
+                  </n-icon>
+                </template>
+              </n-input>
+              <n-button
+                type="primary"
+                @click="handleSearch"
+                :loading="searching"
+              >
+                搜索
+              </n-button>
+            </n-input-group>
+
+            <!-- 搜索建议 -->
+            <div v-if="showSuggestions && suggestions.length" class="search-suggestions">
+              <n-card size="small" embedded>
+                <div
+                  v-for="suggestion in suggestions"
+                  :key="suggestion"
+                  class="suggestion-item"
+                  @click="handleSuggestionClick(suggestion)"
+                >
+                  <n-icon size="14">
+                    <SearchOutline />
+                  </n-icon>
+                  <span>{{ suggestion }}</span>
+                </div>
+              </n-card>
+            </div>
+          </div>
+
           <!-- 排序选择 -->
           <n-dropdown
             :options="sortOptions"
@@ -120,14 +120,18 @@ import { useSettingsStore } from '../../stores/settings'
 import { SortOption } from '../../types'
 
 // 响应式状态
-const searchInput = ref('')
 const showSuggestions = ref(false)
 
 // Store
 const searchStore = useSearchStore()
 const settingsStore = useSettingsStore()
 
-// 计算属性
+// 计算属性 - 将searchInput与searchStore同步
+const searchInput = computed({
+  get: () => searchStore.searchQuery,
+  set: (value: string) => searchStore.setSearchQuery(value)
+})
+
 const searching = computed(() => false) // 暂时设为false，后续实现
 
 // 返回功能
@@ -166,11 +170,6 @@ const sortOptions: DropdownOption[] = [
     label: '按大小排序',
     key: SortOption.SIZE_ASC,
     icon: () => h(NIcon, null, { default: () => h(SearchOutline) })
-  },
-  {
-    label: '按类型排序',
-    key: SortOption.CATEGORY,
-    icon: () => h(NIcon, null, { default: () => h(SearchOutline) })
   }
 ]
 
@@ -179,14 +178,6 @@ const settingsOptions: DropdownOption[] = [
   {
     label: '主题设置',
     key: 'theme'
-  },
-  {
-    label: '显示设置',
-    key: 'display'
-  },
-  {
-    label: '关于',
-    key: 'about'
   }
 ]
 
@@ -209,15 +200,16 @@ watch(showSuggestions, (show) => {
 // 事件处理
 function handleSearch() {
   if (searchInput.value.trim()) {
-    searchStore.setSearchQuery(searchInput.value.trim())
+    // searchInput已经与store同步，所以这里只需要关闭建议
     showSuggestions.value = false
+    console.log('搜索执行:', searchInput.value)
   }
 }
 
 function handleClearSearch() {
   searchInput.value = ''
-  searchStore.clearSearch()
   showSuggestions.value = false
+  console.log('搜索已清除')
 }
 
 function handleSuggestionClick(suggestion: string) {
@@ -230,19 +222,11 @@ function handleSortSelect(key: string) {
 }
 
 function handleSettingsSelect(key: string) {
-  switch (key) {
-    case 'theme':
-      // 切换主题模式
-      const currentMode = settingsStore.preferences.theme.mode
-      const newMode = currentMode === 'light' ? 'dark' : 'light'
-      settingsStore.setThemeMode(newMode)
-      break
-    case 'display':
-      // 打开显示设置
-      break
-    case 'about':
-      // 显示关于信息
-      break
+  if (key === 'theme') {
+    // 切换主题模式
+    const currentMode = settingsStore.preferences.theme.mode
+    const newMode = currentMode === 'light' ? 'dark' : 'light'
+    settingsStore.setThemeMode(newMode)
   }
 }
 
@@ -250,7 +234,7 @@ function handleSettingsSelect(key: string) {
 
 function handleClickOutside(event: Event) {
   const target = event.target as HTMLElement
-  if (!target.closest('.header-center')) {
+  if (!target.closest('.search-container')) {
     showSuggestions.value = false
   }
 }
@@ -278,6 +262,7 @@ onUnmounted(() => {
   width: 100%;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
 }
 
@@ -293,11 +278,9 @@ onUnmounted(() => {
   display: none;
 }
 
-.header-center {
-  flex: 1;
-  max-width: 600px;
+.search-container {
   position: relative;
-  min-width: 0; /* 允许收缩 */
+  min-width: 300px;
 }
 
 .search-input {
@@ -331,6 +314,9 @@ onUnmounted(() => {
 
 .header-right {
   flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 /* 平板端适配 */
@@ -347,8 +333,8 @@ onUnmounted(() => {
     min-width: 100px;
   }
   
-  .header-center {
-    max-width: 400px;
+  .search-container {
+    min-width: 250px;
   }
 }
 
@@ -376,12 +362,12 @@ onUnmounted(() => {
     font-size: 16px;
   }
   
-  .header-center {
-    max-width: none;
+  .search-container {
+    min-width: 200px;
   }
   
   /* 移动端简化搜索栏 */
-  .header-center :deep(.n-input-group .n-button) {
+  .search-container :deep(.n-input-group .n-button) {
     display: none;
   }
   

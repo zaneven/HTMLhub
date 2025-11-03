@@ -212,8 +212,9 @@ const handleSelectAll = (selected: boolean) => {
       }
     })
   } else {
-    // 取消选择所有文件
-    props.selectedFiles.forEach(fileId => {
+    // 取消选择所有文件 - 创建副本避免遍历时数组变化的问题
+    const selectedFilesCopy = [...props.selectedFiles]
+    selectedFilesCopy.forEach(fileId => {
       emit('select-change', fileId, false)
     })
   }

@@ -121,13 +121,6 @@
         </n-empty>
       </div>
     </n-card>
-
-    <!-- 文件预览模态框 -->
-    <file-preview-modal
-      v-model:show="showPreviewModal"
-      :file-info="fileInfo"
-      @download="handleDownload"
-    />
   </div>
 </template>
 
@@ -154,7 +147,6 @@ import {
 } from '@vicons/ionicons5'
 import { formatFileSize } from '@/utils/fileUtils'
 import type { FileInfo } from '@/types'
-import FilePreviewModal from '@/components/files/FilePreviewModal.vue'
 
 const route = useRoute()
 
@@ -162,7 +154,6 @@ const route = useRoute()
 const loading = ref(false)
 const error = ref<string | null>(null)
 const fileInfo = ref<FileInfo | null>(null)
-const showPreviewModal = ref(false)
 
 // 计算属性
 const fileId = computed(() => route.params.fileId as string)
@@ -219,7 +210,9 @@ async function loadFileInfo() {
 
 function handlePreview() {
   if (fileInfo.value) {
-    showPreviewModal.value = true
+    // 直接在新标签页打开文件，而不是显示预览弹窗
+    const previewUrl = `/${fileInfo.value.path.replace(/^\//, '')}`
+    window.open(previewUrl, '_blank')
   }
 }
 

@@ -123,13 +123,6 @@
         @update:page-size="handlePageSizeChange"
       />
     </div>
-
-    <!-- 文件预览模态框 -->
-    <file-preview-modal
-      v-model:show="showPreviewModal"
-      :file-info="previewFile"
-      @download="handleDownload"
-    />
   </div>
 </template>
 
@@ -156,15 +149,15 @@ import { useFiles } from '@/composables/useFiles'
 import { useSearchStore } from '@/stores/search'
 import { formatFileSize } from '@/utils/fileUtils'
 import type { FileInfo } from '@/types'
-import { ViewMode } from '@/types'
+import { ViewMode, SortOption } from '@/types'
 import FileListView from '@/components/files/FileListView.vue'
 import FileGridView from '@/components/files/FileGridView.vue'
-import FilePreviewModal from '@/components/files/FilePreviewModal.vue'
 
 // Composables
 const {
   loading,
   error,
+  files,
   paginatedFiles,
   totalPages,
   totalFiles
@@ -175,8 +168,6 @@ const searchStore = useSearchStore()
 // 响应式状态
 const selectedFiles = ref<string[]>([])
 const sortBy = ref('name')
-const showPreviewModal = ref(false)
-const previewFile = ref<FileInfo | null>(null)
 const sortOrder = ref<'asc' | 'desc'>('asc')
 
 // 计算属性
@@ -196,14 +187,6 @@ const batchActions: DropdownOption[] = [
   {
     label: '下载',
     key: 'download'
-  },
-  {
-    label: '删除',
-    key: 'delete'
-  },
-  {
-    label: '分享',
-    key: 'share'
   }
 ]
 
@@ -232,6 +215,26 @@ const handleSelectChange = (fileId: string, selected: boolean) => {
 }
 
 const handleSortChange = (field: string) => {
+  // 获取当前排序选项
+  const currentSortOption = searchStore.sortOption
+  
+  // 根据字段名映射到SortOption枚举
+  let newSortOption: SortOption
+  
+  if (field === 'name') {
+    newSortOption = currentSortOption === SortOption.NAME_ASC ? SortOption.NAME_DESC : SortOption.NAME_ASC
+  } else if (field === 'size') {
+    newSortOption = currentSortOption === SortOption.SIZE_ASC ? SortOption.SIZE_DESC : SortOption.SIZE_ASC
+  } else if (field === 'date') {
+    newSortOption = currentSortOption === SortOption.DATE_ASC ? SortOption.DATE_DESC : SortOption.DATE_ASC
+  } else {
+    newSortOption = SortOption.NAME_ASC
+  }
+  
+  // 更新搜索store中的排序选项
+  searchStore.setSortOption(newSortOption)
+  
+  // 同时更新本地状态以便UI显示
   if (sortBy.value === field) {
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
   } else {
@@ -241,8 +244,9 @@ const handleSortChange = (field: string) => {
 }
 
 const handlePreview = (file: FileInfo) => {
-  previewFile.value = file
-  showPreviewModal.value = true
+  // 直接在新标签页打开文件，而不是显示预览弹窗
+  const previewUrl = `/${file.path.replace(/^\//, '')}`
+  window.open(previewUrl, '_blank')
 }
 
 const handleDownload = (file: FileInfo) => {
@@ -267,6 +271,21 @@ const handleFileAction = (action: string, file: FileInfo) => {
 
 const handleBatchAction = (key: string) => {
   console.log('批量操作:', key)
+  
+  if (key === 'download') {
+    // 批量下载选中的文件
+    const selectedFileObjects = selectedFiles.value.map(fileId => 
+      files.value.find(f => f.id === fileId)
+    ).filter(Boolean)
+    
+    selectedFileObjects.forEach(file => {
+      if (file) {
+        handleDownload(file)
+      }
+    })
+    
+    console.log(`开始下载 ${selectedFileObjects.length} 个文件`)
+  }
 }
 
 const handleFileClick = (file: FileInfo) => {
