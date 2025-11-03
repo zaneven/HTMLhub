@@ -21,11 +21,7 @@ export default defineConfig({
       // 允许访问html-files目录
       allow: ['..']
     },
-    // 配置静态文件服务
-    middlewareMode: false,
   },
-  // 配置静态资源复制
-  assetsInclude: ['**/*.html'],
   // 构建优化
   build: {
     rollupOptions: {
@@ -36,7 +32,5 @@ export default defineConfig({
         },
       },
     },
-    // 复制html-files到构建输出
-    copyPublicDir: true,
   },
 })
