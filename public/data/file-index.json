@@ -1,0 +1,67 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2025-10-30T09:07:53.978Z",
+  "stats": {
+    "totalFiles": 3,
+    "totalSize": 9602,
+    "categories": {
+      "about": 1,
+      "index": 1,
+      "blog": 1
+    },
+    "extensions": {
+      ".html": 3
+    },
+    "lastScan": "2025-10-30T09:07:53.978Z"
+  },
+  "files": [
+    {
+      "id": "aHRtbC1maWxlcy9leGFtcGxlcy9hYm91dC5odG1s",
+      "name": "about.html",
+      "nameWithoutExt": "about",
+      "path": "html-files/examples/about.html",
+      "absolutePath": "/Users/zw/Documents/Develop/codebuddy-cli/HTMLviewer/html-files/examples/about.html",
+      "extension": ".html",
+      "size": 2976,
+      "createdAt": "2025-10-30T09:07:22.340Z",
+      "modifiedAt": "2025-10-30T09:07:22.508Z",
+      "category": "about",
+      "tags": [
+        "html-files",
+        "examples"
+      ]
+    },
+    {
+      "id": "aHRtbC1maWxlcy90ZW1wbGF0ZXMvYmxvZy1wb3N0Lmh0bWw=",
+      "name": "blog-post.html",
+      "nameWithoutExt": "blog-post",
+      "path": "html-files/templates/blog-post.html",
+      "absolutePath": "/Users/zw/Documents/Develop/codebuddy-cli/HTMLviewer/html-files/templates/blog-post.html",
+      "extension": ".html",
+      "size": 4656,
+      "createdAt": "2025-10-30T09:07:44.849Z",
+      "modifiedAt": "2025-10-30T09:07:44.975Z",
+      "category": "blog",
+      "tags": [
+        "html-files",
+        "templates"
+      ]
+    },
+    {
+      "id": "aHRtbC1maWxlcy9leGFtcGxlcy9pbmRleC5odG1s",
+      "name": "index.html",
+      "nameWithoutExt": "index",
+      "path": "html-files/examples/index.html",
+      "absolutePath": "/Users/zw/Documents/Develop/codebuddy-cli/HTMLviewer/html-files/examples/index.html",
+      "extension": ".html",
+      "size": 1970,
+      "createdAt": "2025-10-30T09:07:05.954Z",
+      "modifiedAt": "2025-10-30T09:07:06.142Z",
+      "category": "index",
+      "tags": [
+        "html-files",
+        "examples"
+      ]
+    }
+  ]
+}
