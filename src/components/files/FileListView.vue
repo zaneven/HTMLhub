@@ -147,7 +147,7 @@ import {
   EyeOutline,
   DownloadOutline
 } from '@vicons/ionicons5'
-import { formatFileSize } from '@/utils/fileUtils'
+import { formatFileSize, getFilePreviewUrl } from '@/utils/fileUtils'
 import type { FileInfo } from '@/types'
 
 interface Props {
@@ -190,9 +190,9 @@ const someSelected = computed(() => {
 
 // 方法
 const handleFileClick = (file: FileInfo) => {
-  // 直接在新标签页打开文件
-  const fileUrl = `/${file.path}`
-  window.open(fileUrl, '_blank')
+  // 使用工具函数生成兼容部署的预览URL
+  const fileUrl = getFilePreviewUrl(file)
+  window.open(fileUrl, '_blank', 'noopener')
 }
 
 const handleFileDoubleClick = (file: FileInfo) => {
@@ -229,9 +229,9 @@ const handleDownload = (file: FileInfo) => {
 }
 
 const handlePreview = (file: FileInfo) => {
-  // 在新标签页打开文件
-  const fileUrl = `/${file.path}`
-  window.open(fileUrl, '_blank')
+  // 在新标签页打开文件（兼容部署路径）
+  const fileUrl = getFilePreviewUrl(file)
+  window.open(fileUrl, '_blank', 'noopener')
   emit('preview', file)
 }
 

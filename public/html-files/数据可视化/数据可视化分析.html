@@ -1,481 +1,520 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>优化的数据可视化展示</title>
-  <!-- 引入Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- 引入Font Awesome -->
-  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-  <!-- 引入Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
-  
-  <!-- 配置Tailwind自定义颜色和字体 -->
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary: '#3B82F6',
-            secondary: '#10B981',
-            accent: '#8B5CF6',
-            neutral: '#1F2937',
-            'neutral-light': '#F3F4F6',
-          },
-          fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-          },
-        },
-      }
-    }
-  </script>
-  
-  <!-- 自定义工具类 -->
-  <style type="text/tailwindcss">
-    @layer utilities {
-      .content-auto {
-        content-visibility: auto;
-      }
-      .chart-container {
-        @apply relative w-full rounded-xl shadow-lg bg-white p-4 md:p-6 transition-all duration-300 hover:shadow-xl;
-      }
-      .stat-card {
-        @apply rounded-xl p-5 shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
-      }
-      .gradient-bg {
-        background: linear-gradient(135deg, var(--tw-gradient-stops));
-      }
-    }
-  </style>
-</head>
-<body class="bg-gray-50 font-sans text-neutral">
-  <div class="container mx-auto px-4 py-8 max-w-7xl">
-    <!-- 页面标题 -->
-    <header class="mb-10 text-center">
-      <h1 class="text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-neutral mb-2">数据可视化分析平台</h1>
-      <p class="text-gray-500 max-w-2xl mx-auto">
-        基于多维度数据的交互式可视化展示，支持动态筛选与深度分析
-      </p>
-    </header>
-    
-    <!-- 统计卡片区域 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-      <div class="stat-card bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-100">
-        <div class="flex justify-between items-start">
-          <div>
-            <p class="text-blue-600 font-medium mb-1">总访问量</p>
-            <h3 class="text-2xl font-bold">284.5K</h3>
-            <p class="text-green-500 text-sm mt-2 flex items-center">
-              <i class="fa fa-arrow-up mr-1"></i> 12.5% <span class="text-gray-400 ml-1">vs 上月</span>
-            </p>
-          </div>
-          <div class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
-            <i class="fa fa-eye text-xl"></i>
-          </div>
-        </div>
-      </div>
-      
-      <div class="stat-card bg-gradient-to-br from-green-50 to-green-100 border border-green-100">
-        <div class="flex justify-between items-start">
-          <div>
-            <p class="text-green-600 font-medium mb-1">转化率</p>
-            <h3 class="text-2xl font-bold">24.8%</h3>
-            <p class="text-green-500 text-sm mt-2 flex items-center">
-              <i class="fa fa-arrow-up mr-1"></i> 3.2% <span class="text-gray-400 ml-1">vs 上月</span>
-            </p>
-          </div>
-          <div class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500">
-            <i class="fa fa-exchange text-xl"></i>
-          </div>
-        </div>
-      </div>
-      
-      <div class="stat-card bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-100">
-        <div class="flex justify-between items-start">
-          <div>
-            <p class="text-purple-600 font-medium mb-1">平均时长</p>
-            <h3 class="text-2xl font-bold">8:42</h3>
-            <p class="text-green-500 text-sm mt-2 flex items-center">
-              <i class="fa fa-arrow-up mr-1"></i> 1.8% <span class="text-gray-400 ml-1">vs 上月</span>
-            </p>
-          </div>
-          <div class="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
-            <i class="fa fa-clock-o text-xl"></i>
-          </div>
-        </div>
-      </div>
-      
-      <div class="stat-card bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-100">
-        <div class="flex justify-between items-start">
-          <div>
-            <p class="text-orange-600 font-medium mb-1">跳出率</p>
-            <h3 class="text-2xl font-bold">32.1%</h3>
-            <p class="text-red-500 text-sm mt-2 flex items-center">
-              <i class="fa fa-arrow-down mr-1"></i> 2.4% <span class="text-gray-400 ml-1">vs 上月</span>
-            </p>
-          </div>
-          <div class="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500">
-            <i class="fa fa-sign-out text-xl"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 主要图表区域 -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-      <!-- 趋势图 -->
-      <div class="lg:col-span-2 chart-container">
-        <div class="flex justify-between items-center mb-6">
-          <h2 class="text-lg font-semibold">用户增长趋势</h2>
-          <div class="flex space-x-2">
-            <button class="px-3 py-1 text-sm bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-colors">周</button>
-            <button class="px-3 py-1 text-sm bg-primary text-white rounded-full">月</button>
-            <button class="px-3 py-1 text-sm bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-colors">年</button>
-          </div>
-        </div>
-        <div class="h-[350px]">
-          <canvas id="trendChart"></canvas>
-        </div>
-      </div>
-      
-      <!-- 饼图 -->
-      <div class="chart-container">
-        <h2 class="text-lg font-semibold mb-6">用户来源分布</h2>
-        <div class="h-[350px] flex items-center justify-center">
-          <canvas id="sourceChart"></canvas>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 次要图表区域 -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- 柱状图 -->
-      <div class="chart-container">
-        <h2 class="text-lg font-semibold mb-6">各产品类别销量对比</h2>
-        <div class="h-[300px]">
-          <canvas id="barChart"></canvas>
-        </div>
-      </div>
-      
-      <!-- 雷达图 -->
-      <div class="chart-container">
-        <h2 class="text-lg font-semibold mb-6">产品满意度分析</h2>
-        <div class="h-[300px] flex items-center justify-center">
-          <canvas id="radarChart"></canvas>
-        </div>
-      </div>
-    </div>
-    
-    <!-- 页脚 -->
-    <footer class="mt-12 text-center text-gray-500 text-sm">
-      <p>© 2023 数据可视化分析平台 | 实时数据更新时间: 2023-06-15 12:30</p>
-    </footer>
-  </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>优化的数据可视化展示</title>
+    <!-- 引入Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入Font Awesome -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css"
+      rel="stylesheet"
+    />
+    <!-- 引入Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
 
-  <script>
-    // 等待DOM加载完成
-    document.addEventListener('DOMContentLoaded', function() {
-      // 趋势图配置
-      const trendCtx = document.getElementById('trendChart').getContext('2d');
-      
-      // 创建渐变
-      const gradient = trendCtx.createLinearGradient(0, 0, 0, 400);
-      gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
-      gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
-      
-      const trendChart = new Chart(trendCtx, {
-        type: 'line',
-        data: {
-          labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
-          datasets: [
-            {
-              label: '新用户',
-              data: [1200, 1900, 1700, 2100, 2500, 3200, 3800, 4200, 4500, 5100, 5800, 6500],
-              borderColor: '#3B82F6',
-              backgroundColor: gradient,
-              tension: 0.4,
-              fill: true,
-              pointBackgroundColor: '#3B82F6',
-              pointBorderColor: '#fff',
-              pointBorderWidth: 2,
-              pointRadius: 4,
-              pointHoverRadius: 6,
+    <!-- 配置Tailwind自定义颜色和字体 -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              primary: '#3B82F6',
+              secondary: '#10B981',
+              accent: '#8B5CF6',
+              neutral: '#1F2937',
+              'neutral-light': '#F3F4F6',
             },
-            {
-              label: '活跃用户',
-              data: [3200, 3900, 4100, 4500, 5200, 5900, 6800, 7500, 8200, 8900, 9500, 10200],
-              borderColor: '#10B981',
-              backgroundColor: 'transparent',
-              tension: 0.4,
-              borderDash: [5, 5],
-              pointBackgroundColor: '#10B981',
-              pointBorderColor: '#fff',
-              pointBorderWidth: 2,
-              pointRadius: 4,
-              pointHoverRadius: 6,
-            }
-          ]
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+            },
+          },
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          interaction: {
-            mode: 'index',
-            intersect: false,
-          },
-          plugins: {
-            legend: {
-              position: 'top',
-              labels: {
-                boxWidth: 12,
-                usePointStyle: true,
-                pointStyle: 'circle'
-              }
-            },
-            tooltip: {
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              titleColor: '#1F2937',
-              bodyColor: '#4B5563',
-              borderColor: '#E5E7EB',
-              borderWidth: 1,
-              padding: 12,
-              boxPadding: 6,
-              usePointStyle: true,
-              callbacks: {
-                label: function(context) {
-                  return context.dataset.label + ': ' + context.raw.toLocaleString();
-                }
-              }
-            }
-          },
-          scales: {
-            x: {
-              grid: {
-                display: false
-              }
-            },
-            y: {
-              beginAtZero: true,
-              grid: {
-                color: 'rgba(0, 0, 0, 0.05)'
-              },
-              ticks: {
-                callback: function(value) {
-                  if (value >= 1000) {
-                    return value / 1000 + 'k';
-                  }
-                  return value;
-                }
-              }
-            }
-          },
-          animation: {
-            duration: 2000,
-            easing: 'easeOutQuart'
-          }
+      }
+    </script>
+
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+      @layer utilities {
+        .content-auto {
+          content-visibility: auto;
         }
-      });
-      
-      // 来源分布图配置
-      const sourceCtx = document.getElementById('sourceChart').getContext('2d');
-      const sourceChart = new Chart(sourceCtx, {
-        type: 'doughnut',
-        data: {
-          labels: ['直接访问', '社交媒体', '搜索引擎', '外部链接', '广告投放'],
-          datasets: [{
-            data: [30, 25, 20, 15, 10],
-            backgroundColor: [
-              '#3B82F6',
-              '#8B5CF6',
-              '#10B981',
-              '#F59E0B',
-              '#EF4444'
+        .chart-container {
+          @apply relative w-full rounded-xl shadow-lg bg-white p-4 md:p-6 transition-all duration-300 hover:shadow-xl;
+        }
+        .stat-card {
+          @apply rounded-xl p-5 shadow-md transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+        }
+        .gradient-bg {
+          background: linear-gradient(135deg, var(--tw-gradient-stops));
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 font-sans text-neutral">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+      <!-- 页面标题 -->
+      <header class="mb-10 text-center">
+        <h1 class="text-[clamp(1.8rem,4vw,2.8rem)] font-bold text-neutral mb-2">
+          数据可视化分析平台
+        </h1>
+        <p class="text-gray-500 max-w-2xl mx-auto">
+          基于多维度数据的交互式可视化展示，支持动态筛选与深度分析
+        </p>
+      </header>
+
+      <!-- 统计卡片区域 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="stat-card bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-100">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-blue-600 font-medium mb-1">总访问量</p>
+              <h3 class="text-2xl font-bold">284.5K</h3>
+              <p class="text-green-500 text-sm mt-2 flex items-center">
+                <i class="fa fa-arrow-up mr-1"></i> 12.5%
+                <span class="text-gray-400 ml-1">vs 上月</span>
+              </p>
+            </div>
+            <div
+              class="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500"
+            >
+              <i class="fa fa-eye text-xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card bg-gradient-to-br from-green-50 to-green-100 border border-green-100">
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-green-600 font-medium mb-1">转化率</p>
+              <h3 class="text-2xl font-bold">24.8%</h3>
+              <p class="text-green-500 text-sm mt-2 flex items-center">
+                <i class="fa fa-arrow-up mr-1"></i> 3.2%
+                <span class="text-gray-400 ml-1">vs 上月</span>
+              </p>
+            </div>
+            <div
+              class="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center text-green-500"
+            >
+              <i class="fa fa-exchange text-xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="stat-card bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-100"
+        >
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-purple-600 font-medium mb-1">平均时长</p>
+              <h3 class="text-2xl font-bold">8:42</h3>
+              <p class="text-green-500 text-sm mt-2 flex items-center">
+                <i class="fa fa-arrow-up mr-1"></i> 1.8%
+                <span class="text-gray-400 ml-1">vs 上月</span>
+              </p>
+            </div>
+            <div
+              class="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500"
+            >
+              <i class="fa fa-clock-o text-xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="stat-card bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-100"
+        >
+          <div class="flex justify-between items-start">
+            <div>
+              <p class="text-orange-600 font-medium mb-1">跳出率</p>
+              <h3 class="text-2xl font-bold">32.1%</h3>
+              <p class="text-red-500 text-sm mt-2 flex items-center">
+                <i class="fa fa-arrow-down mr-1"></i> 2.4%
+                <span class="text-gray-400 ml-1">vs 上月</span>
+              </p>
+            </div>
+            <div
+              class="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500"
+            >
+              <i class="fa fa-sign-out text-xl"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 主要图表区域 -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- 趋势图 -->
+        <div class="lg:col-span-2 chart-container">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-lg font-semibold">用户增长趋势</h2>
+            <div class="flex space-x-2">
+              <button
+                class="px-3 py-1 text-sm bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-colors"
+              >
+                周
+              </button>
+              <button class="px-3 py-1 text-sm bg-primary text-white rounded-full">月</button>
+              <button
+                class="px-3 py-1 text-sm bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-colors"
+              >
+                年
+              </button>
+            </div>
+          </div>
+          <div class="h-[350px]">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+
+        <!-- 饼图 -->
+        <div class="chart-container">
+          <h2 class="text-lg font-semibold mb-6">用户来源分布</h2>
+          <div class="h-[350px] flex items-center justify-center">
+            <canvas id="sourceChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- 次要图表区域 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- 柱状图 -->
+        <div class="chart-container">
+          <h2 class="text-lg font-semibold mb-6">各产品类别销量对比</h2>
+          <div class="h-[300px]">
+            <canvas id="barChart"></canvas>
+          </div>
+        </div>
+
+        <!-- 雷达图 -->
+        <div class="chart-container">
+          <h2 class="text-lg font-semibold mb-6">产品满意度分析</h2>
+          <div class="h-[300px] flex items-center justify-center">
+            <canvas id="radarChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- 页脚 -->
+      <footer class="mt-12 text-center text-gray-500 text-sm">
+        <p>© 2023 数据可视化分析平台 | 实时数据更新时间: 2023-06-15 12:30</p>
+      </footer>
+    </div>
+
+    <script>
+      // 等待DOM加载完成
+      document.addEventListener('DOMContentLoaded', function () {
+        // 趋势图配置
+        const trendCtx = document.getElementById('trendChart').getContext('2d')
+
+        // 创建渐变
+        const gradient = trendCtx.createLinearGradient(0, 0, 0, 400)
+        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)')
+        gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)')
+
+        const trendChart = new Chart(trendCtx, {
+          type: 'line',
+          data: {
+            labels: [
+              '1月',
+              '2月',
+              '3月',
+              '4月',
+              '5月',
+              '6月',
+              '7月',
+              '8月',
+              '9月',
+              '10月',
+              '11月',
+              '12月',
             ],
-            borderWidth: 0,
-            hoverOffset: 6
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '70%',
-          plugins: {
-            legend: {
-              position: 'bottom',
-              labels: {
-                padding: 20,
-                boxWidth: 12,
-                usePointStyle: true,
-                pointStyle: 'circle'
-              }
-            },
-            tooltip: {
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              titleColor: '#1F2937',
-              bodyColor: '#4B5563',
-              borderColor: '#E5E7EB',
-              borderWidth: 1,
-              padding: 12,
-              callbacks: {
-                label: function(context) {
-                  return context.label + ': ' + context.raw + '%';
-                }
-              }
-            }
-          },
-          animation: {
-            animateRotate: true,
-            animateScale: true,
-            duration: 2000,
-            easing: 'easeOutQuart'
-          }
-        }
-      });
-      
-      // 柱状图配置
-      const barCtx = document.getElementById('barChart').getContext('2d');
-      const barChart = new Chart(barCtx, {
-        type: 'bar',
-        data: {
-          labels: ['电子产品', '服装鞋帽', '家居用品', '食品饮料', '图书音像', '美妆个护'],
-          datasets: [
-            {
-              label: '本月销量',
-              data: [450, 320, 280, 520, 180, 350],
-              backgroundColor: '#3B82F6',
-              borderRadius: 6,
-              barPercentage: 0.6,
-            },
-            {
-              label: '上月销量',
-              data: [380, 290, 310, 480, 150, 320],
-              backgroundColor: '#93C5FD',
-              borderRadius: 6,
-              barPercentage: 0.6,
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: {
-              position: 'top',
-              labels: {
-                boxWidth: 12,
-                usePointStyle: true,
-                pointStyle: 'circle'
-              }
-            },
-            tooltip: {
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              titleColor: '#1F2937',
-              bodyColor: '#4B5563',
-              borderColor: '#E5E7EB',
-              borderWidth: 1,
-            }
-          },
-          scales: {
-            x: {
-              grid: {
-                display: false
-              }
-            },
-            y: {
-              beginAtZero: true,
-              grid: {
-                color: 'rgba(0, 0, 0, 0.05)'
-              }
-            }
-          },
-          animation: {
-            duration: 1500,
-            easing: 'easeOutBounce'
-          }
-        }
-      });
-      
-      // 雷达图配置
-      const radarCtx = document.getElementById('radarChart').getContext('2d');
-      const radarChart = new Chart(radarCtx, {
-        type: 'radar',
-        data: {
-          labels: ['易用性', '功能完整性', '性能', '设计', '价格', '售后服务'],
-          datasets: [
-            {
-              label: '产品A',
-              data: [85, 90, 80, 95, 75, 85],
-              backgroundColor: 'rgba(59, 130, 246, 0.2)',
-              borderColor: '#3B82F6',
-              pointBackgroundColor: '#3B82F6',
-              pointBorderColor: '#fff',
-              pointHoverBackgroundColor: '#fff',
-              pointHoverBorderColor: '#3B82F6'
-            },
-            {
-              label: '产品B',
-              data: [75, 85, 90, 80, 95, 70],
-              backgroundColor: 'rgba(16, 185, 129, 0.2)',
-              borderColor: '#10B981',
-              pointBackgroundColor: '#10B981',
-              pointBorderColor: '#fff',
-              pointHoverBackgroundColor: '#fff',
-              pointHoverBorderColor: '#10B981'
-            }
-          ]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: {
-            r: {
-              angleLines: {
-                color: 'rgba(0, 0, 0, 0.05)'
+            datasets: [
+              {
+                label: '新用户',
+                data: [1200, 1900, 1700, 2100, 2500, 3200, 3800, 4200, 4500, 5100, 5800, 6500],
+                borderColor: '#3B82F6',
+                backgroundColor: gradient,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#3B82F6',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
               },
-              grid: {
-                color: 'rgba(0, 0, 0, 0.05)'
+              {
+                label: '活跃用户',
+                data: [3200, 3900, 4100, 4500, 5200, 5900, 6800, 7500, 8200, 8900, 9500, 10200],
+                borderColor: '#10B981',
+                backgroundColor: 'transparent',
+                tension: 0.4,
+                borderDash: [5, 5],
+                pointBackgroundColor: '#10B981',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6,
               },
-              pointLabels: {
-                font: {
-                  size: 11
-                }
-              },
-              suggestedMin: 50,
-              suggestedMax: 100
-            }
+            ],
           },
-          plugins: {
-            legend: {
-              position: 'top',
-              labels: {
-                boxWidth: 12,
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+              mode: 'index',
+              intersect: false,
+            },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  boxWidth: 12,
+                  usePointStyle: true,
+                  pointStyle: 'circle',
+                },
+              },
+              tooltip: {
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                titleColor: '#1F2937',
+                bodyColor: '#4B5563',
+                borderColor: '#E5E7EB',
+                borderWidth: 1,
+                padding: 12,
+                boxPadding: 6,
                 usePointStyle: true,
-                pointStyle: 'circle'
-              }
-            }
+                callbacks: {
+                  label: function (context) {
+                    return context.dataset.label + ': ' + context.raw.toLocaleString()
+                  },
+                },
+              },
+            },
+            scales: {
+              x: {
+                grid: {
+                  display: false,
+                },
+              },
+              y: {
+                beginAtZero: true,
+                grid: {
+                  color: 'rgba(0, 0, 0, 0.05)',
+                },
+                ticks: {
+                  callback: function (value) {
+                    if (value >= 1000) {
+                      return value / 1000 + 'k'
+                    }
+                    return value
+                  },
+                },
+              },
+            },
+            animation: {
+              duration: 2000,
+              easing: 'easeOutQuart',
+            },
           },
-          animation: {
-            duration: 2000,
-            easing: 'easeOutQuart'
-          }
-        }
-      });
-      
-      // 添加卡片悬停动画效果
-      const cards = document.querySelectorAll('.stat-card, .chart-container');
-      cards.forEach(card => {
-        card.addEventListener('mouseenter', () => {
-          card.style.transform = 'translateY(-5px)';
-          card.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)';
-        });
-        
-        card.addEventListener('mouseleave', () => {
-          card.style.transform = 'translateY(0)';
-          card.style.boxShadow = '';
-        });
-      });
-    });
-  </script>
-</body>
+        })
+
+        // 来源分布图配置
+        const sourceCtx = document.getElementById('sourceChart').getContext('2d')
+        const sourceChart = new Chart(sourceCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['直接访问', '社交媒体', '搜索引擎', '外部链接', '广告投放'],
+            datasets: [
+              {
+                data: [30, 25, 20, 15, 10],
+                backgroundColor: ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'],
+                borderWidth: 0,
+                hoverOffset: 6,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  padding: 20,
+                  boxWidth: 12,
+                  usePointStyle: true,
+                  pointStyle: 'circle',
+                },
+              },
+              tooltip: {
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                titleColor: '#1F2937',
+                bodyColor: '#4B5563',
+                borderColor: '#E5E7EB',
+                borderWidth: 1,
+                padding: 12,
+                callbacks: {
+                  label: function (context) {
+                    return context.label + ': ' + context.raw + '%'
+                  },
+                },
+              },
+            },
+            animation: {
+              animateRotate: true,
+              animateScale: true,
+              duration: 2000,
+              easing: 'easeOutQuart',
+            },
+          },
+        })
+
+        // 柱状图配置
+        const barCtx = document.getElementById('barChart').getContext('2d')
+        const barChart = new Chart(barCtx, {
+          type: 'bar',
+          data: {
+            labels: ['电子产品', '服装鞋帽', '家居用品', '食品饮料', '图书音像', '美妆个护'],
+            datasets: [
+              {
+                label: '本月销量',
+                data: [450, 320, 280, 520, 180, 350],
+                backgroundColor: '#3B82F6',
+                borderRadius: 6,
+                barPercentage: 0.6,
+              },
+              {
+                label: '上月销量',
+                data: [380, 290, 310, 480, 150, 320],
+                backgroundColor: '#93C5FD',
+                borderRadius: 6,
+                barPercentage: 0.6,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  boxWidth: 12,
+                  usePointStyle: true,
+                  pointStyle: 'circle',
+                },
+              },
+              tooltip: {
+                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                titleColor: '#1F2937',
+                bodyColor: '#4B5563',
+                borderColor: '#E5E7EB',
+                borderWidth: 1,
+              },
+            },
+            scales: {
+              x: {
+                grid: {
+                  display: false,
+                },
+              },
+              y: {
+                beginAtZero: true,
+                grid: {
+                  color: 'rgba(0, 0, 0, 0.05)',
+                },
+              },
+            },
+            animation: {
+              duration: 1500,
+              easing: 'easeOutBounce',
+            },
+          },
+        })
+
+        // 雷达图配置
+        const radarCtx = document.getElementById('radarChart').getContext('2d')
+        const radarChart = new Chart(radarCtx, {
+          type: 'radar',
+          data: {
+            labels: ['易用性', '功能完整性', '性能', '设计', '价格', '售后服务'],
+            datasets: [
+              {
+                label: '产品A',
+                data: [85, 90, 80, 95, 75, 85],
+                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                borderColor: '#3B82F6',
+                pointBackgroundColor: '#3B82F6',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#3B82F6',
+              },
+              {
+                label: '产品B',
+                data: [75, 85, 90, 80, 95, 70],
+                backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                borderColor: '#10B981',
+                pointBackgroundColor: '#10B981',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#10B981',
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+              r: {
+                angleLines: {
+                  color: 'rgba(0, 0, 0, 0.05)',
+                },
+                grid: {
+                  color: 'rgba(0, 0, 0, 0.05)',
+                },
+                pointLabels: {
+                  font: {
+                    size: 11,
+                  },
+                },
+                suggestedMin: 50,
+                suggestedMax: 100,
+              },
+            },
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  boxWidth: 12,
+                  usePointStyle: true,
+                  pointStyle: 'circle',
+                },
+              },
+            },
+            animation: {
+              duration: 2000,
+              easing: 'easeOutQuart',
+            },
+          },
+        })
+
+        // 添加卡片悬停动画效果
+        const cards = document.querySelectorAll('.stat-card, .chart-container')
+        cards.forEach((card) => {
+          card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-5px)'
+            card.style.boxShadow =
+              '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+          })
+
+          card.addEventListener('mouseleave', () => {
+            card.style.transform = 'translateY(0)'
+            card.style.boxShadow = ''
+          })
+        })
+      })
+    </script>
+  </body>
 </html>

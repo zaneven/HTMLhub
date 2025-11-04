@@ -145,7 +145,7 @@ import {
   EyeOutline,
   DownloadOutline
 } from '@vicons/ionicons5'
-import { formatFileSize } from '@/utils/fileUtils'
+import { formatFileSize, getFilePreviewUrl } from '@/utils/fileUtils'
 import type { FileInfo } from '@/types'
 
 const route = useRoute()
@@ -164,10 +164,7 @@ const isHtmlFile = computed(() => {
 
 const previewUrl = computed(() => {
   if (!fileInfo.value || !isHtmlFile.value) return undefined
-  
-  const basePath = '/html-files'
-  const relativePath = fileInfo.value.path.replace(/^\//, '')
-  return `${basePath}/${relativePath}`
+  return getFilePreviewUrl(fileInfo.value)
 })
 
 // 生命周期
@@ -211,8 +208,8 @@ async function loadFileInfo() {
 function handlePreview() {
   if (fileInfo.value) {
     // 直接在新标签页打开文件，而不是显示预览弹窗
-    const previewUrl = `/${fileInfo.value.path.replace(/^\//, '')}`
-    window.open(previewUrl, '_blank')
+    const url = getFilePreviewUrl(fileInfo.value)
+    window.open(url, '_blank', 'noopener')
   }
 }
 

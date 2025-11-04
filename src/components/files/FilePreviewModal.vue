@@ -156,6 +156,7 @@ import {
   OpenOutline,
   DownloadOutline
 } from '@vicons/ionicons5'
+import { getFilePreviewUrl } from '@/utils/fileUtils'
 import type { FileInfo } from '@/types'
 
 interface Props {
@@ -197,12 +198,7 @@ const canOpenInNewTab = computed(() => {
 
 const previewUrl = computed(() => {
   if (!props.fileInfo || !isHtmlFile.value) return undefined
-  
-  // 构建预览URL - 使用public目录中的html-files
-  const relativePath = props.fileInfo.path.replace(/^\//, '')
-  
-  // 直接使用相对路径访问public目录中的html-files
-  return `/${relativePath}`
+  return getFilePreviewUrl(props.fileInfo)
 })
 
 // 监听文件变化

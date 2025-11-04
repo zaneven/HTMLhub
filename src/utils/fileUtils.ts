@@ -131,13 +131,16 @@ export function getFileTypeColor(extension: string): string {
  * 生成文件预览URL
  */
 export function getFilePreviewUrl(file: FileInfo): string {
-  // 如果是相对路径，需要转换为绝对路径
-  if (file.path.startsWith('/')) {
-    return file.path
+  // 规范化路径：去掉开头的斜杠与public前缀
+  let p = (file.path || '').replace(/^\//, '')
+  if (p.startsWith('public/')) {
+    p = p.substring('public/'.length)
   }
-  
-  // 处理相对路径
-  return `/${file.path}`
+
+  // 基于部署的base路径构建完整URL
+  const base = import.meta.env.BASE_URL || '/'
+  const normalizedBase = base.endsWith('/') ? base : `${base}/`
+  return `${normalizedBase}${p}`
 }
 
 /**
