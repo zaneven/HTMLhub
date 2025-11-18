@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GeoJSON转SVG工具</title>
+  <style>
+    body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+    .container { text-align: center; }
+    input { padding: 8px; width: 200px; }
+    button { padding: 8px 16px; background: #3366cc; color: white; border: none; cursor: pointer; }
+    #result { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>GeoJSON转SVG工具</h1>
+    <p>输入GeoJSON ID（如330000），生成对应区域的SVG地图：</p>
+    <input type="text" id="geojsonId" placeholder="例如：330000" value="330000">
+    <button onclick="convert()">转换并下载</button>
+    <div id="result"></div>
+  </div>
+
+  <script>
+    // 替换为你的Worker域名
+    const WORKER_URL = "https://g2v.getprompt.top";
+
+    async function convert() {
+      const id = document.getElementById("geojsonId").value.trim();
+      const resultDiv = document.getElementById("result");
+      
+      if (!id) {
+        resultDiv.textContent = "请输入GeoJSON ID";
+        return;
+      }
+
+      try {
+        resultDiv.textContent = "转换中...";
+        // 调用Worker接口，触发下载
+        window.location.href = `${WORKER_URL}?id=${id}`;
+        resultDiv.textContent = "转换成功，正在下载...";
+      } catch (err) {
+        resultDiv.textContent = `转换失败：${err.message}`;
+      }
+    }
+  </script>
+</body>
+</html>
