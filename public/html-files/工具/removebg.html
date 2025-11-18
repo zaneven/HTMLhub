@@ -203,15 +203,12 @@
       const bgEl = document.getElementById('bg')
       const statusEl = document.getElementById('status')
       const drop = document.getElementById('drop')
+      const runEl = document.getElementById('run')
       function getDefaultApi() {
-        try {
-          return location.origin
-        } catch (e) {
-          return ''
-        }
+        return ''
       }
       function getApi() {
-        return apiEl.value.trim() || getDefaultApi()
+        return apiEl.value.trim()
       }
       function human(n) {
         if (n < 1024) return n + ' B'
@@ -265,7 +262,12 @@
       saveEl.addEventListener('click', () => {
         saveApi()
         setStatus('接口地址已保存')
+        updateRunEnabled()
       })
+      function updateRunEnabled() {
+        runEl.disabled = !apiEl.value.trim()
+      }
+      apiEl.addEventListener('input', updateRunEnabled)
       async function run() {
         const f = fileEl.files[0]
         if (!f) {
@@ -299,6 +301,7 @@
       }
       document.getElementById('run').addEventListener('click', run)
       loadApi()
+      updateRunEnabled()
     </script>
   </body>
 </html>
