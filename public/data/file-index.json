@@ -1,138 +1,87 @@
 {
-  "version": "1.0.0",
-  "generatedAt": "2025-11-18T07:02:28.541Z",
+  "version": "2.0.0",
+  "generatedAt": "2026-01-08T08:26:24.591Z",
   "stats": {
-    "totalFiles": 7,
-    "totalSize": 92503,
-    "categories": {
-      "index": 2,
-      "other": 4,
-      "about": 1
-    },
-    "extensions": {
-      ".html": 7
-    },
-    "lastScan": "2025-11-18T07:02:28.541Z"
+    "totalCategories": 3,
+    "totalProjects": 6
   },
-  "files": [
+  "categories": [
     {
-      "id": "cHVibGljL2h0bWwtZmlsZXMv5oql5ZGK5oC757uTL+aKpeWRii5odG1s",
-      "name": "报告.html",
-      "nameWithoutExt": "报告",
-      "path": "public/html-files/报告总结/报告.html",
-      "absolutePath": "/Users/zw/Documents/Develop/HTMLviewer/public/html-files/报告总结/报告.html",
-      "extension": ".html",
-      "size": 14624,
-      "createdAt": "2025-11-03T12:08:31.874Z",
-      "modifiedAt": "2025-11-03T12:08:48.540Z",
-      "category": "other",
-      "tags": [
-        "public",
-        "html-files",
-        "报告总结"
-      ]
+      "id": "5oql5ZGK5oC757uT",
+      "name": "报告总结",
+      "projectCount": 3
+    },
+    {
+      "id": "5bel5YW3",
+      "name": "工具",
+      "projectCount": 2
+    },
+    {
+      "id": "5pWw5o2u5Y+v6KeG5YyW",
+      "name": "数据可视化",
+      "projectCount": 1
+    }
+  ],
+  "projects": [
+    {
+      "id": "cHVibGljL2h0bWwtZmlsZXMv5bel5YW3L+eUteihqOaKpeaWh+aVsOaNruino+aekA==",
+      "name": "电表报文数据解析",
+      "category": "工具",
+      "path": "public/html-files/工具/电表报文数据解析",
+      "indexPath": "public/html-files/工具/电表报文数据解析/index.html",
+      "type": "directory",
+      "createdAt": "2026-01-08T08:01:35.462Z",
+      "modifiedAt": "2026-01-08T07:05:35.523Z"
+    },
+    {
+      "id": "cHVibGljL2h0bWwtZmlsZXMv5oql5ZGK5oC757uTL+eUtee9keaKpeWRig==",
+      "name": "电网报告",
+      "category": "报告总结",
+      "path": "public/html-files/报告总结/电网报告",
+      "indexPath": "public/html-files/报告总结/电网报告/index.html",
+      "type": "directory",
+      "createdAt": "2026-01-08T08:25:58.756Z",
+      "modifiedAt": "2026-01-08T07:05:35.523Z"
     },
     {
       "id": "cHVibGljL2h0bWwtZmlsZXMv5oql5ZGK5oC757uTL+WTiOWfuuexs+aWh+WMlueglOepti5odG1s",
-      "name": "哈基米文化研究.html",
-      "nameWithoutExt": "哈基米文化研究",
+      "name": "哈基米文化研究",
+      "category": "报告总结",
       "path": "public/html-files/报告总结/哈基米文化研究.html",
-      "absolutePath": "/Users/zw/Documents/Develop/HTMLviewer/public/html-files/报告总结/哈基米文化研究.html",
-      "extension": ".html",
-      "size": 46692,
+      "indexPath": "public/html-files/报告总结/哈基米文化研究.html",
+      "type": "file",
       "createdAt": "2025-11-03T12:11:06.238Z",
-      "modifiedAt": "2025-11-03T12:11:20.048Z",
-      "category": "other",
-      "tags": [
-        "public",
-        "html-files",
-        "报告总结"
-      ]
+      "modifiedAt": "2025-11-03T12:11:20.048Z"
+    },
+    {
+      "id": "cHVibGljL2h0bWwtZmlsZXMv5oql5ZGK5oC757uTL+WPr+inhuWMluaKpeWRii5odG1s",
+      "name": "可视化报告",
+      "category": "报告总结",
+      "path": "public/html-files/报告总结/可视化报告.html",
+      "indexPath": "public/html-files/报告总结/可视化报告.html",
+      "type": "file",
+      "createdAt": "2025-11-03T12:08:31.874Z",
+      "modifiedAt": "2025-11-03T12:08:48.540Z"
     },
     {
       "id": "cHVibGljL2h0bWwtZmlsZXMv5pWw5o2u5Y+v6KeG5YyWL+aVsOaNruWPr+inhuWMluWIhuaekC5odG1s",
-      "name": "数据可视化分析.html",
-      "nameWithoutExt": "数据可视化分析",
+      "name": "数据可视化分析",
+      "category": "数据可视化",
       "path": "public/html-files/数据可视化/数据可视化分析.html",
-      "absolutePath": "/Users/zw/Documents/Develop/HTMLviewer/public/html-files/数据可视化/数据可视化分析.html",
-      "extension": ".html",
-      "size": 17506,
+      "indexPath": "public/html-files/数据可视化/数据可视化分析.html",
+      "type": "file",
       "createdAt": "2025-11-03T12:10:16.761Z",
-      "modifiedAt": "2025-11-03T13:24:51.354Z",
-      "category": "other",
-      "tags": [
-        "public",
-        "html-files",
-        "数据可视化"
-      ]
-    },
-    {
-      "id": "cHVibGljL2h0bWwtZmlsZXMv5qGI5L6LL2Fib3V0Lmh0bWw=",
-      "name": "about.html",
-      "nameWithoutExt": "about",
-      "path": "public/html-files/案例/about.html",
-      "absolutePath": "/Users/zw/Documents/Develop/HTMLviewer/public/html-files/案例/about.html",
-      "extension": ".html",
-      "size": 3057,
-      "createdAt": "2025-10-30T09:07:22.340Z",
-      "modifiedAt": "2025-11-03T12:05:31.730Z",
-      "category": "about",
-      "tags": [
-        "public",
-        "html-files",
-        "案例"
-      ]
-    },
-    {
-      "id": "cHVibGljL2h0bWwtZmlsZXMv5bel5YW3L2luZGV4Lmh0bWw=",
-      "name": "index.html",
-      "nameWithoutExt": "index",
-      "path": "public/html-files/工具/index.html",
-      "absolutePath": "/Users/zw/Documents/Develop/HTMLviewer/public/html-files/工具/index.html",
-      "extension": ".html",
-      "size": 1439,
-      "createdAt": "2025-11-14T07:55:41.957Z",
-      "modifiedAt": "2025-11-14T07:56:10.899Z",
-      "category": "index",
-      "tags": [
-        "public",
-        "html-files",
-        "工具"
-      ]
-    },
-    {
-      "id": "cHVibGljL2h0bWwtZmlsZXMv5qGI5L6LL2luZGV4Lmh0bWw=",
-      "name": "index.html",
-      "nameWithoutExt": "index",
-      "path": "public/html-files/案例/index.html",
-      "absolutePath": "/Users/zw/Documents/Develop/HTMLviewer/public/html-files/案例/index.html",
-      "extension": ".html",
-      "size": 1970,
-      "createdAt": "2025-10-30T09:07:05.954Z",
-      "modifiedAt": "2025-10-30T09:07:06.142Z",
-      "category": "index",
-      "tags": [
-        "public",
-        "html-files",
-        "案例"
-      ]
+      "modifiedAt": "2025-11-03T13:24:51.354Z"
     },
     {
       "id": "cHVibGljL2h0bWwtZmlsZXMv5bel5YW3L3JlbW92ZWJnLmh0bWw=",
-      "name": "removebg.html",
-      "nameWithoutExt": "removebg",
+      "name": "removebg",
+      "category": "工具",
       "path": "public/html-files/工具/removebg.html",
-      "absolutePath": "/Users/zw/Documents/Develop/HTMLviewer/public/html-files/工具/removebg.html",
-      "extension": ".html",
-      "size": 7215,
+      "indexPath": "public/html-files/工具/removebg.html",
+      "type": "file",
       "createdAt": "2025-11-18T05:52:41.464Z",
-      "modifiedAt": "2025-11-18T07:01:41.886Z",
-      "category": "other",
-      "tags": [
-        "public",
-        "html-files",
-        "工具"
-      ]
+      "modifiedAt": "2025-11-18T09:12:38.675Z"
     }
   ]
 }

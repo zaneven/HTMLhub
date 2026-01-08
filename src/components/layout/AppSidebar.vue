@@ -6,9 +6,9 @@
         <!-- 移动端侧边栏内容 -->
         <div class="quick-stats">
           <n-card size="small" embedded>
-            <n-statistic label="总文件数" :value="totalFiles" />
+            <n-statistic label="分类数" :value="totalCategories" />
             <n-divider style="margin: 8px 0" />
-            <n-statistic label="总大小" :value="formatFileSize(totalSize)" :value-style="{ fontSize: '14px' }" />
+            <n-statistic label="项目数" :value="totalProjects" />
           </n-card>
         </div>
 
@@ -44,9 +44,9 @@
       <!-- 快速统计 -->
       <div class="quick-stats">
         <n-card size="small" embedded>
-          <n-statistic label="总文件数" :value="totalFiles" />
+          <n-statistic label="分类数" :value="totalCategories" />
           <n-divider style="margin: 8px 0" />
-          <n-statistic label="总大小" :value="formatFileSize(totalSize)" :value-style="{ fontSize: '14px' }" />
+          <n-statistic label="项目数" :value="totalProjects" />
         </n-card>
       </div>
 
@@ -84,16 +84,9 @@ import {
 import {
   FolderOpenOutline,
   FolderOutline,
-  DocumentOutline,
-  ImageOutline,
-  VideocamOutline,
-  MusicalNoteOutline,
-  CodeSlashOutline,
-  ArchiveOutline
+  AppsOutline
 } from '@vicons/ionicons5'
 import { useFilesStore } from '../../stores/files'
-import { useSearchStore } from '../../stores/search'
-import { formatFileSize } from '../../utils/fileUtils'
 
 // 响应式状态
 const drawerVisible = ref(false)
@@ -137,58 +130,28 @@ onUnmounted(() => {
 
 // Store
 const filesStore = useFilesStore()
-const searchStore = useSearchStore()
 
 // 计算属性
-const totalFiles = computed(() => filesStore.totalFiles)
-const totalSize = computed(() => {
-  const stats = filesStore.getStats
-  return stats.totalSize
-})
-const selectedCategory = computed(() => searchStore.searchFilter.category)
-
-// 分类图标映射
-const categoryIcons: Record<string, unknown> = {
-  // 目录相关图标
-  'examples': FolderOutline,
-  'templates': FolderOutline,
-  'components': CodeSlashOutline,
-  'assets': ImageOutline,
-  'docs': DocumentOutline,
-  'images': ImageOutline,
-  'videos': VideocamOutline,
-  'audio': MusicalNoteOutline,
-  'scripts': CodeSlashOutline,
-  'styles': CodeSlashOutline,
-  'data': ArchiveOutline,
-  '根目录': FolderOpenOutline,
-  // 原有的分类图标
-  '文档': DocumentOutline,
-  '图片': ImageOutline,
-  '视频': VideocamOutline,
-  '音频': MusicalNoteOutline,
-  '代码': CodeSlashOutline,
-  '压缩包': ArchiveOutline,
-  '其他': FolderOutline
-}
+const totalProjects = computed(() => filesStore.totalProjects)
+const totalCategories = computed(() => filesStore.totalCategories)
+const selectedCategory = computed(() => filesStore.selectedCategory)
 
 // 分类菜单选项
 const categoryMenuOptions = computed((): MenuOption[] => {
   const categories = filesStore.categories
   const options: MenuOption[] = [
     {
-      label: '全部文件',
+      label: '全部项目',
       key: '',
-      icon: () => h(NIcon, null, { default: () => h(FolderOpenOutline) })
+      icon: () => h(NIcon, null, { default: () => h(AppsOutline) })
     }
   ]
 
   categories.forEach(category => {
-    const IconComponent = categoryIcons[category.name] || FolderOutline
     options.push({
-      label: `${category.name} (${category.count})`,
+      label: `${category.name} (${category.projectCount})`,
       key: category.name,
-      icon: () => h(NIcon, null, { default: () => h(IconComponent) })
+      icon: () => h(NIcon, null, { default: () => h(FolderOutline) })
     })
   })
 
@@ -197,7 +160,11 @@ const categoryMenuOptions = computed((): MenuOption[] => {
 
 // 事件处理
 function handleCategorySelect(category: string) {
-  searchStore.setCategoryFilter(category)
+  filesStore.setSelectedCategory(category)
+  // 移动端选择后关闭抽屉
+  if (isMobile.value) {
+    drawerVisible.value = false
+  }
 }
 </script>
 
@@ -261,37 +228,6 @@ function handleCategorySelect(category: string) {
   white-space: nowrap;
 }
 
-.tags-section {
-  flex-shrink: 0;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  max-height: 150px;
-  overflow-y: auto;
-}
-
-.tag-item {
-  cursor: pointer;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.tag-item:hover {
-  transform: translateY(-1px);
-}
-
-.quick-actions {
-  flex-shrink: 0;
-  margin-top: auto;
-  padding-top: 16px;
-  border-top: 1px solid var(--n-border-color);
-}
-
 /* 移动端抽屉样式 */
 .mobile-sidebar {
   z-index: 1000;
@@ -312,10 +248,6 @@ function handleCategorySelect(category: string) {
     gap: 12px;
   }
 
-  .tags-container {
-    max-height: 120px;
-  }
-
   .section-title {
     font-size: 13px;
   }
@@ -325,16 +257,11 @@ function handleCategorySelect(category: string) {
 @media (max-width: 767px) {
   .app-sidebar {
     display: none;
-    /* 移动端隐藏固定侧边栏 */
   }
 
   .sidebar-content.mobile {
     padding: 8px;
     gap: 8px;
-  }
-
-  .tags-container {
-    max-height: 100px;
   }
 
   .quick-stats :deep(.n-card) {
@@ -352,10 +279,6 @@ function handleCategorySelect(category: string) {
   .sidebar-content {
     padding: 20px;
     gap: 20px;
-  }
-
-  .tags-container {
-    max-height: 250px;
   }
 }
 
@@ -376,69 +299,31 @@ function handleCategorySelect(category: string) {
 }
 
 /* 滚动条优化 */
-.tags-container::-webkit-scrollbar,
 .category-section::-webkit-scrollbar {
   width: 4px;
 }
 
-.tags-container::-webkit-scrollbar-track,
 .category-section::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.tags-container::-webkit-scrollbar-thumb,
 .category-section::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.1);
   border-radius: 2px;
 }
 
-.tags-container::-webkit-scrollbar-thumb:hover,
 .category-section::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.2);
 }
 
 /* 暗色主题下的滚动条 */
 @media (prefers-color-scheme: dark) {
-
-  .tags-container::-webkit-scrollbar-thumb,
   .category-section::-webkit-scrollbar-thumb {
     background: rgba(255, 255, 255, 0.1);
   }
 
-  .tags-container::-webkit-scrollbar-thumb:hover,
   .category-section::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.2);
   }
-}
-
-/* 收起状态下的样式修复 */
-:deep(.n-layout-sider--collapsed) {
-  .n-menu-item {
-    padding: 0 !important;
-    justify-content: center !important;
-  }
-
-  .n-menu-item-content {
-    padding: 8px 0 !important;
-    justify-content: center !important;
-  }
-
-  .n-menu-item-content-header {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-  }
-
-  .n-icon {
-    margin: 0 !important;
-  }
-}
-
-/* 确保图标在收起状态下正确显示 */
-:deep(.n-layout-sider--collapsed .n-menu .n-menu-item .n-icon) {
-  font-size: 22px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
 }
 </style>

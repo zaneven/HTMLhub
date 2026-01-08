@@ -1,3 +1,34 @@
+// 项目信息接口
+export interface ProjectInfo {
+  id: string
+  name: string
+  category: string
+  path: string
+  indexPath: string
+  type: 'directory' | 'file'
+  createdAt: string
+  modifiedAt: string
+}
+
+// 分类信息接口
+export interface CategoryInfo {
+  id: string
+  name: string
+  projectCount: number
+}
+
+// 项目索引数据接口
+export interface ProjectIndexData {
+  version: string
+  generatedAt: string
+  stats: {
+    totalCategories: number
+    totalProjects: number
+  }
+  categories: CategoryInfo[]
+  projects: ProjectInfo[]
+}
+
 // 文件信息接口
 export interface FileInfo {
   id: string

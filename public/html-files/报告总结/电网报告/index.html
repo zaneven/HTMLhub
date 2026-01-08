@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电费数据可视化解析器</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>⚡ 电费数据可视化解析器</h1>
+            <p class="subtitle">智能解析电力接口数据，直观展示费用明细</p>
+        </header>
+
+        <div class="upload-section">
+            <div class="upload-box" id="uploadBox">
+                <div class="upload-icon">📁</div>
+                <h3>上传 JSON 数据文件</h3>
+                <p>拖拽文件到此处，或点击选择文件</p>
+                <input type="file" id="fileInput" accept=".json" hidden>
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">选择文件</button>
+            </div>
+            <div class="divider">或</div>
+            <div class="paste-section">
+                <h3>直接粘贴 JSON 数据</h3>
+                <textarea id="jsonInput" placeholder="在此粘贴接口返回的 JSON 数据..."></textarea>
+                <button class="parse-btn" onclick="parseInputData()">解析数据</button>
+            </div>
+        </div>
+
+        <div id="resultSection" class="result-section hidden">
+            <!-- 概览卡片 -->
+            <div class="overview-cards" id="overviewCards"></div>
+
+            <!-- 标签页导航 -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="consInfo">用户信息</button>
+                <button class="tab-btn" data-tab="execCtlg">目录电费明细</button>
+                <button class="tab-btn" data-tab="readList">抄表示数</button>
+                <button class="tab-btn" data-tab="custExp">客户电费清单</button>
+            </div>
+
+            <!-- 用户信息 -->
+            <div class="tab-content active" id="consInfo">
+                <div class="section-header">
+                    <h2>📋 用户信息</h2>
+                </div>
+                <div class="data-grid" id="consInfoGrid"></div>
+            </div>
+
+            <!-- 目录电费明细 -->
+            <div class="tab-content" id="execCtlg">
+                <div class="section-header">
+                    <h2>📊 目录电费明细</h2>
+                    <div class="filter-group">
+                        <label>按时段筛选：</label>
+                        <select id="ctlgClsFilter" onchange="filterExecCtlg()">
+                            <option value="">全部</option>
+                            <option value="01">01-尖</option>
+                            <option value="02">02-峰</option>
+                            <option value="03">03-平</option>
+                            <option value="04">04-谷</option>
+                            <option value="05">05-深谷</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="table-wrapper">
+                    <table class="data-table" id="execCtlgTable">
+                        <thead>
+                            <tr>
+                                <th>目录电价名称</th>
+                                <th>时段</th>
+                                <th>费用属性分类</th>
+                                <th>有功结算电量</th>
+                                <th>电价</th>
+                                <th>电费</th>
+                                <th>冲减类型</th>
+                            </tr>
+                        </thead>
+                        <tbody id="execCtlgBody"></tbody>
+                    </table>
+                </div>
+                <!-- 时段电量汇总表 -->
+                <div class="summary-section">
+                    <h3>📊 按时段汇总统计</h3>
+                    <div class="summary-table-wrapper">
+                        <table class="data-table summary-table" id="ctlgSummaryTable">
+                            <thead>
+                                <tr>
+                                    <th>时段</th>
+                                    <th>汇总电量 (kWh)</th>
+                                    <th>汇总电费 (元)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ctlgSummaryBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="chart-row">
+                    <div class="chart-container">
+                        <canvas id="execCtlgChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="execCtlgQtyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 抄表示数 -->
+            <div class="tab-content" id="readList">
+                <div class="section-header">
+                    <h2>📈 抄表示数信息</h2>
+                </div>
+                <!-- 最大需量指标卡 -->
+                <div class="demand-cards" id="demandCards"></div>
+                <div class="table-wrapper">
+                    <table class="data-table" id="readListTable">
+                        <thead>
+                            <tr>
+                                <th>计量点名称</th>
+                                <th>表号</th>
+                                <th>示数类型</th>
+                                <th>抄见起度</th>
+                                <th>抄见止度</th>
+                                <th>综合倍率</th>
+                                <th>抄见电量</th>
+                            </tr>
+                        </thead>
+                        <tbody id="readListBody"></tbody>
+                    </table>
+                </div>
+                <!-- 按计量点分组的图表区域 -->
+                <div class="meter-charts-container" id="meterChartsContainer"></div>
+            </div>
+
+            <!-- 客户电费清单 -->
+            <div class="tab-content" id="custExp">
+                <div class="section-header">
+                    <h2>💰 客户电费清单</h2>
+                </div>
+                <div class="data-categories">
+                    <!-- 时段电费 -->
+                    <div class="category-card">
+                        <h3>⏰ 时段电费</h3>
+                        <div class="category-content" id="timePeriodFees"></div>
+                    </div>
+
+                    <!-- 市场化交易电费 -->
+                    <div class="category-card">
+                        <h3>📈 市场化交易电费</h3>
+                        <div class="category-content" id="marketTradeFees"></div>
+                    </div>
+
+                    <!-- 绿电交易 -->
+                    <div class="category-card">
+                        <h3>🌿 绿电交易电费</h3>
+                        <div class="category-content" id="greenTradeFees"></div>
+                    </div>
+
+                    <!-- 其他费用 -->
+                    <div class="category-card">
+                        <h3>📝 其他费用</h3>
+                        <div class="category-content" id="otherFees"></div>
+                    </div>
+
+                    <!-- 电量信息 -->
+                    <div class="category-card">
+                        <h3>⚡ 电量信息</h3>
+                        <div class="category-content" id="powerQuantity"></div>
+                    </div>
+
+                    <!-- 电价信息 -->
+                    <div class="category-card">
+                        <h3>💹 电价信息</h3>
+                        <div class="category-content" id="priceInfo"></div>
+                    </div>
+                </div>
+                <div class="chart-row">
+                    <div class="chart-container">
+                        <canvas id="feeChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="powerChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="fieldMapping.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

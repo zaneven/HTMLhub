@@ -1,20 +1,8 @@
 <template>
   <n-layout-header bordered class="app-header">
     <div class="header-content">
-      <!-- 左侧：汉堡菜单和面包屑导航 -->
+      <!-- 左侧：占位 -->
       <div class="header-left">
-        <n-button
-          text
-          @click="handleBackClick"
-          :disabled="!canGoBack"
-          class="back-button"
-        >
-          <template #icon>
-            <n-icon>
-              <chevron-back-outline />
-            </n-icon>
-          </template>
-        </n-button>
       </div>
 
       <!-- 右侧：搜索栏和操作按钮 -->
@@ -112,8 +100,7 @@ import {
 import {
   SearchOutline,
   SwapVerticalOutline,
-  SettingsOutline,
-  ChevronBackOutline
+  SettingsOutline
 } from '@vicons/ionicons5'
 import { useSearchStore } from '../../stores/search'
 import { useSettingsStore } from '../../stores/settings'
@@ -132,16 +119,7 @@ const searchInput = computed({
   set: (value: string) => searchStore.setSearchQuery(value)
 })
 
-const searching = computed(() => false) // 暂时设为false，后续实现
-
-// 返回功能
-const canGoBack = computed(() => {
-  return window.history.length > 1
-})
-
-function handleBackClick() {
-  window.history.back()
-}
+const searching = computed(() => false)
 
 // 搜索建议
 const suggestions = computed(() => {
