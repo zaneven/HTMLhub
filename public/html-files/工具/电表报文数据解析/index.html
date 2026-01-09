@@ -36,11 +36,16 @@
             <div class="overview-cards" id="overviewCards"></div>
 
             <!-- 标签页导航 -->
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="consInfo">用户信息</button>
-                <button class="tab-btn" data-tab="execCtlg">目录电费明细</button>
-                <button class="tab-btn" data-tab="readList">抄表示数</button>
-                <button class="tab-btn" data-tab="custExp">客户电费清单</button>
+            <div class="tabs-container">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="consInfo">用户信息</button>
+                    <button class="tab-btn" data-tab="execCtlg">目录电费明细</button>
+                    <button class="tab-btn" data-tab="readList">抄表示数</button>
+                    <button class="tab-btn" data-tab="custExp">客户电费清单</button>
+                </div>
+                <button class="export-btn" onclick="exportToExcel()" title="导出为Excel文件">
+                    📥 导出Excel
+                </button>
             </div>
 
             <!-- 用户信息 -->
@@ -64,6 +69,10 @@
                             <option value="03">03-平</option>
                             <option value="04">04-谷</option>
                             <option value="05">05-深谷</option>
+                        </select>
+                        <label>按费用属性分类筛选：</label>
+                        <select id="expAttrClsFilter" onchange="filterExecCtlg()">
+                            <option value="">全部</option>
                         </select>
                     </div>
                 </div>
@@ -113,6 +122,12 @@
             <div class="tab-content" id="readList">
                 <div class="section-header">
                     <h2>📈 抄表示数信息</h2>
+                    <div class="filter-group">
+                        <label>按计量点筛选：</label>
+                        <select id="mpNameFilter" onchange="filterReadList()">
+                            <option value="">全部</option>
+                        </select>
+                    </div>
                 </div>
                 <!-- 最大需量指标卡 -->
                 <div class="demand-cards" id="demandCards"></div>
@@ -191,6 +206,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <script src="fieldMapping.js"></script>
     <script src="app.js"></script>
 </body>

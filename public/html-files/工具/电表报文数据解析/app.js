@@ -84,11 +84,33 @@ function processData(data) {
     // 提取实际数据
     let actualData;
     if (data.code === 0 && data.data) {
-        if (data.data.code === "0" && data.data.data) {
+        let innerData = data.data;
+
+        // 如果 data.data 是字符串，说明是原始 API 格式，需要解析
+        if (typeof innerData === 'string') {
+            try {
+                innerData = JSON.parse(innerData);
+            } catch (e) {
+                console.error('解析 data.data 失败:', e);
+            }
+        }
+
+        if (innerData && innerData.code === "0" && innerData.data) {
+            let consData = innerData.data;
+
+            // 如果 innerData.data 仍是字符串，继续解析
+            if (typeof consData === 'string') {
+                try {
+                    consData = JSON.parse(consData);
+                } catch (e) {
+                    console.error('解析 innerData.data 失败:', e);
+                }
+            }
+
             // 获取第一个户号的数据
-            const consNoKeys = Object.keys(data.data.data);
+            const consNoKeys = Object.keys(consData);
             if (consNoKeys.length > 0) {
-                actualData = data.data.data[consNoKeys[0]];
+                actualData = consData[consNoKeys[0]];
             }
         }
     }
@@ -120,22 +142,40 @@ function renderOverviewCards() {
     const consInfo = parsedData.consLists?.[0] || {};
     const custExp = parsedData.custExpLists?.[0] || {};
 
-    const cards = [
-        { icon: '🏢', label: '户名', value: consInfo.consName || '-' },
-        { icon: '📍', label: '户号', value: consInfo.consNo || '-' },
-        { icon: '💰', label: '当月合计电费', value: formatCurrency(custExp.dyAmt), highlight: true },
-        { icon: '⚡', label: '当月合计电量', value: formatNumber(custExp.dyPq) + ' kWh', highlight: true },
-        { icon: '📅', label: '结算年月', value: formatYearMonth(consInfo.jsYm) },
-        { icon: '📊', label: '基本电费计算方式', value: custExp.beaCalcMode || '-' }
+    // 基础信息卡片（按顺序：户名、户号、结算年月、基本电费计算方式）
+    const basicCards = [
+        { icon: '🏢', label: '户名', value: consInfo.consName || '-', wide: true },
+        { icon: '📍', label: '户号', value: consInfo.consNo || '-', wide: true },
+        { icon: '📅', label: '结算年月', value: formatYearMonth(consInfo.jsYm), wide: true },
+        { icon: '📊', label: '基本电费计算方式', value: custExp.beaCalcMode || '-', wide: true }
     ];
 
-    container.innerHTML = cards.map(card => `
-        <div class="overview-card ${card.highlight ? 'highlight' : ''}">
-            <div class="icon">${card.icon}</div>
-            <div class="label">${card.label}</div>
-            <div class="value">${card.value}</div>
+    // 金额电量概览卡片（当月合计电费、当月合计电量）
+    const highlightCards = [
+        { icon: '💰', label: '当月合计电费', value: formatCurrency(custExp.dyAmt), highlight: true },
+        { icon: '⚡', label: '当月合计电量', value: formatNumber(custExp.dyPq) + ' kWh', highlight: true }
+    ];
+
+    container.innerHTML = `
+        <div class="overview-row basic-row">
+            ${basicCards.map(card => `
+                <div class="overview-card ${card.wide ? 'wide' : ''}">
+                    <div class="icon">${card.icon}</div>
+                    <div class="label">${card.label}</div>
+                    <div class="value">${card.value}</div>
+                </div>
+            `).join('')}
         </div>
-    `).join('');
+        <div class="overview-row highlight-row">
+            ${highlightCards.map(card => `
+                <div class="overview-card highlight">
+                    <div class="icon">${card.icon}</div>
+                    <div class="label">${card.label}</div>
+                    <div class="value">${card.value}</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
 }
 
 // ========== 渲染用户信息 ==========
@@ -168,17 +208,67 @@ function renderConsInfo() {
 // ========== 渲染目录电费明细 ==========
 function renderExecCtlg() {
     execCtlgData = parsedData.execCtlgLists || [];
+
+    // 先按目录电价名称排序，再按费用属性分类排序
+    execCtlgData.sort((a, b) => {
+        // 先按目录电价名称排序
+        const nameA = a.execCtlgUpName || '';
+        const nameB = b.execCtlgUpName || '';
+        const nameCompare = nameA.localeCompare(nameB, 'zh-CN');
+        if (nameCompare !== 0) return nameCompare;
+
+        // 再按费用属性分类排序
+        const attrA = a.expAttrCls || '';
+        const attrB = b.expAttrCls || '';
+        return attrA.localeCompare(attrB, 'zh-CN');
+    });
+
+    // 填充费用属性分类筛选选项
+    populateExpAttrClsFilter();
+
     renderExecCtlgTable(execCtlgData);
     renderCtlgSummaryTable();
     renderExecCtlgChart();
     renderExecCtlgQtyChart();
 }
 
+// 填充费用属性分类筛选选项
+function populateExpAttrClsFilter() {
+    const select = document.getElementById('expAttrClsFilter');
+    const existingOptions = new Set();
+
+    execCtlgData.forEach(item => {
+        if (item.expAttrCls && !existingOptions.has(item.expAttrCls)) {
+            existingOptions.add(item.expAttrCls);
+        }
+    });
+
+    // 保留第一个"全部"选项，清除其他选项
+    select.innerHTML = '<option value="">全部</option>';
+
+    // 排序后添加选项
+    Array.from(existingOptions).sort().forEach(cls => {
+        const option = document.createElement('option');
+        option.value = cls;
+        option.textContent = getExpAttrClsName(cls);
+        select.appendChild(option);
+    });
+}
+
 function filterExecCtlg() {
-    const filter = document.getElementById('ctlgClsFilter').value;
-    const filtered = filter
-        ? execCtlgData.filter(item => item.ctlgCls === filter)
-        : execCtlgData;
+    const ctlgFilter = document.getElementById('ctlgClsFilter').value;
+    const expAttrFilter = document.getElementById('expAttrClsFilter').value;
+
+    let filtered = execCtlgData;
+
+    if (ctlgFilter) {
+        filtered = filtered.filter(item => item.ctlgCls === ctlgFilter);
+    }
+
+    if (expAttrFilter) {
+        filtered = filtered.filter(item => item.expAttrCls === expAttrFilter);
+    }
+
     renderExecCtlgTable(filtered);
 }
 
@@ -387,10 +477,17 @@ function renderExecCtlgQtyChart() {
     });
 }
 
+// 全局变量存储原始抄表数据
+let readListData = [];
+
 // ========== 渲染抄表示数 ==========
 function renderReadList() {
     const tbody = document.getElementById('readListBody');
     const readData = parsedData.readLists || [];
+    readListData = readData;
+
+    // 填充计量点名称筛选选项
+    populateMpNameFilter();
 
     // 分离最大需量数据 (readTypeCode = '15')
     const demandData = readData.filter(item => item.readTypeCode === '15');
@@ -400,6 +497,63 @@ function renderReadList() {
     renderDemandCards(demandData);
 
     // 渲染普通抄表数据表格（排除最大需量）
+    renderReadListTable(regularData);
+
+    // 按计量点名称分组渲染图表（排除最大需量）
+    renderMeterCharts(regularData);
+}
+
+// 填充计量点名称筛选选项
+function populateMpNameFilter() {
+    const select = document.getElementById('mpNameFilter');
+    const existingOptions = new Set();
+
+    readListData.forEach(item => {
+        if (item.mpName && !existingOptions.has(item.mpName)) {
+            existingOptions.add(item.mpName);
+        }
+    });
+
+    // 保留第一个"全部"选项，清除其他选项
+    select.innerHTML = '<option value="">全部</option>';
+
+    // 排序后添加选项
+    Array.from(existingOptions).sort((a, b) => a.localeCompare(b, 'zh-CN')).forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+    });
+}
+
+// 筛选抄表示数
+function filterReadList() {
+    const mpNameFilter = document.getElementById('mpNameFilter').value;
+
+    let filtered = readListData;
+
+    if (mpNameFilter) {
+        filtered = filtered.filter(item => item.mpName === mpNameFilter);
+    }
+
+    // 分离最大需量数据
+    const demandData = filtered.filter(item => item.readTypeCode === '15');
+    const regularData = filtered.filter(item => item.readTypeCode !== '15');
+
+    // 渲染最大需量指标卡
+    renderDemandCards(demandData);
+
+    // 渲染普通抄表数据表格
+    renderReadListTable(regularData);
+
+    // 按计量点名称分组渲染图表
+    renderMeterCharts(regularData);
+}
+
+// 渲染抄表示数表格
+function renderReadListTable(regularData) {
+    const tbody = document.getElementById('readListBody');
+
     tbody.innerHTML = regularData.map(item => {
         const pq = parseFloat(item.thisReadPq) || 0;
         const valueClass = pq >= 0 ? 'positive' : 'negative';
@@ -416,9 +570,6 @@ function renderReadList() {
             </tr>
         `;
     }).join('');
-
-    // 按计量点名称分组渲染图表（排除最大需量）
-    renderMeterCharts(regularData);
 }
 
 // 渲染最大需量指标卡
@@ -816,4 +967,156 @@ function getBadgeClass(ctlgCls) {
         '05': 'badge-deep'
     };
     return mapping[ctlgCls] || '';
+}
+
+// ========== Excel 导出功能 ==========
+function exportToExcel() {
+    if (!parsedData) {
+        alert('请先解析数据后再导出');
+        return;
+    }
+
+    // 创建工作簿
+    const wb = XLSX.utils.book_new();
+
+    // 1. 用户信息 Sheet
+    const consInfo = parsedData.consLists?.[0] || {};
+    const custExp = parsedData.custExpLists?.[0] || {};
+
+    const consInfoData = [
+        ['字段', '值'],
+        ['户号', consInfo.consNo || '-'],
+        ['户名', consInfo.consName || '-'],
+        ['营业区编号', consInfo.orgNo || '-'],
+        ['用电地址', consInfo.elecAddr || '-'],
+        ['抄表年月', formatYearMonth(consInfo.mrYm)],
+        ['结算年月', formatYearMonth(consInfo.jsYm)],
+        ['抄表例日', (consInfo.mrDay || '-') + ' 日'],
+        ['费率', consInfo.tsNum || '-'],
+        ['用电类别', getElecTypeCodeName(consInfo.elecTypeCode)],
+        ['市场化属性分类', getDeregAttrClsName(consInfo.deregAttrCls)],
+        ['结算期数', getSettleTimesName(consInfo.gradedSettleTimes)],
+        ['基本电费计算方式', custExp.beaCalcMode || '-'],
+        ['受电容量 (kVA)', custExp.ctrtCap || '-'],
+        ['实际需量 (kW)', custExp.actlDmd || '-'],
+        ['当月合计电费 (元)', custExp.dyAmt || '-'],
+        ['当月合计电量 (kWh)', custExp.dyPq || '-']
+    ];
+
+    const wsConsInfo = XLSX.utils.aoa_to_sheet(consInfoData);
+    wsConsInfo['!cols'] = [{ wch: 20 }, { wch: 50 }];
+    XLSX.utils.book_append_sheet(wb, wsConsInfo, '用户信息');
+
+    // 2. 目录电费明细 Sheet
+    const execCtlgHeaders = [
+        '目录电价名称', '时段', '费用属性分类', '有功结算电量(kWh)',
+        '电价(元/kWh)', '电费(元)', '冲减类型'
+    ];
+
+    const execCtlgRows = (parsedData.execCtlgLists || []).map(item => [
+        item.execCtlgUpName || '-',
+        getCtlgClsName(item.ctlgCls),
+        getExpAttrClsName(item.expAttrCls),
+        parseFloat(item.settleQty) || 0,
+        parseFloat(item.degUp) || 0,
+        parseFloat(item.degExp) || 0,
+        item.writeOffType ? getWriteOffTypeName(item.writeOffType) : '-'
+    ]);
+
+    const wsExecCtlg = XLSX.utils.aoa_to_sheet([execCtlgHeaders, ...execCtlgRows]);
+    wsExecCtlg['!cols'] = [
+        { wch: 45 }, { wch: 8 }, { wch: 18 }, { wch: 18 },
+        { wch: 15 }, { wch: 15 }, { wch: 10 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsExecCtlg, '目录电费明细');
+
+    // 3. 抄表示数 Sheet
+    const readListHeaders = [
+        '计量点名称', '表号', '示数类型', '抄见起度',
+        '抄见止度', '综合倍率', '抄见电量(kWh)'
+    ];
+
+    const readListRows = (parsedData.readLists || []).map(item => [
+        item.mpName || '-',
+        item.barCode || '-',
+        getReadTypeName(item.readTypeCode),
+        item.lastMrNum || '-',
+        item.thisRead || '-',
+        item.tFactor || '-',
+        parseFloat(item.thisReadPq) || 0
+    ]);
+
+    const wsReadList = XLSX.utils.aoa_to_sheet([readListHeaders, ...readListRows]);
+    wsReadList['!cols'] = [
+        { wch: 35 }, { wch: 18 }, { wch: 12 }, { wch: 12 },
+        { wch: 12 }, { wch: 12 }, { wch: 15 }
+    ];
+    XLSX.utils.book_append_sheet(wb, wsReadList, '抄表示数');
+
+    // 4. 客户电费清单 Sheet
+    const custExpData = [
+        ['分类', '项目', '值', '单位'],
+        // ===== 电费部分 =====
+        ['', '', '', ''],
+        ['【电费】', '', '', ''],
+        // 时段电费
+        ['时段电费', '尖电费', custExp.jDf || 0, '元'],
+        ['时段电费', '峰电费', custExp.fDf || 0, '元'],
+        ['时段电费', '平电费', custExp.pDf || 0, '元'],
+        ['时段电费', '谷电费', custExp.gDf || 0, '元'],
+        // 市场化交易电费
+        ['市场化交易电费', '总-市场化交易电费', custExp.zjyDf || 0, '元'],
+        ['市场化交易电费', '尖-市场化交易电费', custExp.jjyDF || 0, '元'],
+        ['市场化交易电费', '峰-市场化交易电费', custExp.fjyDF || 0, '元'],
+        ['市场化交易电费', '谷-市场化交易电费', custExp.gjyDf || 0, '元'],
+        // 绿电交易电费
+        ['绿电交易电费', '总-绿电交易电费', custExp.greExp || 0, '元'],
+        ['绿电交易电费', '尖-绿电交易电费', custExp.greExpSharp || 0, '元'],
+        ['绿电交易电费', '峰-绿电交易电费', custExp.greExpPeak || 0, '元'],
+        ['绿电交易电费', '谷-绿电交易电费', custExp.greExpBal || 0, '元'],
+        // 其他费用
+        ['其他费用', '输配电费', custExp.spDf || 0, '元'],
+        ['其他费用', '代征电费', custExp.dzDf || 0, '元'],
+        ['其他费用', '系统运行费', custExp.sysRunExp || 0, '元'],
+        ['其他费用', '上网环节线损费', custExp.sysRunLlExp || 0, '元'],
+        ['其他费用', '发用两侧电费偏差', custExp.sysRunDvtExp || 0, '元'],
+        ['其他费用', '燃气机组容量电费', custExp.sysRunUnitExp || 0, '元'],
+        ['其他费用', '基本电费', custExp.jbDf || 0, '元'],
+        ['其他费用', '力调电费', custExp.ltDf || 0, '元'],
+        // 当月合计电费（单独强调）
+        ['', '', '', ''],
+        ['★★★ 合计 ★★★', '当月合计电费', custExp.dyAmt || 0, '元'],
+        ['', '', '', ''],
+
+        // ===== 电量部分 =====
+        ['【电量】', '', '', ''],
+        ['电量信息', '尖电量', custExp.jDl || 0, 'kWh'],
+        ['电量信息', '峰电量', custExp.fDl || 0, 'kWh'],
+        ['电量信息', '平电量', custExp.pDl || 0, 'kWh'],
+        ['电量信息', '谷电量', custExp.gDl || 0, 'kWh'],
+        ['电量信息', '当月合计电量', custExp.dyPq || 0, 'kWh'],
+        ['电量信息', '总-零售交易电量', custExp.rtPq || 0, 'kWh'],
+        ['容量信息', '受电容量', custExp.ctrtCap || 0, 'kVA'],
+        ['容量信息', '实际需量', custExp.actlDmd || 0, 'kW'],
+        ['', '', '', ''],
+
+        // ===== 电价部分 =====
+        ['【电价】', '', '', ''],
+        ['电价信息', '尖电价', custExp.jDj || 0, '元/kWh'],
+        ['电价信息', '峰电价', custExp.fDj || 0, '元/kWh'],
+        ['电价信息', '平电价', custExp.pDj || 0, '元/kWh'],
+        ['电价信息', '谷电价', custExp.gDj || 0, '元/kWh']
+    ];
+
+    const wsCustExp = XLSX.utils.aoa_to_sheet(custExpData);
+    wsCustExp['!cols'] = [{ wch: 18 }, { wch: 25 }, { wch: 18 }, { wch: 10 }];
+    XLSX.utils.book_append_sheet(wb, wsCustExp, '客户电费清单');
+
+    // 生成文件名
+    const consNo = consInfo.consNo || 'unknown';
+    const jsYm = consInfo.jsYm || '';
+    const fileName = `电费数据_${consNo}_${jsYm}.xlsx`;
+
+    // 导出文件
+    XLSX.writeFile(wb, fileName);
 }
