@@ -78,10 +78,32 @@
               </template>
             </n-button>
           </n-dropdown>
+
+          <!-- 管理入口（仅云端模式显示） -->
+          <n-button
+            v-if="isCloudMode"
+            size="small"
+            :type="isAuthenticated ? 'primary' : 'default'"
+            @click="handleAdminClick"
+          >
+            <template #icon>
+              <n-icon>
+                <PersonOutline v-if="!isAuthenticated" />
+                <SettingsOutline v-else />
+              </n-icon>
+            </template>
+            {{ isAuthenticated ? '管理' : '登录' }}
+          </n-button>
         </n-space>
       </div>
     </div>
   </n-layout-header>
+
+  <!-- 登录弹窗 -->
+  <AdminLogin
+    v-model:show="showLoginModal"
+    @success="handleLoginSuccess"
+  />
 </template>
 
 <script setup lang="ts">
@@ -100,18 +122,31 @@ import {
 import {
   SearchOutline,
   SwapVerticalOutline,
-  SettingsOutline
+  SettingsOutline,
+  PersonOutline
 } from '@vicons/ionicons5'
+import { useRouter } from 'vue-router'
 import { useSearchStore } from '../../stores/search'
 import { useSettingsStore } from '../../stores/settings'
+import { useAuthStore } from '../../stores/auth'
+import { useAppMode } from '../../composables/useAppMode'
 import { SortOption } from '../../types'
+import AdminLogin from '../admin/AdminLogin.vue'
+
+const router = useRouter()
 
 // 响应式状态
 const showSuggestions = ref(false)
+const showLoginModal = ref(false)
 
 // Store
 const searchStore = useSearchStore()
 const settingsStore = useSettingsStore()
+const authStore = useAuthStore()
+const { isCloudMode } = useAppMode()
+
+// 认证状态
+const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 // 计算属性 - 将searchInput与searchStore同步
 const searchInput = computed({
@@ -215,6 +250,23 @@ function handleClickOutside(event: Event) {
   if (!target.closest('.search-container')) {
     showSuggestions.value = false
   }
+}
+
+// 管理入口点击处理
+function handleAdminClick() {
+  if (isAuthenticated.value) {
+    // 已登录，跳转到管理页面
+    router.push('/admin')
+  } else {
+    // 未登录，显示登录弹窗
+    showLoginModal.value = true
+  }
+}
+
+// 登录成功处理
+function handleLoginSuccess() {
+  // 登录成功后跳转到管理页面
+  router.push('/admin')
 }
 
 // 组件卸载时清理事件监听

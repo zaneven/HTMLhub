@@ -43,6 +43,15 @@ const routes: RouteRecordRaw[] = [
     }
   },
   {
+    path: '/admin',
+    name: 'admin',
+    component: () => import('../views/AdminView.vue'),
+    meta: {
+      title: 'HTML Viewer - 管理后台',
+      requiresAuth: true
+    }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'notFound',
     component: () => import('../views/NotFoundView.vue'),
@@ -64,11 +73,25 @@ const router = createRouter({
   }
 })
 
-// 路由守卫 - 设置页面标题
+// 路由守卫 - 设置页面标题和权限检查
 router.beforeEach((to, from, next) => {
+  // 设置页面标题
   if (to.meta?.title) {
     document.title = to.meta.title as string
   }
+
+  // 权限检查（仅在云端模式下检查）
+  if (to.meta?.requiresAuth) {
+    const token = localStorage.getItem('auth_token')
+    const apiUrl = import.meta.env.VITE_API_URL
+
+    // 如果是云端模式且未登录，重定向到首页
+    if (apiUrl && !token) {
+      next({ name: 'home' })
+      return
+    }
+  }
+
   next()
 })
 

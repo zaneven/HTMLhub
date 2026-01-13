@@ -1,0 +1,276 @@
+import type { Env, ProjectInfo, CategoryInfo, ProjectIndexData } from '../types'
+import { json, success, unauthorized, badRequest, serverError } from '../utils/response'
+import { verifyAuth } from '../utils/auth'
+
+/**
+ * Base64 编码 (用于生成 ID)
+ */
+function toBase64(str: string): string {
+  return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+    (_, p1) => String.fromCharCode(parseInt(p1, 16))))
+}
+
+/**
+ * 从 R2 扫描文件生成索引
+ */
+async function scanR2Files(env: Env): Promise<ProjectIndexData> {
+  const projects: ProjectInfo[] = []
+  const categoryMap = new Map<string, number>()
+
+  // 列出 R2 中所有文件
+  let cursor: string | undefined
+  do {
+    const listed = await env.HTML_FILES.list({
+      prefix: 'html-files/',
+      cursor
+    })
+
+    for (const object of listed.objects) {
+      // 解析路径: html-files/{category}/{project}/index.html 或 html-files/{category}/{file}.html
+      const parts = object.key.split('/')
+      if (parts.length < 3) continue
+
+      const category = parts[1]
+      const fileName = parts[parts.length - 1]
+
+      // 只处理 HTML 文件
+      if (!fileName.endsWith('.html') && !fileName.endsWith('.htm')) continue
+
+      // 判断是目录项目还是单文件项目
+      const isDirectory = parts.length === 4 && fileName === 'index.html'
+      const projectName = isDirectory ? parts[2] : fileName.replace(/\.(html|htm)$/, '')
+      const projectPath = isDirectory
+        ? parts.slice(0, 3).join('/')
+        : object.key
+
+      // 避免重复添加同一个目录项目
+      const projectId = toBase64(projectPath)
+      if (projects.some(p => p.id === projectId)) continue
+
+      projects.push({
+        id: projectId,
+        name: projectName,
+        category,
+        path: projectPath,
+        indexPath: object.key,
+        type: isDirectory ? 'directory' : 'file',
+        createdAt: object.uploaded.toISOString(),
+        modifiedAt: object.uploaded.toISOString()
+      })
+
+      // 统计分类
+      categoryMap.set(category, (categoryMap.get(category) || 0) + 1)
+    }
+
+    cursor = listed.truncated ? listed.cursor : undefined
+  } while (cursor)
+
+  // 生成分类列表
+  const categories: CategoryInfo[] = Array.from(categoryMap.entries()).map(([name, count]) => ({
+    id: toBase64(name),
+    name,
+    projectCount: count
+  }))
+
+  // 排序
+  categories.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
+  projects.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
+
+  return {
+    version: '2.0.0',
+    generatedAt: new Date().toISOString(),
+    stats: {
+      totalCategories: categories.length,
+      totalProjects: projects.length
+    },
+    categories,
+    projects
+  }
+}
+
+/**
+ * 更新文件索引缓存
+ */
+async function updateFileIndex(env: Env): Promise<ProjectIndexData> {
+  const index = await scanR2Files(env)
+  await env.FILE_INDEX.put('index', JSON.stringify(index), {
+    expirationTtl: 300 // 5分钟缓存
+  })
+  return index
+}
+
+/**
+ * 获取文件列表
+ */
+export async function listFiles(env: Env): Promise<Response> {
+  try {
+    // 优先从 KV 缓存读取
+    const cached = await env.FILE_INDEX.get('index', 'json') as ProjectIndexData | null
+
+    if (cached) {
+      return json(cached)
+    }
+
+    // 从 R2 重新扫描
+    const index = await updateFileIndex(env)
+    return json(index)
+  } catch (err) {
+    console.error('Error listing files:', err)
+    return serverError('获取文件列表失败')
+  }
+}
+
+/**
+ * 上传文件
+ */
+export async function uploadFile(request: Request, env: Env): Promise<Response> {
+  // 验证认证
+  if (!await verifyAuth(request, env)) {
+    return unauthorized()
+  }
+
+  try {
+    const formData = await request.formData()
+    const file = formData.get('file') as File | null
+    const category = (formData.get('category') as string) || '未分类'
+    const projectName = formData.get('projectName') as string | null
+
+    if (!file) {
+      return badRequest('未提供文件')
+    }
+
+    // 验证文件类型
+    const fileName = file.name.toLowerCase()
+    if (!fileName.endsWith('.html') && !fileName.endsWith('.htm')) {
+      return badRequest('只支持 HTML 文件')
+    }
+
+    // 生成存储路径
+    // 如果提供了 projectName，作为目录项目存储: html-files/{category}/{projectName}/index.html
+    // 否则作为单文件存储: html-files/{category}/{filename}
+    let key: string
+    if (projectName) {
+      key = `html-files/${category}/${projectName}/index.html`
+    } else {
+      key = `html-files/${category}/${file.name}`
+    }
+
+    // 上传到 R2
+    await env.HTML_FILES.put(key, file.stream(), {
+      httpMetadata: {
+        contentType: file.type || 'text/html'
+      },
+      customMetadata: {
+        category,
+        originalName: file.name,
+        uploadedAt: new Date().toISOString()
+      }
+    })
+
+    // 更新索引
+    await updateFileIndex(env)
+
+    return success({ key, category, projectName: projectName || file.name })
+  } catch (err) {
+    console.error('Error uploading file:', err)
+    return serverError('文件上传失败')
+  }
+}
+
+/**
+ * 删除文件
+ */
+export async function deleteFile(request: Request, env: Env): Promise<Response> {
+  // 验证认证
+  if (!await verifyAuth(request, env)) {
+    return unauthorized()
+  }
+
+  try {
+    const url = new URL(request.url)
+    const key = url.searchParams.get('key')
+
+    if (!key) {
+      return badRequest('未提供文件路径')
+    }
+
+    // 验证路径安全性
+    if (!key.startsWith('html-files/')) {
+      return badRequest('无效的文件路径')
+    }
+
+    // 如果是目录项目，需要删除整个目录
+    const listed = await env.HTML_FILES.list({ prefix: key })
+
+    if (listed.objects.length === 0) {
+      // 尝试作为单个文件删除
+      await env.HTML_FILES.delete(key)
+    } else {
+      // 删除目录下所有文件
+      for (const object of listed.objects) {
+        await env.HTML_FILES.delete(object.key)
+      }
+    }
+
+    // 更新索引
+    await updateFileIndex(env)
+
+    return success({ deleted: key })
+  } catch (err) {
+    console.error('Error deleting file:', err)
+    return serverError('文件删除失败')
+  }
+}
+
+/**
+ * 刷新文件索引
+ */
+export async function refreshIndex(request: Request, env: Env): Promise<Response> {
+  // 验证认证
+  if (!await verifyAuth(request, env)) {
+    return unauthorized()
+  }
+
+  try {
+    const index = await updateFileIndex(env)
+    return success(index)
+  } catch (err) {
+    console.error('Error refreshing index:', err)
+    return serverError('刷新索引失败')
+  }
+}
+
+/**
+ * 获取文件内容 (用于前端预览 R2 中的文件)
+ */
+export async function getFileContent(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url)
+  const key = url.searchParams.get('key')
+
+  if (!key) {
+    return badRequest('未提供文件路径')
+  }
+
+  // 验证路径安全性
+  if (!key.startsWith('html-files/')) {
+    return badRequest('无效的文件路径')
+  }
+
+  try {
+    const object = await env.HTML_FILES.get(key)
+
+    if (!object) {
+      return json({ success: false, error: '文件不存在' }, 404)
+    }
+
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': object.httpMetadata?.contentType || 'text/html',
+        'Cache-Control': 'public, max-age=3600'
+      }
+    })
+  } catch (err) {
+    console.error('Error getting file content:', err)
+    return serverError('获取文件内容失败')
+  }
+}
