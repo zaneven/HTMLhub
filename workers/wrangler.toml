@@ -2,6 +2,13 @@ name = "htmlviewer-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
+# 自定义域名绑定
+# 域名: htmlviewer-api.getprompt.top
+# DNS 配置: 在 Cloudflare 添加 CNAME 记录，或使用 Pages 自定义域名
+routes = [
+  { pattern = "htmlviewer-api.getprompt.top", custom_domain = true }
+]
+
 # 环境变量 - 在部署时通过 Cloudflare Dashboard 或 wrangler secret 设置
 [vars]
 # ADMIN_PASSWORD 应该通过 wrangler secret put ADMIN_PASSWORD 设置
@@ -12,8 +19,6 @@ binding = "HTML_FILES"
 bucket_name = "htmlviewer-files"
 
 # KV 命名空间绑定 (用于缓存索引)
-# 部署前需要先创建 KV 命名空间: wrangler kv:namespace create FILE_INDEX
-# 然后将返回的 id 填入下面
 [[kv_namespaces]]
 binding = "FILE_INDEX"
 id = "7266aa1135814e9c805fe781c128fa5f"
@@ -21,16 +26,3 @@ id = "7266aa1135814e9c805fe781c128fa5f"
 # 本地开发配置
 [dev]
 port = 8787
-
-# 自定义域名绑定
-# 域名: htmlviewer-api.getprompt.top
-# DNS 配置: 添加 CNAME 记录指向 htmlviewer-api.zaneven.workers.dev
-routes = [
-  { pattern = "htmlviewer-api.getprompt.top", custom_domain = true }
-]
-
-# 开发环境预览 R2 桶 (可选)
-# [[r2_buckets]]
-# binding = "HTML_FILES"
-# bucket_name = "htmlviewer-files-dev"
-# preview_bucket_name = "htmlviewer-files-dev"
