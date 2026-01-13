@@ -7,10 +7,11 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
     const path = url.pathname
+    const origin = request.headers.get('Origin')
 
     // CORS 预检请求
     if (request.method === 'OPTIONS') {
-      return handleCORS()
+      return handleCORS(origin)
     }
 
     // 路由分发
@@ -77,6 +78,6 @@ export default {
       })
     }
 
-    return addCORSHeaders(response)
+    return addCORSHeaders(response, origin)
   }
 }
