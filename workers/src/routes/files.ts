@@ -369,3 +369,42 @@ export async function getFileContent(request: Request, env: Env): Promise<Respon
     return serverError('获取文件内容失败')
   }
 }
+
+/**
+ * 直接通过路径提供 R2 文件（支持相对路径资源加载）
+ * 路径格式: html-files/{category}/{project}/{filename}
+ */
+export async function serveR2File(key: string, env: Env): Promise<Response> {
+  // 验证路径安全性
+  if (!key.startsWith('html-files/')) {
+    return badRequest('无效的文件路径')
+  }
+
+  // 解码 URL 编码的路径（处理中文等）
+  const decodedKey = decodeURIComponent(key)
+
+  try {
+    const object = await env.HTML_FILES.get(decodedKey)
+
+    if (!object) {
+      return json({ success: false, error: '文件不存在' }, 404)
+    }
+
+    // 根据文件扩展名确定 MIME 类型
+    const contentType = object.httpMetadata?.contentType || getMimeType(decodedKey.split('/').pop() || '')
+
+    return new Response(object.body, {
+      headers: {
+        'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=3600',
+        // CORS 头，允许跨域访问资源
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type'
+      }
+    })
+  } catch (err) {
+    console.error('Error serving R2 file:', err)
+    return serverError('获取文件失败')
+  }
+}

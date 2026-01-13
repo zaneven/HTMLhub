@@ -22,6 +22,13 @@ id = "7266aa1135814e9c805fe781c128fa5f"
 [dev]
 port = 8787
 
+# 自定义域名绑定
+# 域名: htmlviewer-api.getprompt.top
+# DNS 配置: 添加 CNAME 记录指向 htmlviewer-api.zaneven.workers.dev
+routes = [
+  { pattern = "htmlviewer-api.getprompt.top", custom_domain = true }
+]
+
 # 开发环境预览 R2 桶 (可选)
 # [[r2_buckets]]
 # binding = "HTML_FILES"

@@ -1,7 +1,7 @@
 import type { Env } from './types'
 import { handleCORS, addCORSHeaders, notFound } from './utils/response'
 import { authenticate, logout } from './utils/auth'
-import { listFiles, uploadFile, uploadMultipleFiles, deleteFile, refreshIndex, getFileContent } from './routes/files'
+import { listFiles, uploadFile, uploadMultipleFiles, deleteFile, refreshIndex, getFileContent, serveR2File } from './routes/files'
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -51,6 +51,12 @@ export default {
         // 文件内容获取 (用于预览)
         case request.method === 'GET' && path === '/api/content':
           response = await getFileContent(request, env)
+          break
+
+        // R2 文件直接访问（支持相对路径资源加载）
+        // 路径格式: /r2/html-files/{category}/{project}/{filename}
+        case request.method === 'GET' && path.startsWith('/r2/'):
+          response = await serveR2File(path.slice(4), env) // 移除 '/r2/' 前缀
           break
 
         // 健康检查

@@ -10,9 +10,35 @@
     </template>
     
     <template #header-extra>
-      <n-tag :type="project.type === 'directory' ? 'info' : 'success'" size="small">
-        {{ project.type === 'directory' ? '项目' : '文件' }}
-      </n-tag>
+      <n-space size="small">
+        <!-- 来源标签 -->
+        <n-tag 
+          v-if="project.source === 'cloud'" 
+          type="warning" 
+          size="small"
+          :bordered="false"
+        >
+          <template #icon>
+            <n-icon><CloudOutline /></n-icon>
+          </template>
+          云端
+        </n-tag>
+        <n-tag 
+          v-else 
+          type="default" 
+          size="small"
+          :bordered="false"
+        >
+          <template #icon>
+            <n-icon><DesktopOutline /></n-icon>
+          </template>
+          本地
+        </n-tag>
+        <!-- 类型标签 -->
+        <n-tag :type="project.type === 'directory' ? 'info' : 'success'" size="small">
+          {{ project.type === 'directory' ? '项目' : '文件' }}
+        </n-tag>
+      </n-space>
     </template>
 
     <div class="card-content">
@@ -43,13 +69,15 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { NCard, NIcon, NTag, NButton } from 'naive-ui'
+import { NCard, NIcon, NTag, NButton, NSpace } from 'naive-ui'
 import { 
   FolderOpenOutline, 
   DocumentOutline, 
   FolderOutline,
   TimeOutline,
-  OpenOutline
+  OpenOutline,
+  CloudOutline,
+  DesktopOutline
 } from '@vicons/ionicons5'
 import type { ProjectInfo } from '@/types'
 import { useFilesStore } from '@/stores/files'

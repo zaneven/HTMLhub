@@ -359,16 +359,20 @@ export const useFilesStore = defineStore('files', () => {
 
   /**
    * 获取文件内容 URL
-   * - 本地项目(source=local): 使用本地路径
-   * - 云端项目(source=cloud): 使用 API 端点
+   * - 本地项目(source=local): 使用本地路径，移除 public/ 前缀
+   * - 云端项目(source=cloud): 使用 /r2/ 路径格式，支持相对资源加载
    */
   function getFileUrl(project: ProjectInfo): string {
-    // 云端项目通过 API 获取
+    // 云端项目通过 /r2/ 路径访问（支持相对路径的 CSS/JS 加载）
     if (project.source === 'cloud') {
-      return `${apiBaseUrl.value}/api/content?key=${encodeURIComponent(project.indexPath)}`
+      // 路径格式: {api_base}/r2/{indexPath}
+      // 例如: https://api.example.com/r2/html-files/工具/测试项目/index.html
+      return `${apiBaseUrl.value}/r2/${project.indexPath}`
     }
     // 本地项目或静态模式：直接返回本地路径
-    return `/${project.indexPath}`
+    // 需要移除 public/ 前缀，因为 Vite 会将 public 目录内容复制到根目录
+    const path = project.indexPath.replace(/^public\//, '')
+    return `/${path}`
   }
 
   return {
