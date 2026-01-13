@@ -1,7 +1,7 @@
 import type { ApiResponse } from '../types'
 
 // 允许的域名列表
-const ALLOWED_ORIGINS = [
+const ALLOWED_ORIGINS: string[] = [
   'https://html.getprompt.top',
   'https://htmlviewer.pages.dev',
   'http://localhost:5173',
@@ -9,31 +9,29 @@ const ALLOWED_ORIGINS = [
 ]
 
 /**
- * 获取允许的 Origin
+ * 获取 CORS 头
  */
-function getAllowedOrigin(requestOrigin: string | null): string {
-  if (requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)) {
-    return requestOrigin
+function getCORSHeaders(origin: string | null): Record<string, string> {
+  // 检查是否在允许列表中
+  const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : '*'
+  
+  return {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Max-Age': '86400'
   }
-  // 开发环境或未知来源，允许所有
-  return '*'
 }
 
 /**
  * 添加 CORS 头部到响应
  */
 export function addCORSHeaders(response: Response, requestOrigin?: string | null): Response {
+  const corsHeaders = getCORSHeaders(requestOrigin || null)
   const headers = new Headers(response.headers)
-  const origin = getAllowedOrigin(requestOrigin ?? null)
   
-  headers.set('Access-Control-Allow-Origin', origin)
-  headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-  headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-  headers.set('Access-Control-Max-Age', '86400')
-  
-  // 如果指定了具体域名，允许携带凭证
-  if (origin !== '*') {
-    headers.set('Access-Control-Allow-Credentials', 'true')
+  for (const [key, value] of Object.entries(corsHeaders)) {
+    headers.set(key, value)
   }
 
   return new Response(response.body, {
@@ -47,22 +45,9 @@ export function addCORSHeaders(response: Response, requestOrigin?: string | null
  * 处理 CORS 预检请求
  */
 export function handleCORS(requestOrigin?: string | null): Response {
-  const origin = getAllowedOrigin(requestOrigin ?? null)
-  
-  const headers: Record<string, string> = {
-    'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Max-Age': '86400'
-  }
-  
-  if (origin !== '*') {
-    headers['Access-Control-Allow-Credentials'] = 'true'
-  }
-  
   return new Response(null, {
     status: 204,
-    headers
+    headers: getCORSHeaders(requestOrigin || null)
   })
 }
 

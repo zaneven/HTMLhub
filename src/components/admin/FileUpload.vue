@@ -22,6 +22,11 @@ import { useFilesStore } from '@/stores/files'
 const filesStore = useFilesStore()
 const message = useMessage()
 
+// 事件
+const emit = defineEmits<{
+  success: []
+}>()
+
 // 表单数据
 const selectedCategory = ref<string>('')
 const newCategory = ref('')
@@ -123,6 +128,8 @@ async function handleUpload() {
       selectedCategory.value = newCategory.value.trim()
       newCategory.value = ''
     }
+    // 发出成功事件
+    emit('success')
   } else {
     message.error(filesStore.error || '上传失败')
   }

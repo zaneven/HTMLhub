@@ -1,19 +1,18 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, h } from 'vue'
 import {
   NLayout,
   NLayoutContent,
   NCard,
   NPageHeader,
-  NGrid,
-  NGridItem,
-  NStatistic,
   NButton,
   NIcon,
   NDataTable,
   NPopconfirm,
   NSpace,
   NTag,
+  NModal,
+  NEmpty,
   useMessage,
   type DataTableColumns
 } from 'naive-ui'
@@ -22,7 +21,9 @@ import {
   LogOutOutline,
   TrashOutline,
   FolderOutline,
-  DocumentOutline
+  DocumentOutline,
+  CloudUploadOutline,
+  OpenOutline
 } from '@vicons/ionicons5'
 import { useRouter } from 'vue-router'
 import { useFilesStore } from '@/stores/files'
@@ -37,21 +38,26 @@ const authStore = useAuthStore()
 const { isCloudMode } = useAppMode()
 const message = useMessage()
 
-// 统计数据
-const stats = computed(() => ({
-  totalProjects: filesStore.totalProjects,
-  totalCategories: filesStore.totalCategories,
-  lastUpdated: filesStore.lastUpdated
-    ? new Date(filesStore.lastUpdated).toLocaleString('zh-CN')
-    : '-'
-}))
+// 上传弹窗状态
+const showUploadModal = ref(false)
+
+// 只显示云端项目
+const cloudProjects = computed(() => {
+  return filesStore.projects.filter(p => p.source === 'cloud')
+})
+
+// 云端项目数量
+const cloudProjectCount = computed(() => cloudProjects.value.length)
 
 // 表格列定义
 const columns: DataTableColumns<ProjectInfo> = [
   {
     title: '项目名称',
     key: 'name',
-    ellipsis: { tooltip: true }
+    ellipsis: { tooltip: true },
+    render(row) {
+      return h('span', { style: { fontWeight: '500' } }, row.name)
+    }
   },
   {
     title: '分类',
@@ -71,7 +77,7 @@ const columns: DataTableColumns<ProjectInfo> = [
           h(NIcon, { size: 16 }, {
             default: () => h(row.type === 'directory' ? FolderOutline : DocumentOutline)
           }),
-          row.type === 'directory' ? '目录' : '文件'
+          row.type === 'directory' ? '项目' : '文件'
         ]
       })
     }
@@ -87,33 +93,46 @@ const columns: DataTableColumns<ProjectInfo> = [
   {
     title: '操作',
     key: 'actions',
-    width: 100,
+    width: 140,
     fixed: 'right',
     render(row) {
-      return h(
-        NPopconfirm,
-        {
-          onPositiveClick: () => handleDelete(row)
-        },
-        {
-          trigger: () => h(
-            NButton,
-            {
+      return h(NSpace, { size: 'small' }, {
+        default: () => [
+          // 打开按钮
+          h(NButton, {
+            size: 'small',
+            quaternary: true,
+            type: 'primary',
+            onClick: () => handleOpen(row)
+          }, {
+            icon: () => h(NIcon, null, { default: () => h(OpenOutline) }),
+            default: () => '打开'
+          }),
+          // 删除按钮
+          h(NPopconfirm, {
+            onPositiveClick: () => handleDelete(row)
+          }, {
+            trigger: () => h(NButton, {
               size: 'small',
               quaternary: true,
               type: 'error'
-            },
-            {
+            }, {
               icon: () => h(NIcon, null, { default: () => h(TrashOutline) }),
               default: () => '删除'
-            }
-          ),
-          default: () => `确定要删除 "${row.name}" 吗？`
-        }
-      )
+            }),
+            default: () => `确定要删除 "${row.name}" 吗？`
+          })
+        ]
+      })
     }
   }
 ]
+
+// 打开项目
+function handleOpen(project: ProjectInfo) {
+  const url = filesStore.getFileUrl(project)
+  window.open(url, '_blank')
+}
 
 // 刷新索引
 async function handleRefresh() {
@@ -147,16 +166,18 @@ function handleBack() {
   router.push('/')
 }
 
-// 需要引入 h 函数
-import { h } from 'vue'
+// 上传成功后关闭弹窗
+function handleUploadSuccess() {
+  showUploadModal.value = false
+}
 </script>
 
 <template>
   <n-layout style="min-height: 100vh">
-    <n-layout-content style="padding: 24px">
+    <n-layout-content style="padding: 24px; max-width: 1200px; margin: 0 auto">
       <n-page-header
         title="项目管理"
-        subtitle="管理上传的 HTML 项目"
+        subtitle="管理云端上传的 HTML 项目"
         @back="handleBack"
       >
         <template #extra>
@@ -182,55 +203,70 @@ import { h } from 'vue'
       </n-page-header>
 
       <div style="margin-top: 24px">
-        <n-grid :cols="3" :x-gap="16" :y-gap="16" style="margin-bottom: 24px">
-          <n-grid-item>
-            <n-card>
-              <n-statistic label="项目总数" :value="stats.totalProjects" />
-            </n-card>
-          </n-grid-item>
-          <n-grid-item>
-            <n-card>
-              <n-statistic label="分类数量" :value="stats.totalCategories" />
-            </n-card>
-          </n-grid-item>
-          <n-grid-item>
-            <n-card>
-              <n-statistic label="最后更新">
-                <template #default>
-                  <span style="font-size: 14px">{{ stats.lastUpdated }}</span>
+        <n-card>
+          <!-- 操作栏 -->
+          <template #header>
+            <n-space justify="space-between" align="center" style="width: 100%">
+              <span>
+                云端项目
+                <n-tag type="info" size="small" round style="margin-left: 8px">
+                  {{ cloudProjectCount }}
+                </n-tag>
+              </span>
+              <n-button type="primary" @click="showUploadModal = true">
+                <template #icon>
+                  <n-icon><CloudUploadOutline /></n-icon>
                 </template>
-              </n-statistic>
-            </n-card>
-          </n-grid-item>
-        </n-grid>
-
-        <n-grid :cols="2" :x-gap="24">
-          <!-- 上传区域 -->
-          <n-grid-item>
-            <FileUpload />
-          </n-grid-item>
+                上传项目
+              </n-button>
+            </n-space>
+          </template>
 
           <!-- 项目列表 -->
-          <n-grid-item>
-            <n-card title="项目列表">
-              <n-data-table
-                :columns="columns"
-                :data="filesStore.projects"
-                :loading="filesStore.loading"
-                :bordered="false"
-                striped
-                size="small"
-                :pagination="{
-                  pageSize: 10,
-                  showSizePicker: true,
-                  pageSizes: [10, 20, 50]
-                }"
-                :scroll-x="600"
-              />
-            </n-card>
-          </n-grid-item>
-        </n-grid>
+          <n-data-table
+            v-if="cloudProjects.length > 0"
+            :columns="columns"
+            :data="cloudProjects"
+            :loading="filesStore.loading"
+            :bordered="false"
+            striped
+            size="small"
+            :pagination="{
+              pageSize: 15,
+              showSizePicker: true,
+              pageSizes: [10, 15, 20, 50]
+            }"
+            :scroll-x="700"
+          />
+
+          <!-- 空状态 -->
+          <n-empty
+            v-else
+            description="暂无云端项目"
+            style="padding: 60px 0"
+          >
+            <template #extra>
+              <n-button type="primary" @click="showUploadModal = true">
+                <template #icon>
+                  <n-icon><CloudUploadOutline /></n-icon>
+                </template>
+                上传第一个项目
+              </n-button>
+            </template>
+          </n-empty>
+        </n-card>
       </div>
     </n-layout-content>
   </n-layout>
+
+  <!-- 上传弹窗 -->
+  <n-modal
+    v-model:show="showUploadModal"
+    preset="card"
+    title="上传项目"
+    style="width: 500px; max-width: 90vw"
+    :mask-closable="false"
+  >
+    <FileUpload @success="handleUploadSuccess" />
+  </n-modal>
 </template>
