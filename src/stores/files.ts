@@ -80,21 +80,72 @@ export const useFilesStore = defineStore('files', () => {
 
   // 根据模式获取项目索引数据
   async function fetchProjectIndexData(): Promise<ProjectIndexData> {
-    // 云端模式：从 Worker API 获取
-    if (isCloudMode.value) {
-      const response = await fetch(`${apiBaseUrl.value}/api/files`)
+    // 静态模式：仅从本地 JSON 文件获取
+    if (!isCloudMode.value) {
+      const response = await fetch('/data/file-index.json')
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       return response.json()
     }
-    
-    // 静态模式：从本地 JSON 文件获取
-    const response = await fetch('/data/file-index.json')
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+
+    // 云端模式：合并本地静态文件和 R2 云端文件
+    const [localData, cloudData] = await Promise.all([
+      // 获取本地静态文件索引
+      fetch('/data/file-index.json')
+        .then(res => res.ok ? res.json() as Promise<ProjectIndexData> : null)
+        .catch(() => null),
+      // 获取 R2 云端文件索引
+      fetch(`${apiBaseUrl.value}/api/files`)
+        .then(res => res.ok ? res.json() as Promise<ProjectIndexData> : null)
+        .catch(() => null)
+    ])
+
+    // 合并数据
+    const allProjects: ProjectInfo[] = []
+    const categoryMap = new Map<string, number>()
+
+    // 添加本地项目（标记来源）
+    if (localData?.projects) {
+      for (const project of localData.projects) {
+        allProjects.push({ ...project, source: 'local' } as ProjectInfo & { source: string })
+        categoryMap.set(project.category, (categoryMap.get(project.category) || 0) + 1)
+      }
     }
-    return response.json()
+
+    // 添加云端项目（标记来源，避免重复）
+    if (cloudData?.projects) {
+      for (const project of cloudData.projects) {
+        // 检查是否已存在同名同分类的项目
+        const exists = allProjects.some(p => p.name === project.name && p.category === project.category)
+        if (!exists) {
+          allProjects.push({ ...project, source: 'cloud' } as ProjectInfo & { source: string })
+          categoryMap.set(project.category, (categoryMap.get(project.category) || 0) + 1)
+        }
+      }
+    }
+
+    // 生成合并后的分类列表
+    const allCategories: CategoryInfo[] = Array.from(categoryMap.entries()).map(([name, count]) => ({
+      id: btoa(encodeURIComponent(name)),
+      name,
+      projectCount: count
+    }))
+
+    // 排序
+    allCategories.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
+    allProjects.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
+
+    return {
+      version: '2.0.0',
+      generatedAt: new Date().toISOString(),
+      stats: {
+        totalCategories: allCategories.length,
+        totalProjects: allProjects.length
+      },
+      categories: allCategories,
+      projects: allProjects
+    }
   }
 
   // 重新加载索引数据
@@ -134,6 +185,75 @@ export const useFilesStore = defineStore('files', () => {
       }
 
       const response = await fetch(`${apiBaseUrl.value}/api/upload`, {
+        method: 'POST',
+        headers: authStore.getAuthHeaders(),
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        // 刷新索引
+        await reloadIndexData()
+        return true
+      } else {
+        error.value = data.error || '上传失败'
+        return false
+      }
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '上传失败'
+      return false
+    } finally {
+      uploading.value = false
+    }
+  }
+
+  /**
+   * 上传多个文件 (仅云端模式)
+   * 用于上传包含 HTML/JS/CSS 等多个文件的项目
+   */
+  async function uploadFiles(files: File[], category: string, projectName?: string): Promise<boolean> {
+    if (!isCloudMode.value) {
+      error.value = '当前为静态模式，无法上传文件'
+      return false
+    }
+
+    const authStore = useAuthStore()
+    if (!authStore.isAuthenticated) {
+      error.value = '请先登录'
+      return false
+    }
+
+    // 单文件直接调用 uploadFile
+    if (files.length === 1) {
+      const file = files[0]
+      if (!file) {
+        error.value = '文件无效'
+        return false
+      }
+      return uploadFile(file, category, projectName)
+    }
+
+    // 多文件必须有项目名
+    if (!projectName) {
+      error.value = '多文件项目必须指定项目名称'
+      return false
+    }
+
+    uploading.value = true
+    error.value = null
+
+    try {
+      const formData = new FormData()
+      formData.append('category', category)
+      formData.append('projectName', projectName)
+      
+      // 添加所有文件
+      for (const file of files) {
+        formData.append('files', file)
+      }
+
+      const response = await fetch(`${apiBaseUrl.value}/api/upload-multiple`, {
         method: 'POST',
         headers: authStore.getAuthHeaders(),
         body: formData
@@ -238,13 +358,16 @@ export const useFilesStore = defineStore('files', () => {
   }
 
   /**
-   * 获取文件内容 URL (云端模式返回 API URL，静态模式返回本地路径)
+   * 获取文件内容 URL
+   * - 本地项目(source=local): 使用本地路径
+   * - 云端项目(source=cloud): 使用 API 端点
    */
   function getFileUrl(project: ProjectInfo): string {
-    if (isCloudMode.value) {
+    // 云端项目通过 API 获取
+    if (project.source === 'cloud') {
       return `${apiBaseUrl.value}/api/content?key=${encodeURIComponent(project.indexPath)}`
     }
-    // 静态模式：直接返回本地路径
+    // 本地项目或静态模式：直接返回本地路径
     return `/${project.indexPath}`
   }
 
@@ -271,6 +394,7 @@ export const useFilesStore = defineStore('files', () => {
     reloadIndexData,
     setSelectedCategory,
     uploadFile,
+    uploadFiles,
     deleteProject,
     refreshIndex,
     getFileUrl

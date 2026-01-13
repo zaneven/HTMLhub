@@ -178,6 +178,101 @@ export async function uploadFile(request: Request, env: Env): Promise<Response> 
 }
 
 /**
+ * 获取文件的 MIME 类型
+ */
+function getMimeType(fileName: string): string {
+  const ext = fileName.split('.').pop()?.toLowerCase() || ''
+  const mimeTypes: Record<string, string> = {
+    'html': 'text/html',
+    'htm': 'text/html',
+    'css': 'text/css',
+    'js': 'application/javascript',
+    'json': 'application/json',
+    'svg': 'image/svg+xml',
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'gif': 'image/gif',
+    'ico': 'image/x-icon',
+    'woff': 'font/woff',
+    'woff2': 'font/woff2',
+    'ttf': 'font/ttf',
+  }
+  return mimeTypes[ext] || 'application/octet-stream'
+}
+
+/**
+ * 上传多个文件（用于包含 HTML/JS/CSS 的项目）
+ */
+export async function uploadMultipleFiles(request: Request, env: Env): Promise<Response> {
+  // 验证认证
+  if (!await verifyAuth(request, env)) {
+    return unauthorized()
+  }
+
+  try {
+    const formData = await request.formData()
+    const category = (formData.get('category') as string) || '未分类'
+    const projectName = formData.get('projectName') as string | null
+
+    if (!projectName) {
+      return badRequest('多文件上传必须提供项目名称')
+    }
+
+    // 获取所有文件
+    const files = formData.getAll('files') as File[]
+
+    if (files.length === 0) {
+      return badRequest('未提供文件')
+    }
+
+    // 检查是否有 index.html 或 .html 文件
+    const hasHtml = files.some(f => {
+      const name = f.name.toLowerCase()
+      return name.endsWith('.html') || name.endsWith('.htm')
+    })
+
+    if (!hasHtml) {
+      return badRequest('项目必须包含至少一个 HTML 文件')
+    }
+
+    // 上传所有文件
+    const uploadedKeys: string[] = []
+    for (const file of files) {
+      // 生成存储路径: html-files/{category}/{projectName}/{filename}
+      const key = `html-files/${category}/${projectName}/${file.name}`
+      
+      await env.HTML_FILES.put(key, file.stream(), {
+        httpMetadata: {
+          contentType: getMimeType(file.name)
+        },
+        customMetadata: {
+          category,
+          projectName,
+          originalName: file.name,
+          uploadedAt: new Date().toISOString()
+        }
+      })
+      
+      uploadedKeys.push(key)
+    }
+
+    // 更新索引
+    await updateFileIndex(env)
+
+    return success({ 
+      category, 
+      projectName, 
+      filesUploaded: files.length,
+      keys: uploadedKeys 
+    })
+  } catch (err) {
+    console.error('Error uploading multiple files:', err)
+    return serverError('文件上传失败')
+  }
+}
+
+/**
  * 删除文件
  */
 export async function deleteFile(request: Request, env: Env): Promise<Response> {

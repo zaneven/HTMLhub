@@ -1,7 +1,7 @@
 import type { Env } from './types'
 import { handleCORS, addCORSHeaders, notFound } from './utils/response'
 import { authenticate, logout } from './utils/auth'
-import { listFiles, uploadFile, deleteFile, refreshIndex, getFileContent } from './routes/files'
+import { listFiles, uploadFile, uploadMultipleFiles, deleteFile, refreshIndex, getFileContent } from './routes/files'
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -34,6 +34,10 @@ export default {
 
         case request.method === 'POST' && path === '/api/upload':
           response = await uploadFile(request, env)
+          break
+
+        case request.method === 'POST' && path === '/api/upload-multiple':
+          response = await uploadMultipleFiles(request, env)
           break
 
         case request.method === 'DELETE' && path === '/api/files':

@@ -52,10 +52,13 @@ import {
   OpenOutline
 } from '@vicons/ionicons5'
 import type { ProjectInfo } from '@/types'
+import { useFilesStore } from '@/stores/files'
 
 const props = defineProps<{
   project: ProjectInfo
 }>()
+
+const filesStore = useFilesStore()
 
 const iconComponent = computed(() => {
   return props.project.type === 'directory' ? FolderOpenOutline : DocumentOutline
@@ -75,9 +78,9 @@ function formatDate(dateString: string): string {
 }
 
 function handleClick() {
-  // 构建预览 URL，移除开头的 public/ 前缀
-  const previewPath = props.project.indexPath.replace(/^public\//, '/')
-  window.open(previewPath, '_blank')
+  // 使用 filesStore.getFileUrl 获取正确的 URL（根据项目来源）
+  const url = filesStore.getFileUrl(props.project)
+  window.open(url, '_blank')
 }
 </script>
 

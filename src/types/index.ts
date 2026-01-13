@@ -8,6 +8,8 @@ export interface ProjectInfo {
   type: 'directory' | 'file'
   createdAt: string
   modifiedAt: string
+  /** 项目来源：local=本地静态文件，cloud=R2云端文件 */
+  source?: 'local' | 'cloud'
 }
 
 // 分类信息接口
