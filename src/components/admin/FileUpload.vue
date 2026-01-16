@@ -11,12 +11,10 @@ import {
   NButton,
   NSpace,
   NAlert,
-  NList,
-  NListItem,
   useMessage,
-  type UploadFileInfo
+  type UploadFileInfo,
 } from 'naive-ui'
-import { CloudUploadOutline, DocumentOutline, TrashOutline } from '@vicons/ionicons5'
+import { CloudUploadOutline, DocumentOutline, FolderOpenOutline } from '@vicons/ionicons5'
 import { useFilesStore } from '@/stores/files'
 
 const filesStore = useFilesStore()
@@ -33,17 +31,17 @@ const newCategory = ref('')
 const projectName = ref('')
 const fileList = ref<UploadFileInfo[]>([])
 
+// 文件夹上传模式
+const folderMode = ref(false)
+
 // 计算属性
 const categoryOptions = computed(() => {
-  const categories = filesStore.categories.map(cat => ({
+  const categories = filesStore.categories.map((cat) => ({
     label: cat.name,
-    value: cat.name
+    value: cat.name,
   }))
   // 添加"新建分类"选项
-  return [
-    ...categories,
-    { label: '+ 新建分类', value: '__new__' }
-  ]
+  return [...categories, { label: '+ 新建分类', value: '__new__' }]
 })
 
 const isNewCategory = computed(() => selectedCategory.value === '__new__')
@@ -70,26 +68,42 @@ const totalSize = computed(() => {
   return fileList.value.reduce((sum, f) => sum + (f.file?.size || 0), 0)
 })
 
+// 支持的文件扩展名
+const supportedExtensions = [
+  '.html',
+  '.htm',
+  '.js',
+  '.css',
+  '.json',
+  '.svg',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.ico',
+  '.woff',
+  '.woff2',
+  '.ttf',
+]
+
 // 文件变化处理 - 支持多种文件类型
 function handleFileChange(files: UploadFileInfo[]) {
   // 保留 HTML/JS/CSS 等静态资源文件
-  fileList.value = files.filter(file => {
+  fileList.value = files.filter((file) => {
     const name = file.name.toLowerCase()
-    return name.endsWith('.html') || 
-           name.endsWith('.htm') || 
-           name.endsWith('.js') || 
-           name.endsWith('.css') ||
-           name.endsWith('.json') ||
-           name.endsWith('.svg') ||
-           name.endsWith('.png') ||
-           name.endsWith('.jpg') ||
-           name.endsWith('.jpeg') ||
-           name.endsWith('.gif') ||
-           name.endsWith('.ico') ||
-           name.endsWith('.woff') ||
-           name.endsWith('.woff2') ||
-           name.endsWith('.ttf')
+    return supportedExtensions.some((ext) => name.endsWith(ext))
   })
+
+  // 如果是文件夹模式且有文件，尝试从相对路径提取项目名
+  if (folderMode.value && fileList.value.length > 0) {
+    const firstFile = fileList.value[0]?.file as File & { webkitRelativePath?: string }
+    if (firstFile?.webkitRelativePath) {
+      const parts = firstFile.webkitRelativePath.split('/')
+      if (parts.length > 1 && parts[0] && !projectName.value) {
+        projectName.value = parts[0]
+      }
+    }
+  }
 }
 
 // 上传处理
@@ -105,7 +119,7 @@ async function handleUpload() {
 
   // 收集所有有效文件
   const files = fileList.value
-    .map(f => f.file)
+    .map((f) => f.file)
     .filter((f): f is File => f !== null && f !== undefined)
 
   if (files.length === 0) {
@@ -116,7 +130,7 @@ async function handleUpload() {
   const success = await filesStore.uploadFiles(
     files,
     effectiveCategory.value,
-    projectName.value.trim() || undefined
+    projectName.value.trim() || undefined,
   )
 
   if (success) {
@@ -139,6 +153,14 @@ async function handleUpload() {
 function customRequest() {
   return
 }
+
+// 切换上传模式
+function toggleFolderMode() {
+  folderMode.value = !folderMode.value
+  // 切换模式时清空文件列表
+  fileList.value = []
+  projectName.value = ''
+}
 </script>
 
 <template>
@@ -149,12 +171,21 @@ function customRequest() {
         {{ filesStore.error }}
       </n-alert>
 
-      <!-- 文件选择 -->
+      <!-- 上传模式切换按钮 -->
+      <n-button :type="folderMode ? 'primary' : 'default'" secondary @click="toggleFolderMode">
+        <template #icon>
+          <n-icon><FolderOpenOutline /></n-icon>
+        </template>
+        {{ folderMode ? '文件夹模式（点击切换到文件模式）' : '文件模式（点击切换到文件夹模式）' }}
+      </n-button>
+
+      <!-- 文件选择 - 普通文件模式 -->
       <n-upload
+        v-if="!folderMode"
         :file-list="fileList"
         multiple
         directory-dnd
-        accept=".html,.htm,.js,.css,.json,.svg,.png,.jpg,.jpeg,.gif,.ico,.woff,.woff2,.ttf"
+        :accept="supportedExtensions.join(',')"
         :custom-request="customRequest"
         @update:file-list="handleFileChange"
       >
@@ -164,10 +195,36 @@ function customRequest() {
               <CloudUploadOutline />
             </n-icon>
             <n-text style="display: block; margin-top: 12px; font-size: 16px">
-              点击或拖拽文件/文件夹到此处上传
+              点击或拖拽文件到此处上传
             </n-text>
             <n-text depth="3" style="display: block; margin-top: 8px">
               支持 HTML/JS/CSS/图片等静态资源，可一次上传多个文件
+            </n-text>
+          </div>
+        </n-upload-dragger>
+      </n-upload>
+
+      <!-- 文件选择 - 文件夹模式 -->
+      <n-upload
+        v-else
+        :file-list="fileList"
+        multiple
+        directory-dnd
+        :accept="supportedExtensions.join(',')"
+        :custom-request="customRequest"
+        :input-props="{ webkitdirectory: true } as any"
+        @update:file-list="handleFileChange"
+      >
+        <n-upload-dragger>
+          <div style="padding: 24px">
+            <n-icon size="48" :depth="3">
+              <FolderOpenOutline />
+            </n-icon>
+            <n-text style="display: block; margin-top: 12px; font-size: 16px">
+              点击选择项目文件夹 或 拖拽文件夹到此处
+            </n-text>
+            <n-text depth="3" style="display: block; margin-top: 8px">
+              将上传文件夹内所有支持的静态资源文件
             </n-text>
           </div>
         </n-upload-dragger>
@@ -178,7 +235,15 @@ function customRequest() {
         <n-text style="display: block; margin-bottom: 8px">
           已选择 {{ fileList.length }} 个文件，共 {{ (totalSize / 1024).toFixed(1) }} KB
         </n-text>
-        <div style="max-height: 150px; overflow-y: auto; background: var(--n-color-embedded); border-radius: 6px; padding: 8px">
+        <div
+          style="
+            max-height: 150px;
+            overflow-y: auto;
+            background: var(--n-color-embedded);
+            border-radius: 6px;
+            padding: 8px;
+          "
+        >
           <div
             v-for="file in fileList"
             :key="file.id"
@@ -211,10 +276,7 @@ function customRequest() {
       <!-- 新建分类输入 -->
       <div v-if="isNewCategory">
         <n-text style="display: block; margin-bottom: 8px">新分类名称</n-text>
-        <n-input
-          v-model:value="newCategory"
-          placeholder="输入新分类名称"
-        />
+        <n-input v-model:value="newCategory" placeholder="输入新分类名称" />
       </div>
 
       <!-- 项目名称 -->
@@ -224,10 +286,7 @@ function customRequest() {
           <span v-if="isMultiFile" style="color: #d03050">（多文件项目必填）</span>
           <span v-else style="color: var(--n-text-color-3)">(可选，留空则使用文件名)</span>
         </n-text>
-        <n-input
-          v-model:value="projectName"
-          placeholder="输入项目名称"
-        />
+        <n-input v-model:value="projectName" placeholder="输入项目名称" />
       </div>
 
       <!-- 上传按钮 -->

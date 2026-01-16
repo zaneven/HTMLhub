@@ -9,6 +9,16 @@ import { useAuthStore } from './auth'
 export const useFilesStore = defineStore('files', () => {
   const { isCloudMode, apiBaseUrl } = useAppMode()
 
+  /**
+   * 处理未授权响应（token 过期或无效）
+   * 清除 token 并返回错误信息
+   */
+  async function handleUnauthorized(): Promise<void> {
+    const authStore = useAuthStore()
+    await authStore.logout()
+    error.value = '登录已过期，请重新登录'
+  }
+
   // 状态
   const indexData = ref<ProjectIndexData | null>(null)
   const loading = ref(false)
@@ -26,29 +36,30 @@ export const useFilesStore = defineStore('files', () => {
   // 根据分类获取项目
   const getProjectsByCategory = computed(() => (category: string): ProjectInfo[] => {
     if (!category) return projects.value
-    return projects.value.filter(project => project.category === category)
+    return projects.value.filter((project) => project.category === category)
   })
 
   // 当前显示的项目（根据选中分类和搜索关键词过滤）
   const filteredProjects = computed(() => {
     const searchStore = useSearchStore()
     const searchQuery = searchStore.searchQuery.toLowerCase().trim()
-    
+
     let result = projects.value
-    
+
     // 按分类过滤
     if (selectedCategory.value) {
-      result = result.filter(project => project.category === selectedCategory.value)
+      result = result.filter((project) => project.category === selectedCategory.value)
     }
-    
+
     // 按搜索关键词过滤
     if (searchQuery) {
-      result = result.filter(project => 
-        project.name.toLowerCase().includes(searchQuery) ||
-        project.category.toLowerCase().includes(searchQuery)
+      result = result.filter(
+        (project) =>
+          project.name.toLowerCase().includes(searchQuery) ||
+          project.category.toLowerCase().includes(searchQuery),
       )
     }
-    
+
     return result
   })
 
@@ -57,7 +68,7 @@ export const useFilesStore = defineStore('files', () => {
     const stats = {
       totalProjects: totalProjects.value,
       totalCategories: totalCategories.value,
-      totalSize: 0
+      totalSize: 0,
     }
     return stats
   })
@@ -93,12 +104,12 @@ export const useFilesStore = defineStore('files', () => {
     const [localData, cloudData] = await Promise.all([
       // 获取本地静态文件索引
       fetch('/data/file-index.json')
-        .then(res => res.ok ? res.json() as Promise<ProjectIndexData> : null)
+        .then((res) => (res.ok ? (res.json() as Promise<ProjectIndexData>) : null))
         .catch(() => null),
       // 获取 R2 云端文件索引
       fetch(`${apiBaseUrl.value}/api/files`)
-        .then(res => res.ok ? res.json() as Promise<ProjectIndexData> : null)
-        .catch(() => null)
+        .then((res) => (res.ok ? (res.json() as Promise<ProjectIndexData>) : null))
+        .catch(() => null),
     ])
 
     // 合并数据
@@ -117,7 +128,9 @@ export const useFilesStore = defineStore('files', () => {
     if (cloudData?.projects) {
       for (const project of cloudData.projects) {
         // 检查是否已存在同名同分类的项目
-        const exists = allProjects.some(p => p.name === project.name && p.category === project.category)
+        const exists = allProjects.some(
+          (p) => p.name === project.name && p.category === project.category,
+        )
         if (!exists) {
           allProjects.push({ ...project, source: 'cloud' } as ProjectInfo & { source: string })
           categoryMap.set(project.category, (categoryMap.get(project.category) || 0) + 1)
@@ -126,11 +139,13 @@ export const useFilesStore = defineStore('files', () => {
     }
 
     // 生成合并后的分类列表
-    const allCategories: CategoryInfo[] = Array.from(categoryMap.entries()).map(([name, count]) => ({
-      id: btoa(encodeURIComponent(name)),
-      name,
-      projectCount: count
-    }))
+    const allCategories: CategoryInfo[] = Array.from(categoryMap.entries()).map(
+      ([name, count]) => ({
+        id: btoa(encodeURIComponent(name)),
+        name,
+        projectCount: count,
+      }),
+    )
 
     // 排序
     allCategories.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
@@ -141,10 +156,10 @@ export const useFilesStore = defineStore('files', () => {
       generatedAt: new Date().toISOString(),
       stats: {
         totalCategories: allCategories.length,
-        totalProjects: allProjects.length
+        totalProjects: allProjects.length,
       },
       categories: allCategories,
-      projects: allProjects
+      projects: allProjects,
     }
   }
 
@@ -187,7 +202,7 @@ export const useFilesStore = defineStore('files', () => {
       const response = await fetch(`${apiBaseUrl.value}/api/upload`, {
         method: 'POST',
         headers: authStore.getAuthHeaders(),
-        body: formData
+        body: formData,
       })
 
       const data = await response.json()
@@ -196,6 +211,9 @@ export const useFilesStore = defineStore('files', () => {
         // 刷新索引
         await reloadIndexData()
         return true
+      } else if (response.status === 401) {
+        await handleUnauthorized()
+        return false
       } else {
         error.value = data.error || '上传失败'
         return false
@@ -212,7 +230,11 @@ export const useFilesStore = defineStore('files', () => {
    * 上传多个文件 (仅云端模式)
    * 用于上传包含 HTML/JS/CSS 等多个文件的项目
    */
-  async function uploadFiles(files: File[], category: string, projectName?: string): Promise<boolean> {
+  async function uploadFiles(
+    files: File[],
+    category: string,
+    projectName?: string,
+  ): Promise<boolean> {
     if (!isCloudMode.value) {
       error.value = '当前为静态模式，无法上传文件'
       return false
@@ -247,7 +269,7 @@ export const useFilesStore = defineStore('files', () => {
       const formData = new FormData()
       formData.append('category', category)
       formData.append('projectName', projectName)
-      
+
       // 添加所有文件
       for (const file of files) {
         formData.append('files', file)
@@ -256,7 +278,7 @@ export const useFilesStore = defineStore('files', () => {
       const response = await fetch(`${apiBaseUrl.value}/api/upload-multiple`, {
         method: 'POST',
         headers: authStore.getAuthHeaders(),
-        body: formData
+        body: formData,
       })
 
       const data = await response.json()
@@ -265,6 +287,9 @@ export const useFilesStore = defineStore('files', () => {
         // 刷新索引
         await reloadIndexData()
         return true
+      } else if (response.status === 401) {
+        await handleUnauthorized()
+        return false
       } else {
         error.value = data.error || '上传失败'
         return false
@@ -295,10 +320,13 @@ export const useFilesStore = defineStore('files', () => {
     error.value = null
 
     try {
-      const response = await fetch(`${apiBaseUrl.value}/api/files?key=${encodeURIComponent(project.path)}`, {
-        method: 'DELETE',
-        headers: authStore.getAuthHeaders()
-      })
+      const response = await fetch(
+        `${apiBaseUrl.value}/api/files?key=${encodeURIComponent(project.path)}`,
+        {
+          method: 'DELETE',
+          headers: authStore.getAuthHeaders(),
+        },
+      )
 
       const data = await response.json()
 
@@ -306,6 +334,9 @@ export const useFilesStore = defineStore('files', () => {
         // 刷新索引
         await reloadIndexData()
         return true
+      } else if (response.status === 401) {
+        await handleUnauthorized()
+        return false
       } else {
         error.value = data.error || '删除失败'
         return false
@@ -337,7 +368,7 @@ export const useFilesStore = defineStore('files', () => {
     try {
       const response = await fetch(`${apiBaseUrl.value}/api/refresh`, {
         method: 'POST',
-        headers: authStore.getAuthHeaders()
+        headers: authStore.getAuthHeaders(),
       })
 
       const data = await response.json()
@@ -345,6 +376,9 @@ export const useFilesStore = defineStore('files', () => {
       if (response.ok && data.success) {
         indexData.value = data.data
         return true
+      } else if (response.status === 401) {
+        await handleUnauthorized()
+        return false
       } else {
         error.value = data.error || '刷新失败'
         return false
@@ -401,6 +435,6 @@ export const useFilesStore = defineStore('files', () => {
     uploadFiles,
     deleteProject,
     refreshIndex,
-    getFileUrl
+    getFileUrl,
   }
 })
