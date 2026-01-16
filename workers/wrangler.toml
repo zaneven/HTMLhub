@@ -1,12 +1,12 @@
-name = "htmlviewer-api"
+name = "htmlmanager-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
 # 自定义域名绑定
-# 域名: htmlviewer-api.getprompt.top
+# 域名: htmlmanager-api.getprompt.top
 # DNS 配置: 在 Cloudflare 添加 CNAME 记录，或使用 Pages 自定义域名
 routes = [
-  { pattern = "htmlviewer-api.getprompt.top", custom_domain = true }
+  { pattern = "htmlmanager-api.getprompt.top", custom_domain = true }
 ]
 
 # 环境变量 - 在部署时通过 Cloudflare Dashboard 或 wrangler secret 设置
@@ -16,7 +16,7 @@ routes = [
 # R2 存储桶绑定
 [[r2_buckets]]
 binding = "HTML_FILES"
-bucket_name = "htmlviewer-files"
+bucket_name = "htmlmanager-files"
 
 # KV 命名空间绑定 (用于缓存索引)
 [[kv_namespaces]]

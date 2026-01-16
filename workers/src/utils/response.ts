@@ -3,9 +3,9 @@ import type { ApiResponse } from '../types'
 // 允许的域名列表
 const ALLOWED_ORIGINS: string[] = [
   'https://html.getprompt.top',
-  'https://htmlviewer.pages.dev',
+  'https://htmlmanager.pages.dev',
   'http://localhost:5173',
-  'http://localhost:4173'
+  'http://localhost:4173',
 ]
 
 /**
@@ -14,12 +14,12 @@ const ALLOWED_ORIGINS: string[] = [
 function getCORSHeaders(origin: string | null): Record<string, string> {
   // 检查是否在允许列表中
   const allowedOrigin = origin && ALLOWED_ORIGINS.includes(origin) ? origin : '*'
-  
+
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Max-Age': '86400'
+    'Access-Control-Max-Age': '86400',
   }
 }
 
@@ -29,7 +29,7 @@ function getCORSHeaders(origin: string | null): Record<string, string> {
 export function addCORSHeaders(response: Response, requestOrigin?: string | null): Response {
   const corsHeaders = getCORSHeaders(requestOrigin || null)
   const headers = new Headers(response.headers)
-  
+
   for (const [key, value] of Object.entries(corsHeaders)) {
     headers.set(key, value)
   }
@@ -37,7 +37,7 @@ export function addCORSHeaders(response: Response, requestOrigin?: string | null
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
-    headers
+    headers,
   })
 }
 
@@ -47,7 +47,7 @@ export function addCORSHeaders(response: Response, requestOrigin?: string | null
 export function handleCORS(requestOrigin?: string | null): Response {
   return new Response(null, {
     status: 204,
-    headers: getCORSHeaders(requestOrigin || null)
+    headers: getCORSHeaders(requestOrigin || null),
   })
 }
 
@@ -58,8 +58,8 @@ export function json<T>(data: T, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
-      'Content-Type': 'application/json'
-    }
+      'Content-Type': 'application/json',
+    },
   })
 }
 

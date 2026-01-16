@@ -1,7 +1,13 @@
 <template>
   <!-- 移动端抽屉模式 -->
-  <n-drawer v-if="isMobile" v-model:show="drawerVisible" :width="280" placement="left" class="mobile-sidebar">
-    <n-drawer-content title="HTMLviewer" closable>
+  <n-drawer
+    v-if="isMobile"
+    v-model:show="drawerVisible"
+    :width="280"
+    placement="left"
+    class="mobile-sidebar"
+  >
+    <n-drawer-content title="HTMLManager" closable>
       <div class="sidebar-content mobile">
         <!-- 移动端侧边栏内容 -->
         <div class="quick-stats">
@@ -20,7 +26,11 @@
             <span>分类</span>
           </div>
 
-          <n-menu :options="categoryMenuOptions" :value="selectedCategory" @update:value="handleCategorySelect" />
+          <n-menu
+            :options="categoryMenuOptions"
+            :value="selectedCategory"
+            @update:value="handleCategorySelect"
+          />
         </div>
       </div>
     </n-drawer-content>
@@ -36,7 +46,7 @@
             <n-icon size="24" color="#18a058">
               <FolderOpenOutline />
             </n-icon>
-            <span class="logo-text">HTMLviewer</span>
+            <span class="logo-text">HTMLManager</span>
           </div>
         </n-space>
       </div>
@@ -59,10 +69,12 @@
           <span>分类</span>
         </div>
 
-        <n-menu :options="categoryMenuOptions" :value="selectedCategory" @update:value="handleCategorySelect" />
+        <n-menu
+          :options="categoryMenuOptions"
+          :value="selectedCategory"
+          @update:value="handleCategorySelect"
+        />
       </div>
-
-
     </div>
   </n-layout-sider>
 </template>
@@ -79,13 +91,9 @@ import {
   NStatistic,
   NDivider,
   NMenu,
-  type MenuOption
+  type MenuOption,
 } from 'naive-ui'
-import {
-  FolderOpenOutline,
-  FolderOutline,
-  AppsOutline
-} from '@vicons/ionicons5'
+import { FolderOpenOutline, FolderOutline, AppsOutline } from '@vicons/ionicons5'
 import { useFilesStore } from '../../stores/files'
 
 // 响应式状态
@@ -115,7 +123,7 @@ defineExpose({
   },
   closeDrawer: () => {
     drawerVisible.value = false
-  }
+  },
 })
 
 // 生命周期
@@ -143,15 +151,15 @@ const categoryMenuOptions = computed((): MenuOption[] => {
     {
       label: '全部项目',
       key: '',
-      icon: () => h(NIcon, null, { default: () => h(AppsOutline) })
-    }
+      icon: () => h(NIcon, null, { default: () => h(AppsOutline) }),
+    },
   ]
 
-  categories.forEach(category => {
+  categories.forEach((category) => {
     options.push({
       label: `${category.name} (${category.projectCount})`,
       key: category.name,
-      icon: () => h(NIcon, null, { default: () => h(FolderOutline) })
+      icon: () => h(NIcon, null, { default: () => h(FolderOutline) }),
     })
   })
 
