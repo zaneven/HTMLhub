@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RouterView } from 'vue-router'
+import { RouterView, useRoute } from 'vue-router'
 import { onMounted, computed, ref } from 'vue'
 import { darkTheme, lightTheme, zhCN, dateZhCN } from 'naive-ui'
 import { useSettingsStore } from './stores/settings'
@@ -7,9 +7,15 @@ import { useFilesStore } from './stores/files'
 import AppSidebar from './components/layout/AppSidebar.vue'
 import AppHeader from './components/layout/AppHeader.vue'
 
+const route = useRoute()
 const settingsStore = useSettingsStore()
 const filesStore = useFilesStore()
 const sidebarRef = ref()
+
+// 是否显示布局（登录页面不显示）
+const showLayout = computed(() => {
+  return route.name !== 'login'
+})
 
 // 主题配置
 const theme = computed(() => {
@@ -23,8 +29,8 @@ const themeOverrides = computed(() => ({
     primaryColorHover: settingsStore.currentTheme.primaryColor + '20',
     primaryColorPressed: settingsStore.currentTheme.primaryColor + '40',
     borderRadius: `${settingsStore.currentTheme.borderRadius}px`,
-    fontSize: `${settingsStore.currentTheme.fontSize}px`
-  }
+    fontSize: `${settingsStore.currentTheme.fontSize}px`,
+  },
 }))
 
 // 切换侧边栏
@@ -38,15 +44,15 @@ onMounted(async () => {
   // 初始化设置
   settingsStore.loadPreferences()
   settingsStore.initThemeDetection()
-  
+
   // 加载文件索引数据
   await filesStore.loadIndexData()
 })
 </script>
 
 <template>
-  <n-config-provider 
-    :theme="theme" 
+  <n-config-provider
+    :theme="theme"
     :theme-overrides="themeOverrides"
     :locale="zhCN"
     :date-locale="dateZhCN"
@@ -54,21 +60,27 @@ onMounted(async () => {
     <n-loading-bar-provider>
       <n-dialog-provider>
         <n-message-provider>
-          <n-layout has-sider class="app-layout">
+          <!-- 带布局的页面 -->
+          <n-layout v-if="showLayout" has-sider class="app-layout">
             <!-- 侧边栏 -->
             <AppSidebar ref="sidebarRef" />
-            
+
             <!-- 主内容区 -->
             <n-layout>
               <!-- 头部 -->
               <AppHeader @toggle-sidebar="handleToggleSidebar" />
-              
+
               <!-- 内容区域 -->
               <n-layout-content class="main-layout-content">
                 <RouterView />
               </n-layout-content>
             </n-layout>
           </n-layout>
+
+          <!-- 全屏页面（登录页等） -->
+          <div v-else class="fullscreen-layout">
+            <RouterView />
+          </div>
         </n-message-provider>
       </n-dialog-provider>
     </n-loading-bar-provider>
@@ -77,7 +89,8 @@ onMounted(async () => {
 
 <style>
 /* 全局样式，确保应用占满整个视口 */
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -92,6 +105,11 @@ html, body {
 
 <style scoped>
 .app-layout {
+  height: 100vh;
+  width: 100%;
+}
+
+.fullscreen-layout {
   height: 100vh;
   width: 100%;
 }
