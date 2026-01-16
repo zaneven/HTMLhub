@@ -2,8 +2,7 @@
   <n-layout-header bordered class="app-header">
     <div class="header-content">
       <!-- 左侧：占位 -->
-      <div class="header-left">
-      </div>
+      <div class="header-left"></div>
 
       <!-- 右侧：搜索栏和操作按钮 -->
       <div class="header-right">
@@ -25,13 +24,7 @@
                   </n-icon>
                 </template>
               </n-input>
-              <n-button
-                type="primary"
-                @click="handleSearch"
-                :loading="searching"
-              >
-                搜索
-              </n-button>
+              <n-button type="primary" @click="handleSearch" :loading="searching"> 搜索 </n-button>
             </n-input-group>
 
             <!-- 搜索建议 -->
@@ -53,11 +46,7 @@
           </div>
 
           <!-- 排序选择 -->
-          <n-dropdown
-            :options="sortOptions"
-            @select="handleSortSelect"
-            trigger="click"
-          >
+          <n-dropdown :options="sortOptions" @select="handleSortSelect" trigger="click">
             <n-button size="small" secondary>
               <template #icon>
                 <n-icon><SwapVerticalOutline /></n-icon>
@@ -67,11 +56,7 @@
           </n-dropdown>
 
           <!-- 设置按钮 -->
-          <n-dropdown
-            :options="settingsOptions"
-            @select="handleSettingsSelect"
-            trigger="click"
-          >
+          <n-dropdown :options="settingsOptions" @select="handleSettingsSelect" trigger="click">
             <n-button size="small" secondary>
               <template #icon>
                 <n-icon><SettingsOutline /></n-icon>
@@ -79,31 +64,30 @@
             </n-button>
           </n-dropdown>
 
-          <!-- 管理入口（仅云端模式显示） -->
+          <!-- 管理入口（仅云端模式且已登录显示） -->
           <n-button
-            v-if="isCloudMode"
+            v-if="isCloudMode && isAuthenticated"
             size="small"
-            :type="isAuthenticated ? 'primary' : 'default'"
+            type="primary"
             @click="handleAdminClick"
           >
             <template #icon>
-              <n-icon>
-                <PersonOutline v-if="!isAuthenticated" />
-                <SettingsOutline v-else />
-              </n-icon>
+              <n-icon><SettingsOutline /></n-icon>
             </template>
-            {{ isAuthenticated ? '管理' : '登录' }}
+            管理
+          </n-button>
+
+          <!-- 退出登录按钮（仅云端模式且已登录显示） -->
+          <n-button v-if="isCloudMode && isAuthenticated" size="small" @click="handleLogout">
+            <template #icon>
+              <n-icon><LogOutOutline /></n-icon>
+            </template>
+            退出
           </n-button>
         </n-space>
       </div>
     </div>
   </n-layout-header>
-
-  <!-- 登录弹窗 -->
-  <AdminLogin
-    v-model:show="showLoginModal"
-    @success="handleLoginSuccess"
-  />
 </template>
 
 <script setup lang="ts">
@@ -117,13 +101,13 @@ import {
   NCard,
   NSpace,
   NIcon,
-  type DropdownOption
+  type DropdownOption,
 } from 'naive-ui'
 import {
   SearchOutline,
   SwapVerticalOutline,
   SettingsOutline,
-  PersonOutline
+  LogOutOutline,
 } from '@vicons/ionicons5'
 import { useRouter } from 'vue-router'
 import { useSearchStore } from '../../stores/search'
@@ -131,13 +115,11 @@ import { useSettingsStore } from '../../stores/settings'
 import { useAuthStore } from '../../stores/auth'
 import { useAppMode } from '../../composables/useAppMode'
 import { SortOption } from '../../types'
-import AdminLogin from '../admin/AdminLogin.vue'
 
 const router = useRouter()
 
 // 响应式状态
 const showSuggestions = ref(false)
-const showLoginModal = ref(false)
 
 // Store
 const searchStore = useSearchStore()
@@ -151,7 +133,7 @@ const isAuthenticated = computed(() => authStore.isAuthenticated)
 // 计算属性 - 将searchInput与searchStore同步
 const searchInput = computed({
   get: () => searchStore.searchQuery,
-  set: (value: string) => searchStore.setSearchQuery(value)
+  set: (value: string) => searchStore.setSearchQuery(value),
 })
 
 const searching = computed(() => false)
@@ -159,11 +141,11 @@ const searching = computed(() => false)
 // 搜索建议
 const suggestions = computed(() => {
   if (!searchInput.value || searchInput.value.length < 2) return []
-  
+
   // 这里可以实现更复杂的搜索建议逻辑
   const history = searchStore.searchHistory
   return history
-    .filter(item => item.toLowerCase().includes(searchInput.value.toLowerCase()))
+    .filter((item) => item.toLowerCase().includes(searchInput.value.toLowerCase()))
     .slice(0, 5)
 })
 
@@ -172,26 +154,26 @@ const sortOptions: DropdownOption[] = [
   {
     label: '按名称排序',
     key: SortOption.NAME_ASC,
-    icon: () => h(NIcon, null, { default: () => h(SearchOutline) })
+    icon: () => h(NIcon, null, { default: () => h(SearchOutline) }),
   },
   {
     label: '按修改时间排序',
     key: SortOption.DATE_ASC,
-    icon: () => h(NIcon, null, { default: () => h(SearchOutline) })
+    icon: () => h(NIcon, null, { default: () => h(SearchOutline) }),
   },
   {
     label: '按大小排序',
     key: SortOption.SIZE_ASC,
-    icon: () => h(NIcon, null, { default: () => h(SearchOutline) })
-  }
+    icon: () => h(NIcon, null, { default: () => h(SearchOutline) }),
+  },
 ]
 
 // 设置选项
 const settingsOptions: DropdownOption[] = [
   {
     label: '主题设置',
-    key: 'theme'
-  }
+    key: 'theme',
+  },
 ]
 
 // 监听搜索输入
@@ -243,8 +225,6 @@ function handleSettingsSelect(key: string) {
   }
 }
 
-
-
 function handleClickOutside(event: Event) {
   const target = event.target as HTMLElement
   if (!target.closest('.search-container')) {
@@ -254,19 +234,13 @@ function handleClickOutside(event: Event) {
 
 // 管理入口点击处理
 function handleAdminClick() {
-  if (isAuthenticated.value) {
-    // 已登录，跳转到管理页面
-    router.push('/admin')
-  } else {
-    // 未登录，显示登录弹窗
-    showLoginModal.value = true
-  }
+  router.push('/admin')
 }
 
-// 登录成功处理
-function handleLoginSuccess() {
-  // 登录成功后跳转到管理页面
-  router.push('/admin')
+// 退出登录
+async function handleLogout() {
+  await authStore.logout()
+  router.push('/login')
 }
 
 // 组件卸载时清理事件监听
@@ -354,15 +328,15 @@ onUnmounted(() => {
   .app-header {
     padding: 0 12px;
   }
-  
+
   .header-content {
     gap: 12px;
   }
-  
+
   .header-left {
     min-width: 100px;
   }
-  
+
   .search-container {
     min-width: 250px;
   }
@@ -374,42 +348,42 @@ onUnmounted(() => {
     height: 56px;
     padding: 0 8px;
   }
-  
+
   .header-content {
     gap: 8px;
   }
-  
+
   .header-left {
     min-width: 80px;
   }
-  
+
   /* 移动端隐藏面包屑文字，只显示图标 */
   .header-left :deep(.n-breadcrumb-item__link) {
     font-size: 0;
   }
-  
+
   .header-left :deep(.n-breadcrumb-item__link .n-icon) {
     font-size: 16px;
   }
-  
+
   .search-container {
     min-width: 200px;
   }
-  
+
   /* 移动端简化搜索栏 */
   .search-container :deep(.n-input-group .n-button) {
     display: none;
   }
-  
+
   /* 移动端简化右侧按钮 */
   .header-right :deep(.n-button .n-button__content) {
     font-size: 0;
   }
-  
+
   .header-right :deep(.n-button .n-icon) {
     margin: 0;
   }
-  
+
   /* 移动端隐藏部分按钮 */
   .header-right :deep(.n-space > :nth-child(2)),
   .header-right :deep(.n-space > :nth-child(3)) {
@@ -422,16 +396,16 @@ onUnmounted(() => {
   .mobile-menu-btn {
     display: flex !important;
   }
-  
+
   .app-header {
     height: 48px;
     padding: 0 4px;
   }
-  
+
   .header-content {
     gap: 4px;
   }
-  
+
   .header-left {
     min-width: 60px;
   }
@@ -460,11 +434,11 @@ onUnmounted(() => {
   .app-header {
     padding: 0 24px;
   }
-  
+
   .header-content {
     gap: 24px;
   }
-  
+
   .header-left {
     min-width: 200px;
   }
@@ -475,11 +449,11 @@ onUnmounted(() => {
   .app-header {
     padding: 0 32px;
   }
-  
+
   .header-content {
     gap: 32px;
   }
-  
+
   .header-center {
     max-width: 800px;
   }

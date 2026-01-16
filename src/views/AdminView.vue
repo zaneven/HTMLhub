@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, h, onMounted } from 'vue'
+import { ref, computed, h } from 'vue'
 import {
   NLayout,
   NLayoutContent,
@@ -40,17 +40,6 @@ const message = useMessage()
 
 // 上传弹窗状态
 const showUploadModal = ref(false)
-
-// 页面加载时验证 token
-onMounted(async () => {
-  if (isCloudMode.value && authStore.token) {
-    const isValid = await authStore.validateToken()
-    if (!isValid) {
-      message.warning('登录已过期，请重新登录')
-      router.push('/')
-    }
-  }
-})
 
 // 只显示云端项目
 const cloudProjects = computed(() => {

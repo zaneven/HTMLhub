@@ -3,6 +3,15 @@ import type { RouteRecordRaw } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
   {
+    path: '/login',
+    name: 'login',
+    component: () => import('../views/LoginView.vue'),
+    meta: {
+      title: 'HTML Manager - 登录',
+      public: true, // 不需要登录
+    },
+  },
+  {
     path: '/',
     name: 'home',
     component: () => import('../views/HomeView.vue'),
@@ -48,7 +57,6 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/AdminView.vue'),
     meta: {
       title: 'HTML Manager - 管理后台',
-      requiresAuth: true,
     },
   },
   {
@@ -57,6 +65,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('../views/NotFoundView.vue'),
     meta: {
       title: 'HTML Manager - 页面未找到',
+      public: true,
     },
   },
 ]
@@ -89,45 +98,51 @@ async function validateToken(token: string): Promise<boolean> {
     })
 
     if (response.status === 401) {
-      // Token 过期，清除
       localStorage.removeItem('auth_token')
       return false
     }
 
     return response.ok
   } catch {
-    // 网络错误时保持登录状态
     return true
   }
 }
 
-// 路由守卫 - 设置页面标题和权限检查
+// 路由守卫 - 全局登录验证
 router.beforeEach(async (to, from, next) => {
   // 设置页面标题
   if (to.meta?.title) {
     document.title = to.meta.title as string
   }
 
-  // 权限检查（仅在云端模式下检查）
-  if (to.meta?.requiresAuth) {
-    const token = localStorage.getItem('auth_token')
-    const apiUrl = import.meta.env.VITE_API_URL
+  const apiUrl = import.meta.env.VITE_API_URL
 
-    // 如果是云端模式
-    if (apiUrl) {
-      // 未登录，重定向到首页
-      if (!token) {
-        next({ name: 'home' })
-        return
-      }
+  // 静态模式不需要登录
+  if (!apiUrl) {
+    next()
+    return
+  }
 
-      // 验证 token 有效性
-      const isValid = await validateToken(token)
-      if (!isValid) {
-        next({ name: 'home' })
-        return
-      }
-    }
+  // 公开页面不需要登录验证
+  if (to.meta?.public) {
+    next()
+    return
+  }
+
+  // 云端模式：检查登录状态
+  const token = localStorage.getItem('auth_token')
+
+  if (!token) {
+    // 未登录，跳转登录页
+    next({ name: 'login' })
+    return
+  }
+
+  // 验证 token 有效性
+  const isValid = await validateToken(token)
+  if (!isValid) {
+    next({ name: 'login' })
+    return
   }
 
   next()
