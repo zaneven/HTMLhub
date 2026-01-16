@@ -31,16 +31,12 @@ const newCategory = ref('')
 const projectName = ref('')
 const fileList = ref<UploadFileInfo[]>([])
 
-// 文件夹上传模式
-const folderMode = ref(false)
-
 // 计算属性
 const categoryOptions = computed(() => {
   const categories = filesStore.categories.map((cat) => ({
     label: cat.name,
     value: cat.name,
   }))
-  // 添加"新建分类"选项
   return [...categories, { label: '+ 新建分类', value: '__new__' }]
 })
 
@@ -94,8 +90,8 @@ function handleFileChange(files: UploadFileInfo[]) {
     return supportedExtensions.some((ext) => name.endsWith(ext))
   })
 
-  // 如果是文件夹模式且有文件，尝试从相对路径提取项目名
-  if (folderMode.value && fileList.value.length > 0) {
+  // 尝试从相对路径提取项目名（文件夹上传时）
+  if (fileList.value.length > 0) {
     const firstFile = fileList.value[0]?.file as File & { webkitRelativePath?: string }
     if (firstFile?.webkitRelativePath) {
       const parts = firstFile.webkitRelativePath.split('/')
@@ -117,7 +113,6 @@ async function handleUpload() {
     return
   }
 
-  // 收集所有有效文件
   const files = fileList.value
     .map((f) => f.file)
     .filter((f): f is File => f !== null && f !== undefined)
@@ -135,14 +130,12 @@ async function handleUpload() {
 
   if (success) {
     message.success('上传成功')
-    // 重置表单
     fileList.value = []
     projectName.value = ''
     if (isNewCategory.value) {
       selectedCategory.value = newCategory.value.trim()
       newCategory.value = ''
     }
-    // 发出成功事件
     emit('success')
   } else {
     message.error(filesStore.error || '上传失败')
@@ -152,14 +145,6 @@ async function handleUpload() {
 // 自定义上传（阻止默认上传行为）
 function customRequest() {
   return
-}
-
-// 切换上传模式
-function toggleFolderMode() {
-  folderMode.value = !folderMode.value
-  // 切换模式时清空文件列表
-  fileList.value = []
-  projectName.value = ''
 }
 </script>
 
@@ -171,48 +156,14 @@ function toggleFolderMode() {
         {{ filesStore.error }}
       </n-alert>
 
-      <!-- 上传模式切换按钮 -->
-      <n-button :type="folderMode ? 'primary' : 'default'" secondary @click="toggleFolderMode">
-        <template #icon>
-          <n-icon><FolderOpenOutline /></n-icon>
-        </template>
-        {{ folderMode ? '文件夹模式（点击切换到文件模式）' : '文件模式（点击切换到文件夹模式）' }}
-      </n-button>
-
-      <!-- 文件选择 - 普通文件模式 -->
+      <!-- 文件/文件夹选择区域 -->
       <n-upload
-        v-if="!folderMode"
         :file-list="fileList"
         multiple
         directory-dnd
         :accept="supportedExtensions.join(',')"
         :custom-request="customRequest"
-        @update:file-list="handleFileChange"
-      >
-        <n-upload-dragger>
-          <div style="padding: 24px">
-            <n-icon size="48" :depth="3">
-              <CloudUploadOutline />
-            </n-icon>
-            <n-text style="display: block; margin-top: 12px; font-size: 16px">
-              点击或拖拽文件到此处上传
-            </n-text>
-            <n-text depth="3" style="display: block; margin-top: 8px">
-              支持 HTML/JS/CSS/图片等静态资源，可一次上传多个文件
-            </n-text>
-          </div>
-        </n-upload-dragger>
-      </n-upload>
-
-      <!-- 文件选择 - 文件夹模式 -->
-      <n-upload
-        v-else
-        :file-list="fileList"
-        multiple
-        directory-dnd
-        :accept="supportedExtensions.join(',')"
-        :custom-request="customRequest"
-        :input-props="{ webkitdirectory: true } as any"
+        :input-props="{ webkitdirectory: true, multiple: true } as any"
         @update:file-list="handleFileChange"
       >
         <n-upload-dragger>
@@ -221,10 +172,10 @@ function toggleFolderMode() {
               <FolderOpenOutline />
             </n-icon>
             <n-text style="display: block; margin-top: 12px; font-size: 16px">
-              点击选择项目文件夹 或 拖拽文件夹到此处
+              点击选择项目文件夹 或 拖拽文件/文件夹到此处
             </n-text>
             <n-text depth="3" style="display: block; margin-top: 8px">
-              将上传文件夹内所有支持的静态资源文件
+              支持 HTML/JS/CSS/图片等静态资源
             </n-text>
           </div>
         </n-upload-dragger>

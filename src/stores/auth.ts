@@ -4,12 +4,12 @@ import { useAppMode } from '@/composables/useAppMode'
 
 /**
  * 认证状态管理 Store
- * 
+ *
  * 处理管理员登录/登出逻辑，使用 token 认证
  */
 export const useAuthStore = defineStore('auth', () => {
   const { apiBaseUrl, isCloudMode } = useAppMode()
-  
+
   // 状态
   const token = ref<string | null>(localStorage.getItem('auth_token'))
   const loading = ref(false)
@@ -34,7 +34,7 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await fetch(`${apiBaseUrl.value}/api/auth`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ password }),
       })
 
       const data = await response.json()
@@ -64,8 +64,8 @@ export const useAuthStore = defineStore('auth', () => {
         await fetch(`${apiBaseUrl.value}/api/logout`, {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${token.value}`
-          }
+            Authorization: `Bearer ${token.value}`,
+          },
         })
       } catch {
         // 忽略登出请求错误
@@ -82,9 +82,42 @@ export const useAuthStore = defineStore('auth', () => {
    */
   function getAuthHeaders(): Record<string, string> {
     if (token.value) {
-      return { 'Authorization': `Bearer ${token.value}` }
+      return { Authorization: `Bearer ${token.value}` }
     }
     return {}
+  }
+
+  /**
+   * 验证 token 是否有效
+   * 通过调用需要认证的 API 来检测 token 状态
+   * @returns true 如果 token 有效，false 如果过期或无效
+   */
+  async function validateToken(): Promise<boolean> {
+    if (!isCloudMode.value || !token.value) {
+      return false
+    }
+
+    try {
+      // 使用 refresh API 来验证 token（这个 API 需要认证）
+      const response = await fetch(`${apiBaseUrl.value}/api/refresh`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+        },
+      })
+
+      if (response.status === 401) {
+        // Token 过期，清除本地状态
+        token.value = null
+        localStorage.removeItem('auth_token')
+        return false
+      }
+
+      return response.ok
+    } catch {
+      // 网络错误，保持当前状态
+      return true
+    }
   }
 
   /**
@@ -106,7 +139,8 @@ export const useAuthStore = defineStore('auth', () => {
     // 方法
     login,
     logout,
+    validateToken,
     getAuthHeaders,
-    clearError
+    clearError,
   }
 })

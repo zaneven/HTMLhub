@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, h } from 'vue'
+import { ref, computed, h, onMounted } from 'vue'
 import {
   NLayout,
   NLayoutContent,
@@ -14,7 +14,7 @@ import {
   NModal,
   NEmpty,
   useMessage,
-  type DataTableColumns
+  type DataTableColumns,
 } from 'naive-ui'
 import {
   RefreshOutline,
@@ -23,7 +23,7 @@ import {
   FolderOutline,
   DocumentOutline,
   CloudUploadOutline,
-  OpenOutline
+  OpenOutline,
 } from '@vicons/ionicons5'
 import { useRouter } from 'vue-router'
 import { useFilesStore } from '@/stores/files'
@@ -41,9 +41,20 @@ const message = useMessage()
 // 上传弹窗状态
 const showUploadModal = ref(false)
 
+// 页面加载时验证 token
+onMounted(async () => {
+  if (isCloudMode.value && authStore.token) {
+    const isValid = await authStore.validateToken()
+    if (!isValid) {
+      message.warning('登录已过期，请重新登录')
+      router.push('/')
+    }
+  }
+})
+
 // 只显示云端项目
 const cloudProjects = computed(() => {
-  return filesStore.projects.filter(p => p.source === 'cloud')
+  return filesStore.projects.filter((p) => p.source === 'cloud')
 })
 
 // 云端项目数量
@@ -57,7 +68,7 @@ const columns: DataTableColumns<ProjectInfo> = [
     ellipsis: { tooltip: true },
     render(row) {
       return h('span', { style: { fontWeight: '500' } }, row.name)
-    }
+    },
   },
   {
     title: '分类',
@@ -65,22 +76,30 @@ const columns: DataTableColumns<ProjectInfo> = [
     width: 120,
     render(row) {
       return h(NTag, { type: 'info', size: 'small' }, { default: () => row.category })
-    }
+    },
   },
   {
     title: '类型',
     key: 'type',
     width: 80,
     render(row) {
-      return h(NSpace, { align: 'center', size: 'small' }, {
-        default: () => [
-          h(NIcon, { size: 16 }, {
-            default: () => h(row.type === 'directory' ? FolderOutline : DocumentOutline)
-          }),
-          row.type === 'directory' ? '项目' : '文件'
-        ]
-      })
-    }
+      return h(
+        NSpace,
+        { align: 'center', size: 'small' },
+        {
+          default: () => [
+            h(
+              NIcon,
+              { size: 16 },
+              {
+                default: () => h(row.type === 'directory' ? FolderOutline : DocumentOutline),
+              },
+            ),
+            row.type === 'directory' ? '项目' : '文件',
+          ],
+        },
+      )
+    },
   },
   {
     title: '更新时间',
@@ -88,7 +107,7 @@ const columns: DataTableColumns<ProjectInfo> = [
     width: 160,
     render(row) {
       return new Date(row.modifiedAt).toLocaleString('zh-CN')
-    }
+    },
   },
   {
     title: '操作',
@@ -96,36 +115,53 @@ const columns: DataTableColumns<ProjectInfo> = [
     width: 140,
     fixed: 'right',
     render(row) {
-      return h(NSpace, { size: 'small' }, {
-        default: () => [
-          // 打开按钮
-          h(NButton, {
-            size: 'small',
-            quaternary: true,
-            type: 'primary',
-            onClick: () => handleOpen(row)
-          }, {
-            icon: () => h(NIcon, null, { default: () => h(OpenOutline) }),
-            default: () => '打开'
-          }),
-          // 删除按钮
-          h(NPopconfirm, {
-            onPositiveClick: () => handleDelete(row)
-          }, {
-            trigger: () => h(NButton, {
-              size: 'small',
-              quaternary: true,
-              type: 'error'
-            }, {
-              icon: () => h(NIcon, null, { default: () => h(TrashOutline) }),
-              default: () => '删除'
-            }),
-            default: () => `确定要删除 "${row.name}" 吗？`
-          })
-        ]
-      })
-    }
-  }
+      return h(
+        NSpace,
+        { size: 'small' },
+        {
+          default: () => [
+            // 打开按钮
+            h(
+              NButton,
+              {
+                size: 'small',
+                quaternary: true,
+                type: 'primary',
+                onClick: () => handleOpen(row),
+              },
+              {
+                icon: () => h(NIcon, null, { default: () => h(OpenOutline) }),
+                default: () => '打开',
+              },
+            ),
+            // 删除按钮
+            h(
+              NPopconfirm,
+              {
+                onPositiveClick: () => handleDelete(row),
+              },
+              {
+                trigger: () =>
+                  h(
+                    NButton,
+                    {
+                      size: 'small',
+                      quaternary: true,
+                      type: 'error',
+                    },
+                    {
+                      icon: () => h(NIcon, null, { default: () => h(TrashOutline) }),
+                      default: () => '删除',
+                    },
+                  ),
+                default: () => `确定要删除 "${row.name}" 吗？`,
+              },
+            ),
+          ],
+        },
+      )
+    },
+  },
 ]
 
 // 打开项目
@@ -175,18 +211,10 @@ function handleUploadSuccess() {
 <template>
   <n-layout style="min-height: 100vh">
     <n-layout-content style="padding: 24px; max-width: 1200px; margin: 0 auto">
-      <n-page-header
-        title="项目管理"
-        subtitle="管理云端上传的 HTML 项目"
-        @back="handleBack"
-      >
+      <n-page-header title="项目管理" subtitle="管理云端上传的 HTML 项目" @back="handleBack">
         <template #extra>
           <n-space>
-            <n-button
-              v-if="isCloudMode"
-              :loading="filesStore.loading"
-              @click="handleRefresh"
-            >
+            <n-button v-if="isCloudMode" :loading="filesStore.loading" @click="handleRefresh">
               <template #icon>
                 <n-icon><RefreshOutline /></n-icon>
               </template>
@@ -234,17 +262,13 @@ function handleUploadSuccess() {
             :pagination="{
               pageSize: 15,
               showSizePicker: true,
-              pageSizes: [10, 15, 20, 50]
+              pageSizes: [10, 15, 20, 50],
             }"
             :scroll-x="700"
           />
 
           <!-- 空状态 -->
-          <n-empty
-            v-else
-            description="暂无云端项目"
-            style="padding: 60px 0"
-          >
+          <n-empty v-else description="暂无云端项目" style="padding: 60px 0">
             <template #extra>
               <n-button type="primary" @click="showUploadModal = true">
                 <template #icon>
