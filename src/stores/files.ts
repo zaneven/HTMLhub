@@ -374,7 +374,8 @@ export const useFilesStore = defineStore('files', () => {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        indexData.value = data.data
+        // 刷新成功后重新加载合并数据（API 只返回云端数据，需要与本地合并）
+        await reloadIndexData()
         return true
       } else if (response.status === 401) {
         await handleUnauthorized()

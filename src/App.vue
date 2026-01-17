@@ -12,9 +12,9 @@ const settingsStore = useSettingsStore()
 const filesStore = useFilesStore()
 const sidebarRef = ref()
 
-// 是否显示布局（登录页面不显示）
+// 是否显示布局（登录页面和管理页面不显示侧边栏）
 const showLayout = computed(() => {
-  return route.name !== 'login'
+  return route.name !== 'login' && route.name !== 'admin'
 })
 
 // 主题配置

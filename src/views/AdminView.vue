@@ -18,7 +18,6 @@ import {
 } from 'naive-ui'
 import {
   RefreshOutline,
-  LogOutOutline,
   TrashOutline,
   FolderOutline,
   DocumentOutline,
@@ -179,13 +178,6 @@ async function handleDelete(project: ProjectInfo) {
   }
 }
 
-// 登出
-async function handleLogout() {
-  await authStore.logout()
-  message.success('已退出登录')
-  router.push('/')
-}
-
 // 返回首页
 function handleBack() {
   router.push('/')
@@ -208,12 +200,6 @@ function handleUploadSuccess() {
                 <n-icon><RefreshOutline /></n-icon>
               </template>
               刷新索引
-            </n-button>
-            <n-button type="error" @click="handleLogout">
-              <template #icon>
-                <n-icon><LogOutOutline /></n-icon>
-              </template>
-              退出登录
             </n-button>
           </n-space>
         </template>
