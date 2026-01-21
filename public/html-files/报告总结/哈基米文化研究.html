@@ -1,766 +1,890 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>哈基米文化现象研究报告</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
     <style>
-        body {
-            font-family: 'Noto Sans SC', sans-serif;
-            background-color: #FFFFFF;
-        }
-        .card {
-            background-color: white;
-            border: 1px solid #E5E7EB;
-            border-radius: 1.25rem; /* 20px */
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            overflow: hidden;
-            position: relative;
-        }
-        .card:hover {
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-        }
-        .highlight-gradient-pink {
-            background: linear-gradient(135deg, rgba(255, 192, 203, 0), rgba(255, 192, 203, 0.05));
-        }
-        .highlight-gradient-blue {
-            background: linear-gradient(135deg, rgba(173, 216, 230, 0), rgba(173, 216, 230, 0.05));
-        }
-        .highlight-gradient-yellow {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0), rgba(255, 215, 0, 0.05));
-        }
-        .highlight-gradient-green {
-            background: linear-gradient(135deg, rgba(144, 238, 144, 0), rgba(144, 238, 144, 0.05));
-        }
-        .highlight-gradient-purple {
-            background: linear-gradient(135deg, rgba(221, 160, 221, 0), rgba(221, 160, 221, 0.05));
-        }
-        .highlight-gradient-orange {
-            background: linear-gradient(135deg, rgba(255, 165, 0, 0), rgba(255, 165, 0, 0.05));
-        }
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: -20px;
-            top: 5px;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background-color: #FF6B6B;
-        }
-        .timeline-line {
-            position: absolute;
-            left: -15px;
-            top: 15px;
-            bottom: -20px;
-            width: 2px;
-            background-color: #E5E7EB;
-        }
-        .timeline-item:last-child .timeline-line {
-            display: none;
-        }
-        .chart-container {
-            position: relative;
-            height: 100%;
-            width: 100%;
-        }
-        .custom-table th {
-            background-color: #f8fafc;
-            border-bottom: 2px solid #e2e8f0;
-        }
-        .custom-table tr:nth-child(even) {
-            background-color: #f8fafc;
-        }
+      body {
+        font-family: 'Noto Sans SC', sans-serif;
+        background-color: #ffffff;
+      }
+      .card {
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 1.25rem; /* 20px */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        overflow: hidden;
+        position: relative;
+      }
+      .card:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      }
+      .highlight-gradient-pink {
+        background: linear-gradient(135deg, rgba(255, 192, 203, 0), rgba(255, 192, 203, 0.05));
+      }
+      .highlight-gradient-blue {
+        background: linear-gradient(135deg, rgba(173, 216, 230, 0), rgba(173, 216, 230, 0.05));
+      }
+      .highlight-gradient-yellow {
+        background: linear-gradient(135deg, rgba(255, 215, 0, 0), rgba(255, 215, 0, 0.05));
+      }
+      .highlight-gradient-green {
+        background: linear-gradient(135deg, rgba(144, 238, 144, 0), rgba(144, 238, 144, 0.05));
+      }
+      .highlight-gradient-purple {
+        background: linear-gradient(135deg, rgba(221, 160, 221, 0), rgba(221, 160, 221, 0.05));
+      }
+      .highlight-gradient-orange {
+        background: linear-gradient(135deg, rgba(255, 165, 0, 0), rgba(255, 165, 0, 0.05));
+      }
+      .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -20px;
+        top: 5px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: #ff6b6b;
+      }
+      .timeline-line {
+        position: absolute;
+        left: -15px;
+        top: 15px;
+        bottom: -20px;
+        width: 2px;
+        background-color: #e5e7eb;
+      }
+      .timeline-item:last-child .timeline-line {
+        display: none;
+      }
+      .chart-container {
+        position: relative;
+        height: 100%;
+        width: 100%;
+      }
+      .custom-table th {
+        background-color: #f8fafc;
+        border-bottom: 2px solid #e2e8f0;
+      }
+      .custom-table tr:nth-child(even) {
+        background-color: #f8fafc;
+      }
     </style>
-</head>
-<body class="bg-white">
+  </head>
+  <body class="bg-white">
     <div class="max-w-7xl mx-auto p-4 md:p-8">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
-            <!-- 主标题卡片 -->
-            <div class="card md:col-span-4 md:row-span-2 p-8 flex flex-col justify-center items-center text-center relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-pink"></div>
-                <div class="relative z-10">
-                    <h1 class="text-5xl md:text-7xl font-black text-gray-800 mb-4">哈基米文化现象</h1>
-                    <h2 class="text-2xl md:text-4xl font-bold text-pink-500 mb-6">研究报告</h2>
-                    <p class="text-lg md:text-xl text-gray-600 max-w-4xl mx-auto">从二次元符号到全网文化现象：2022-2025年完整发展轨迹分析</p>
-                    <div class="mt-8 flex items-center justify-center space-x-6 text-gray-500">
-                        <div class="flex items-center">
-                            <i class="fa-solid fa-calendar-alt mr-2"></i>
-                            <span>2025年10月</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fa-solid fa-chart-line mr-2"></i>
-                            <span>网络文化研究</span>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fa-solid fa-music mr-2"></i>
-                            <span>音乐趋势分析</span>
-                        </div>
-                    </div>
-                </div>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
+        <!-- 主标题卡片 -->
+        <div
+          class="card md:col-span-4 md:row-span-2 p-8 flex flex-col justify-center items-center text-center relative"
+        >
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-pink"></div>
+          <div class="relative z-10">
+            <h1 class="text-5xl md:text-7xl font-black text-gray-800 mb-4">哈基米文化现象</h1>
+            <h2 class="text-2xl md:text-4xl font-bold text-pink-500 mb-6">研究报告</h2>
+            <p class="text-lg md:text-xl text-gray-600 max-w-4xl mx-auto">
+              从二次元符号到全网文化现象：2022-2025年完整发展轨迹分析
+            </p>
+            <div class="mt-8 flex items-center justify-center space-x-6 text-gray-500">
+              <div class="flex items-center">
+                <i class="fa-solid fa-calendar-alt mr-2"></i>
+                <span>2025年10月</span>
+              </div>
+              <div class="flex items-center">
+                <i class="fa-solid fa-chart-line mr-2"></i>
+                <span>网络文化研究</span>
+              </div>
+              <div class="flex items-center">
+                <i class="fa-solid fa-music mr-2"></i>
+                <span>音乐趋势分析</span>
+              </div>
             </div>
-
-            <!-- 引言卡片 -->
-            <div class="card md:col-span-4 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-blue"></div>
-                <div class="relative z-10">
-                    <h3 class="text-2xl font-bold text-blue-600 mb-4 flex items-center">
-                        <i class="fa-solid fa-book-open mr-3"></i>引言：研究背景与意义
-                    </h3>
-                    <p class="text-gray-700 leading-relaxed mb-4">
-                        "哈基米"已从一个小众亚文化符号发展为席卷全网的文化现象，其影响力延伸至商业、娱乐等多个领域。本研究梳理了2022年至2025年10月的完整发展轨迹，深入分析其传播机制、文化内涵演变，以及相关音乐作品的流行趋势。
-                    </p>
-                    <p class="text-gray-700 leading-relaxed font-medium">
-                        研究发现，哈基米文化经历了从<span class="text-blue-600 font-bold">蜂蜜水原意</span>到<span class="text-blue-600 font-bold">猫咪代名词</span>，再到<span class="text-blue-600 font-bold">纯粹符号游戏</span>的剧烈演变，折射出互联网时代文化传播的复杂性和不可预测性。
-                    </p>
-                </div>
-            </div>
-
-            <!-- 词汇来源卡片 -->
-            <div class="card md:col-span-2 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-yellow"></div>
-                <div class="relative z-10">
-                    <h3 class="text-2xl font-bold text-yellow-600 mb-4 flex items-center">
-                        <i class="fa-solid fa-language mr-3"></i>词汇来源与日语原意
-                    </h3>
-                    <p class="text-gray-700 leading-relaxed mb-4">
-                        "哈基米"一词源于日语"はちみ"（hachimi），是日语"蜂蜜"（はちみつ，hachimitsu）的缩略形式。在《赛马娘》第二季第12集中，角色东海帝王在购买蜂蜜特饮时哼唱了一段旋律。
-                    </p>
-                    <div class="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
-                        <p class="text-gray-700 italic">
-                            "はちみ はちみ はちみ はちみ はちみ / はちみをなめると / あしが あしが あしが あしが あしが / あしがはやくなる"
-                        </p>
-                        <p class="text-gray-600 mt-2 text-sm">
-                            意思：蜂蜜蜂蜜蜂蜜蜂蜜蜂蜜 / 一舔蜂蜜的话 / 脚步脚步脚步脚步脚步 / 脚步就变快了
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 传入中国路径卡片 -->
-            <div class="card md:col-span-2 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-green"></div>
-                <div class="relative z-10">
-                    <h3 class="text-2xl font-bold text-green-600 mb-4 flex items-center">
-                        <i class="fa-solid fa-route mr-3"></i>传入中国的路径与本土化过程
-                    </h3>
-                    <p class="text-gray-700 leading-relaxed mb-4">
-                        "哈基米"传入中国呈现出典型的<span class="font-bold text-green-600">"出口转内销"</span>特征。虽然B站是热梗的发源地，但真正让哈基米爆火的却是抖音、快手等短视频平台。
-                    </p>
-                    <div class="flex items-center space-x-4 mt-6">
-                        <div class="text-center">
-                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-2">
-                                <i class="fa-solid fa-video text-2xl text-green-600"></i>
-                            </div>
-                            <p class="text-sm font-medium">B站UP主改编</p>
-                        </div>
-                        <div class="text-green-400 text-2xl">→</div>
-                        <div class="text-center">
-                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-2">
-                                <i class="fa-solid fa-share-nodes text-2xl text-green-600"></i>
-                            </div>
-                            <p class="text-sm font-medium">短视频平台传播</p>
-                        </div>
-                        <div class="text-green-400 text-2xl">→</div>
-                        <div class="text-center">
-                            <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-2">
-                                <i class="fa-solid fa-cat text-2xl text-green-600"></i>
-                            </div>
-                            <p class="text-sm font-medium">猫咪代名词</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 发展时间线标题卡片 -->
-            <div class="card md:col-span-4 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-purple"></div>
-                <div class="relative z-10">
-                    <h3 class="text-2xl font-bold text-purple-600 mb-4 flex items-center">
-                        <i class="fa-solid fa-timeline mr-3"></i>哈基米文化发展时间线（2022-2025）
-                    </h3>
-                </div>
-            </div>
-
-            <!-- 2022年时间线卡片 -->
-            <div class="card md:col-span-2 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-purple"></div>
-                <div class="relative z-10">
-                    <div class="flex items-start">
-                        <div class="text-4xl font-black text-purple-500 mr-6">2022</div>
-                        <div class="timeline-item relative pl-6">
-                            <div class="timeline-line"></div>
-                            <h4 class="text-xl font-bold text-gray-800 mb-2">起源与初期传播阶段</h4>
-                            <p class="text-gray-700 mb-3">
-                                <span class="font-bold">2022年11月19日</span>被认为是哈基米文化的诞生日。B站UP主京桥刹那发布《哈基米调音-〈两个笨蛋〉》，这是将《赛马娘》中东海帝王哼唱的蜂蜜之歌与《CLANNAD》插曲混音创作的音乐视频。
-                            </p>
-                            <p class="text-gray-700">
-                                该作品被称为"哈基米宇宙基点"，是哈基米音乐流传最广、收听最高的源头作品。
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2023年时间线卡片 -->
-            <div class="card md:col-span-2 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-purple"></div>
-                <div class="relative z-10">
-                    <div class="flex items-start">
-                        <div class="text-4xl font-black text-purple-500 mr-6">2023</div>
-                        <div class="timeline-item relative pl-6">
-                            <div class="timeline-line"></div>
-                            <h4 class="text-xl font-bold text-gray-800 mb-2">破圈与语义迁移阶段</h4>
-                            <p class="text-gray-700 mb-3">
-                                <span class="font-bold">2023年11月</span>，"哈基米"入选三联生活周刊发布的2023年度十大热梗。据统计，光是2023年带有"哈基米"这个TAG的内容就已经高达50亿次的播放。
-                            </p>
-                            <p class="text-gray-700">
-                                在语义层面，"哈基米"从"蜂蜜水"到"猫咪"的彻底语义迁移。抖音平台上#哈基米挑战收获了12亿播放量，其中萌宠视频占比高达73%。
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2024年时间线卡片 -->
-            <div class="card md:col-span-2 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-purple"></div>
-                <div class="relative z-10">
-                    <div class="flex items-start">
-                        <div class="text-4xl font-black text-purple-500 mr-6">2024</div>
-                        <div class="timeline-item relative pl-6">
-                            <div class="timeline-line"></div>
-                            <h4 class="text-xl font-bold text-gray-800 mb-2">分化与亚文化重构阶段</h4>
-                            <p class="text-gray-700 mb-3">
-                                <span class="font-bold">2024年9月</span>，"圆头耄耋"的出现彻底改变了哈基米文化的走向。这只流浪猫闯入UP主家中，展现出极具攻击性的行为，成为了"哈基米"=不受控制的野猫这一观点的鲜活形象。
-                            </p>
-                            <p class="text-gray-700">
-                                在B站平台上，"哈基米"、"爱猫TV"成了抽象恨猫的代名词，围绕恨猫文化形成的二创视频开始成为B站的一大流量板块。
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 2025年时间线卡片 -->
-            <div class="card md:col-span-2 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-purple"></div>
-                <div class="relative z-10">
-                    <div class="flex items-start">
-                        <div class="text-4xl font-black text-purple-500 mr-6">2025</div>
-                        <div class="timeline-item relative pl-6">
-                            <h4 class="text-xl font-bold text-gray-800 mb-2">符号化与商业化阶段</h4>
-                            <p class="text-gray-700 mb-3">
-                                <span class="font-bold">2025年6月20日</span>，肯德基推出"哈基米宝宝蛋挞"，在全国限量200万份。
-                            </p>
-                            <p class="text-gray-700 mb-3">
-                                <span class="font-bold">2025年10月7日</span>，"哈基米币"在web3发行，开盘价格是0.00007，不到20天的时间翻了几百倍，已经涨到了0.056，截至10月22日，市值近6000万美元。
-                            </p>
-                            <p class="text-gray-700">
-                                哈基米音乐迎来创作高潮，和AI鬼畜一起"血洗"B站，大有成为新时代"金坷垃"的趋势。
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 歌曲类型与创作生态卡片 -->
-            <div class="card md:col-span-4 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-orange"></div>
-                <div class="relative z-10">
-                    <h3 class="text-2xl font-bold text-orange-600 mb-6 flex items-center">
-                        <i class="fa-solid fa-music mr-3"></i>哈基米歌曲类型与创作生态
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3">
-                                <i class="fa-solid fa-sliders text-xl text-orange-600"></i>
-                            </div>
-                            <h4 class="text-lg font-bold text-gray-800 mb-2">基础调音类</h4>
-                            <p class="text-gray-600 text-sm">以京桥刹那的《两个笨蛋》为代表，将《赛马娘》原声与其他音乐进行混音。</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3">
-                                <i class="fa-solid fa-record-vinyl text-xl text-orange-600"></i>
-                            </div>
-                            <h4 class="text-lg font-bold text-gray-800 mb-2">流行歌曲改编类</h4>
-                            <p class="text-gray-600 text-sm">包括《哈基米：Billie Jean》《哈基米：Counting Stars》《哈基米：我无怨无悔》等。</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3">
-                                <i class="fa-solid fa-pen-nib text-xl text-orange-600"></i>
-                            </div>
-                            <h4 class="text-lg font-bold text-gray-800 mb-2">原创哈基米音乐</h4>
-                            <p class="text-gray-600 text-sm">如《哈雪大冒险》《基米核》《孤高曼波》《太空曼波》等。</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3">
-                                <i class="fa-solid fa-masks-theater text-xl text-orange-600"></i>
-                            </div>
-                            <h4 class="text-lg font-bold text-gray-800 mb-2">古典音乐融合类</h4>
-                            <p class="text-gray-600 text-sm">《大哈咒》《哈基米咏叹调》《野哈飞舞》《威廉退儿序曲》等。</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3">
-                                <i class="fa-solid fa-wand-magic-sparkles text-xl text-orange-600"></i>
-                            </div>
-                            <h4 class="text-lg font-bold text-gray-800 mb-2">曼波系列</h4>
-                            <p class="text-gray-600 text-sm">《来去曼波》《神曼波》《哈基米自由曼波R&B》《哈基米hard drift phonk曼波倔强版》等。</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3">
-                                <i class="fa-solid fa-robot text-xl text-orange-600"></i>
-                            </div>
-                            <h4 class="text-lg font-bold text-gray-800 mb-2">AI生成类</h4>
-                            <p class="text-gray-600 text-sm">随着Sora2等视频生成模型的发布，哈基米音乐拥有了影像版，进一步拓展了表现形式。</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 播放数据与传播效果卡片 -->
-            <div class="card md:col-span-2 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-blue"></div>
-                <div class="relative z-10">
-                    <h3 class="text-2xl font-bold text-blue-600 mb-6 flex items-center">
-                        <i class="fa-solid fa-chart-bar mr-3"></i>播放数据与传播效果
-                    </h3>
-                    <div class="chart-container">
-                        <canvas id="playDataChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 创作者群体卡片 -->
-            <div class="card md:col-span-2 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-green"></div>
-                <div class="relative z-10">
-                    <h3 class="text-2xl font-bold text-green-600 mb-6 flex items-center">
-                        <i class="fa-solid fa-users mr-3"></i>主要创作者群体
-                    </h3>
-                    <div class="space-y-4">
-                        <div class="flex items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                                <i class="fa-solid fa-crown text-xl text-green-600"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800">京桥刹那</h4>
-                                <p class="text-sm text-gray-600">"哈高祖"，《两个笨蛋》创作者</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                                <i class="fa-solid fa-snowflake text-xl text-green-600"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800">暗杠读秒p</h4>
-                                <p class="text-sm text-gray-600">《哈雪大冒险》《曼波、曼波、有时哈基米》</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                                <i class="fa-solid fa-landmark text-xl text-green-600"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800">法兰西诗歌剧</h4>
-                                <p class="text-sm text-gray-600">《跳楼基》《哈基米：我无怨无悔》等</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                                <i class="fa-solid fa-id-card text-xl text-green-600"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800">还给我神ID</h4>
-                                <p class="text-sm text-gray-600">《不再曼波》《来去曼波》《太空曼波》等</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                                <i class="fa-solid fa-compact-disc text-xl text-green-600"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800">DJGenji</h4>
-                                <p class="text-sm text-gray-600">《哈基Midnight City》《哈基米's feeling》</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                                <i class="fa-solid fa-music text-xl text-green-600"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800">kizznoluv</h4>
-                                <p class="text-sm text-gray-600">《大哈咒》《哈基米咏叹调》《野哈飞舞》</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 歌曲资源汇总卡片 -->
-            <div class="card md:col-span-4 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-pink"></div>
-                <div class="relative z-10">
-                    <h3 class="text-2xl font-bold text-pink-600 mb-6 flex items-center">
-                        <i class="fa-solid fa-database mr-3"></i>主要歌曲资源汇总
-                    </h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full custom-table">
-                            <thead>
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 rounded-tl-lg">作品名称</th>
-                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">创作者</th>
-                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">平台</th>
-                                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 rounded-tr-lg">类型</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-700">哈基米：两个笨蛋</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">京桥刹那</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">B站</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">基础调音类</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-700">哈雪大冒险</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">暗杠读秒p</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">B站</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">原创类</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-700">基米核</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">米基咚叮</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">B站</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">原创类</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-700">哈基米：Billie Jean</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">tukirin-</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">B站</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">流行改编类</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-700">来去曼波</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">还给我神ID</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">B站/网易云</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">曼波系列</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-700">大哈咒</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">kizznoluv</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">B站</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">古典融合类</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-700">曼波~（哈基米活全家音乐）</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">椰汁年糕鱼</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">网易云音乐</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">歌单合集</td>
-                                </tr>
-                                <tr>
-                                    <td class="px-4 py-3 text-sm text-gray-700">哈基米无处不在(音乐合集)</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">Apple Music</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">Apple Music</td>
-                                    <td class="px-4 py-3 text-sm text-gray-700">官方合集</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 网站建设建议卡片 -->
-            <div class="card md:col-span-2 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-yellow"></div>
-                <div class="relative z-10">
-                    <h3 class="text-2xl font-bold text-yellow-600 mb-6 flex items-center">
-                        <i class="fa-solid fa-lightbulb mr-3"></i>网站建设建议
-                    </h3>
-                    <div class="space-y-4">
-                        <div class="flex items-start">
-                            <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 mt-1">
-                                <i class="fa-solid fa-music text-yellow-600"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800 mb-1">音乐资源库</h4>
-                                <p class="text-sm text-gray-600">建立完整的哈基米音乐数据库，包括原创作品、翻唱版本、曼波系列等分类。</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 mt-1">
-                                <i class="fa-solid fa-history text-yellow-600"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800 mb-1">文化发展史展示</h4>
-                                <p class="text-sm text-gray-600">通过时间线、大事记等形式，系统展示哈基米文化从2022年至今的发展历程。</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 mt-1">
-                                <i class="fa-solid fa-users-gear text-yellow-600"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800 mb-1">创作者社区</h4>
-                                <p class="text-sm text-gray-600">建立UP主、音乐人、画师等创作者的交流社区，提供作品发布、粉丝互动等功能。</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start">
-                            <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 mt-1">
-                                <i class="fa-solid fa-briefcase text-yellow-600"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-gray-800 mb-1">商业合作平台</h4>
-                                <p class="text-sm text-gray-600">建立品牌合作、IP授权、商业推广等服务平台。</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 版权风险提示卡片 -->
-            <div class="card md:col-span-2 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-red"></div>
-                <div class="relative z-10">
-                    <h3 class="text-2xl font-bold text-red-600 mb-6 flex items-center">
-                        <i class="fa-solid fa-triangle-exclamation mr-3"></i>版权风险与合规建议
-                    </h3>
-                    <div class="space-y-4">
-                        <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
-                            <h4 class="font-bold text-red-800 mb-2">音乐作品版权</h4>
-                            <p class="text-red-700 text-sm">
-                                哈基米音乐的版权状况复杂，包括原始《赛马娘》音频（版权归Cygames所有）、二次创作音乐（版权归各UP主和创作者所有）、翻唱和改编作品（涉及原曲版权和演绎版权）。
-                            </p>
-                        </div>
-                        <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
-                            <h4 class="font-bold text-red-800 mb-2">商标与品牌风险</h4>
-                            <p class="text-red-700 text-sm">
-                                "哈基米"作为网络热词，目前尚未被正式注册为商标，存在与现有商标冲突、被他人抢先注册、商业使用引发争议等风险。
-                            </p>
-                        </div>
-                        <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
-                            <h4 class="font-bold text-red-800 mb-2">内容审核风险</h4>
-                            <p class="text-red-700 text-sm">
-                                哈基米文化涉及爱猫与恨猫的对立，存在引发争议的风险。建议建立严格的内容审核机制，避免发布攻击性内容。
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 商业化路径卡片 -->
-            <div class="card md:col-span-2 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-blue"></div>
-                <div class="relative z-10">
-                    <h3 class="text-2xl font-bold text-blue-600 mb-6 flex items-center">
-                        <i class="fa-solid fa-sack-dollar mr-3"></i>商业化路径与盈利模式
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-3">
-                                <i class="fa-solid fa-download text-blue-600"></i>
-                            </div>
-                            <h4 class="font-bold text-gray-800 mb-1">内容付费模式</h4>
-                            <p class="text-xs text-gray-600">提供高质量的哈基米音乐下载服务，推出付费会员制度</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-3">
-                                <i class="fa-solid fa-handshake text-blue-600"></i>
-                            </div>
-                            <h4 class="font-bold text-gray-800 mb-1">品牌合作与IP授权</h4>
-                            <p class="text-xs text-gray-600">与餐饮、零售等行业合作，开发哈基米主题的周边产品</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-3">
-                                <i class="fa-solid fa-cubes text-blue-600"></i>
-                            </div>
-                            <h4 class="font-bold text-gray-800 mb-1">虚拟经济与数字资产</h4>
-                            <p class="text-xs text-gray-600">探索虚拟货币和NFT等数字资产，开发主题游戏和虚拟世界</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-3">
-                                <i class="fa-solid fa-bullhorn text-blue-600"></i>
-                            </div>
-                            <h4 class="font-bold text-gray-800 mb-1">广告与流量变现</h4>
-                            <p class="text-xs text-gray-600">通过优质内容吸引流量，实现广告变现，提供精准营销服务</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 发展趋势卡片 -->
-            <div class="card md:col-span-2 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-green"></div>
-                <div class="relative z-10">
-                    <h3 class="text-2xl font-bold text-green-600 mb-6 flex items-center">
-                        <i class="fa-solid fa-arrow-trend-up mr-3"></i>发展趋势与展望
-                    </h3>
-                    <div class="chart-container">
-                        <canvas id="futureTrendChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 结语卡片 -->
-            <div class="card md:col-span-4 p-8 relative">
-                <div class="absolute top-0 left-0 w-full h-full highlight-gradient-purple"></div>
-                <div class="relative z-10">
-                    <h3 class="text-2xl font-bold text-purple-600 mb-6 flex items-center">
-                        <i class="fa-solid fa-flag-checkered mr-3"></i>结语：哈基米文化现象的启示与展望
-                    </h3>
-                    <p class="text-gray-700 leading-relaxed mb-4">
-                        通过对哈基米文化从2022年至2025年10月发展历程的系统梳理，我们可以得出以下重要启示：
-                    </p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <h4 class="font-bold text-gray-800 mb-2">跨文化传播中的语义迁移</h4>
-                            <p class="text-sm text-gray-600">
-                                "哈基米"从日语"蜂蜜水"演变为"猫咪代名词"，再到如今的"纯粹符号"，展示了网络文化传播的复杂性和不可预测性。
-                            </p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <h4 class="font-bold text-gray-800 mb-2">亚文化破圈的机遇与挑战</h4>
-                            <p class="text-sm text-gray-600">
-                                哈基米文化通过抖音等短视频平台实现了爆发式增长，但也因此失去了其在二次元圈层中的原始含义。
-                            </p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <h4 class="font-bold text-gray-800 mb-2">文化现象的商业价值</h4>
-                            <p class="text-sm text-gray-600">
-                                从肯德基的"哈基米宝宝蛋挞"到市值6000万美元的"哈基米币"，哈基米文化展现出了巨大的商业潜力。
-                            </p>
-                        </div>
-                        <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                            <h4 class="font-bold text-gray-800 mb-2">创作者生态的重要性</h4>
-                            <p class="text-sm text-gray-600">
-                                哈基米音乐的繁荣离不开众多UP主和音乐人的创新创作，建立健康的创作者生态是文化现象持续发展的基础。
-                            </p>
-                        </div>
-                    </div>
-                    <p class="text-gray-700 leading-relaxed font-medium">
-                        对于网站建设而言，建议采取<span class="text-purple-600 font-bold">"文化传承与商业创新并重"</span>的策略，既要保护和传承哈基米文化的核心价值，也要积极探索商业变现的新模式。通过建立完善的内容体系、创作者生态和商业模式，打造一个真正有价值的哈基米文化平台。
-                    </p>
-                </div>
-            </div>
+          </div>
         </div>
+
+        <!-- 引言卡片 -->
+        <div class="card md:col-span-4 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-blue"></div>
+          <div class="relative z-10">
+            <h3 class="text-2xl font-bold text-blue-600 mb-4 flex items-center">
+              <i class="fa-solid fa-book-open mr-3"></i>引言：研究背景与意义
+            </h3>
+            <p class="text-gray-700 leading-relaxed mb-4">
+              "哈基米"已从一个小众亚文化符号发展为席卷全网的文化现象，其影响力延伸至商业、娱乐等多个领域。本研究梳理了2022年至2025年10月的完整发展轨迹，深入分析其传播机制、文化内涵演变，以及相关音乐作品的流行趋势。
+            </p>
+            <p class="text-gray-700 leading-relaxed font-medium">
+              研究发现，哈基米文化经历了从<span class="text-blue-600 font-bold">蜂蜜水原意</span
+              >到<span class="text-blue-600 font-bold">猫咪代名词</span>，再到<span
+                class="text-blue-600 font-bold"
+                >纯粹符号游戏</span
+              >的剧烈演变，折射出互联网时代文化传播的复杂性和不可预测性。
+            </p>
+          </div>
+        </div>
+
+        <!-- 词汇来源卡片 -->
+        <div class="card md:col-span-2 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-yellow"></div>
+          <div class="relative z-10">
+            <h3 class="text-2xl font-bold text-yellow-600 mb-4 flex items-center">
+              <i class="fa-solid fa-language mr-3"></i>词汇来源与日语原意
+            </h3>
+            <p class="text-gray-700 leading-relaxed mb-4">
+              "哈基米"一词源于日语"はちみ"（hachimi），是日语"蜂蜜"（はちみつ，hachimitsu）的缩略形式。在《赛马娘》第二季第12集中，角色东海帝王在购买蜂蜜特饮时哼唱了一段旋律。
+            </p>
+            <div class="bg-yellow-50 p-4 rounded-lg border-l-4 border-yellow-400">
+              <p class="text-gray-700 italic">
+                "はちみ はちみ はちみ はちみ はちみ / はちみをなめると / あしが あしが あしが あしが
+                あしが / あしがはやくなる"
+              </p>
+              <p class="text-gray-600 mt-2 text-sm">
+                意思：蜂蜜蜂蜜蜂蜜蜂蜜蜂蜜 / 一舔蜂蜜的话 / 脚步脚步脚步脚步脚步 / 脚步就变快了
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 传入中国路径卡片 -->
+        <div class="card md:col-span-2 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-green"></div>
+          <div class="relative z-10">
+            <h3 class="text-2xl font-bold text-green-600 mb-4 flex items-center">
+              <i class="fa-solid fa-route mr-3"></i>传入中国的路径与本土化过程
+            </h3>
+            <p class="text-gray-700 leading-relaxed mb-4">
+              "哈基米"传入中国呈现出典型的<span class="font-bold text-green-600">"出口转内销"</span
+              >特征。虽然B站是热梗的发源地，但真正让哈基米爆火的却是抖音、快手等短视频平台。
+            </p>
+            <div class="flex items-center space-x-4 mt-6">
+              <div class="text-center">
+                <div
+                  class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-2"
+                >
+                  <i class="fa-solid fa-video text-2xl text-green-600"></i>
+                </div>
+                <p class="text-sm font-medium">B站UP主改编</p>
+              </div>
+              <div class="text-green-400 text-2xl">→</div>
+              <div class="text-center">
+                <div
+                  class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-2"
+                >
+                  <i class="fa-solid fa-share-nodes text-2xl text-green-600"></i>
+                </div>
+                <p class="text-sm font-medium">短视频平台传播</p>
+              </div>
+              <div class="text-green-400 text-2xl">→</div>
+              <div class="text-center">
+                <div
+                  class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-2"
+                >
+                  <i class="fa-solid fa-cat text-2xl text-green-600"></i>
+                </div>
+                <p class="text-sm font-medium">猫咪代名词</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 发展时间线标题卡片 -->
+        <div class="card md:col-span-4 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-purple"></div>
+          <div class="relative z-10">
+            <h3 class="text-2xl font-bold text-purple-600 mb-4 flex items-center">
+              <i class="fa-solid fa-timeline mr-3"></i>哈基米文化发展时间线（2022-2025）
+            </h3>
+          </div>
+        </div>
+
+        <!-- 2022年时间线卡片 -->
+        <div class="card md:col-span-2 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-purple"></div>
+          <div class="relative z-10">
+            <div class="flex items-start">
+              <div class="text-4xl font-black text-purple-500 mr-6">2022</div>
+              <div class="timeline-item relative pl-6">
+                <div class="timeline-line"></div>
+                <h4 class="text-xl font-bold text-gray-800 mb-2">起源与初期传播阶段</h4>
+                <p class="text-gray-700 mb-3">
+                  <span class="font-bold">2022年11月19日</span
+                  >被认为是哈基米文化的诞生日。B站UP主京桥刹那发布《哈基米调音-〈两个笨蛋〉》，这是将《赛马娘》中东海帝王哼唱的蜂蜜之歌与《CLANNAD》插曲混音创作的音乐视频。
+                </p>
+                <p class="text-gray-700">
+                  该作品被称为"哈基米宇宙基点"，是哈基米音乐流传最广、收听最高的源头作品。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2023年时间线卡片 -->
+        <div class="card md:col-span-2 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-purple"></div>
+          <div class="relative z-10">
+            <div class="flex items-start">
+              <div class="text-4xl font-black text-purple-500 mr-6">2023</div>
+              <div class="timeline-item relative pl-6">
+                <div class="timeline-line"></div>
+                <h4 class="text-xl font-bold text-gray-800 mb-2">破圈与语义迁移阶段</h4>
+                <p class="text-gray-700 mb-3">
+                  <span class="font-bold">2023年11月</span
+                  >，"哈基米"入选三联生活周刊发布的2023年度十大热梗。据统计，光是2023年带有"哈基米"这个TAG的内容就已经高达50亿次的播放。
+                </p>
+                <p class="text-gray-700">
+                  在语义层面，"哈基米"从"蜂蜜水"到"猫咪"的彻底语义迁移。抖音平台上#哈基米挑战收获了12亿播放量，其中萌宠视频占比高达73%。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2024年时间线卡片 -->
+        <div class="card md:col-span-2 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-purple"></div>
+          <div class="relative z-10">
+            <div class="flex items-start">
+              <div class="text-4xl font-black text-purple-500 mr-6">2024</div>
+              <div class="timeline-item relative pl-6">
+                <div class="timeline-line"></div>
+                <h4 class="text-xl font-bold text-gray-800 mb-2">分化与亚文化重构阶段</h4>
+                <p class="text-gray-700 mb-3">
+                  <span class="font-bold">2024年9月</span
+                  >，"圆头耄耋"的出现彻底改变了哈基米文化的走向。这只流浪猫闯入UP主家中，展现出极具攻击性的行为，成为了"哈基米"=不受控制的野猫这一观点的鲜活形象。
+                </p>
+                <p class="text-gray-700">
+                  在B站平台上，"哈基米"、"爱猫TV"成了抽象恨猫的代名词，围绕恨猫文化形成的二创视频开始成为B站的一大流量板块。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2025年时间线卡片 -->
+        <div class="card md:col-span-2 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-purple"></div>
+          <div class="relative z-10">
+            <div class="flex items-start">
+              <div class="text-4xl font-black text-purple-500 mr-6">2025</div>
+              <div class="timeline-item relative pl-6">
+                <h4 class="text-xl font-bold text-gray-800 mb-2">符号化与商业化阶段</h4>
+                <p class="text-gray-700 mb-3">
+                  <span class="font-bold">2025年6月20日</span
+                  >，肯德基推出"哈基米宝宝蛋挞"，在全国限量200万份。
+                </p>
+                <p class="text-gray-700 mb-3">
+                  <span class="font-bold">2025年10月7日</span
+                  >，"哈基米币"在web3发行，开盘价格是0.00007，不到20天的时间翻了几百倍，已经涨到了0.056，截至10月22日，市值近6000万美元。
+                </p>
+                <p class="text-gray-700">
+                  哈基米音乐迎来创作高潮，和AI鬼畜一起"血洗"B站，大有成为新时代"金坷垃"的趋势。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 歌曲类型与创作生态卡片 -->
+        <div class="card md:col-span-4 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-orange"></div>
+          <div class="relative z-10">
+            <h3 class="text-2xl font-bold text-orange-600 mb-6 flex items-center">
+              <i class="fa-solid fa-music mr-3"></i>哈基米歌曲类型与创作生态
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <div
+                  class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3"
+                >
+                  <i class="fa-solid fa-sliders text-xl text-orange-600"></i>
+                </div>
+                <h4 class="text-lg font-bold text-gray-800 mb-2">基础调音类</h4>
+                <p class="text-gray-600 text-sm">
+                  以京桥刹那的《两个笨蛋》为代表，将《赛马娘》原声与其他音乐进行混音。
+                </p>
+              </div>
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <div
+                  class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3"
+                >
+                  <i class="fa-solid fa-record-vinyl text-xl text-orange-600"></i>
+                </div>
+                <h4 class="text-lg font-bold text-gray-800 mb-2">流行歌曲改编类</h4>
+                <p class="text-gray-600 text-sm">
+                  包括《哈基米：Billie Jean》《哈基米：Counting Stars》《哈基米：我无怨无悔》等。
+                </p>
+              </div>
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <div
+                  class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3"
+                >
+                  <i class="fa-solid fa-pen-nib text-xl text-orange-600"></i>
+                </div>
+                <h4 class="text-lg font-bold text-gray-800 mb-2">原创哈基米音乐</h4>
+                <p class="text-gray-600 text-sm">
+                  如《哈雪大冒险》《基米核》《孤高曼波》《太空曼波》等。
+                </p>
+              </div>
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <div
+                  class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3"
+                >
+                  <i class="fa-solid fa-masks-theater text-xl text-orange-600"></i>
+                </div>
+                <h4 class="text-lg font-bold text-gray-800 mb-2">古典音乐融合类</h4>
+                <p class="text-gray-600 text-sm">
+                  《大哈咒》《哈基米咏叹调》《野哈飞舞》《威廉退儿序曲》等。
+                </p>
+              </div>
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <div
+                  class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3"
+                >
+                  <i class="fa-solid fa-wand-magic-sparkles text-xl text-orange-600"></i>
+                </div>
+                <h4 class="text-lg font-bold text-gray-800 mb-2">曼波系列</h4>
+                <p class="text-gray-600 text-sm">
+                  《来去曼波》《神曼波》《哈基米自由曼波R&B》《哈基米hard drift
+                  phonk曼波倔强版》等。
+                </p>
+              </div>
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <div
+                  class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-3"
+                >
+                  <i class="fa-solid fa-robot text-xl text-orange-600"></i>
+                </div>
+                <h4 class="text-lg font-bold text-gray-800 mb-2">AI生成类</h4>
+                <p class="text-gray-600 text-sm">
+                  随着Sora2等视频生成模型的发布，哈基米音乐拥有了影像版，进一步拓展了表现形式。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 播放数据与传播效果卡片 -->
+        <div class="card md:col-span-2 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-blue"></div>
+          <div class="relative z-10">
+            <h3 class="text-2xl font-bold text-blue-600 mb-6 flex items-center">
+              <i class="fa-solid fa-chart-bar mr-3"></i>播放数据与传播效果
+            </h3>
+            <div class="chart-container">
+              <canvas id="playDataChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- 创作者群体卡片 -->
+        <div class="card md:col-span-2 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-green"></div>
+          <div class="relative z-10">
+            <h3 class="text-2xl font-bold text-green-600 mb-6 flex items-center">
+              <i class="fa-solid fa-users mr-3"></i>主要创作者群体
+            </h3>
+            <div class="space-y-4">
+              <div
+                class="flex items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm"
+              >
+                <div
+                  class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4"
+                >
+                  <i class="fa-solid fa-crown text-xl text-green-600"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-gray-800">京桥刹那</h4>
+                  <p class="text-sm text-gray-600">"哈高祖"，《两个笨蛋》创作者</p>
+                </div>
+              </div>
+              <div
+                class="flex items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm"
+              >
+                <div
+                  class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4"
+                >
+                  <i class="fa-solid fa-snowflake text-xl text-green-600"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-gray-800">暗杠读秒p</h4>
+                  <p class="text-sm text-gray-600">《哈雪大冒险》《曼波、曼波、有时哈基米》</p>
+                </div>
+              </div>
+              <div
+                class="flex items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm"
+              >
+                <div
+                  class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4"
+                >
+                  <i class="fa-solid fa-landmark text-xl text-green-600"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-gray-800">法兰西诗歌剧</h4>
+                  <p class="text-sm text-gray-600">《跳楼基》《哈基米：我无怨无悔》等</p>
+                </div>
+              </div>
+              <div
+                class="flex items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm"
+              >
+                <div
+                  class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4"
+                >
+                  <i class="fa-solid fa-id-card text-xl text-green-600"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-gray-800">还给我神ID</h4>
+                  <p class="text-sm text-gray-600">《不再曼波》《来去曼波》《太空曼波》等</p>
+                </div>
+              </div>
+              <div
+                class="flex items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm"
+              >
+                <div
+                  class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4"
+                >
+                  <i class="fa-solid fa-compact-disc text-xl text-green-600"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-gray-800">DJGenji</h4>
+                  <p class="text-sm text-gray-600">《哈基Midnight City》《哈基米's feeling》</p>
+                </div>
+              </div>
+              <div
+                class="flex items-center p-3 bg-white rounded-lg border border-gray-200 shadow-sm"
+              >
+                <div
+                  class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4"
+                >
+                  <i class="fa-solid fa-music text-xl text-green-600"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-gray-800">kizznoluv</h4>
+                  <p class="text-sm text-gray-600">《大哈咒》《哈基米咏叹调》《野哈飞舞》</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 歌曲资源汇总卡片 -->
+        <div class="card md:col-span-4 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-pink"></div>
+          <div class="relative z-10">
+            <h3 class="text-2xl font-bold text-pink-600 mb-6 flex items-center">
+              <i class="fa-solid fa-database mr-3"></i>主要歌曲资源汇总
+            </h3>
+            <div class="overflow-x-auto">
+              <table class="w-full custom-table">
+                <thead>
+                  <tr>
+                    <th
+                      class="px-4 py-3 text-left text-sm font-semibold text-gray-700 rounded-tl-lg"
+                    >
+                      作品名称
+                    </th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">创作者</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">平台</th>
+                    <th
+                      class="px-4 py-3 text-left text-sm font-semibold text-gray-700 rounded-tr-lg"
+                    >
+                      类型
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="px-4 py-3 text-sm text-gray-700">哈基米：两个笨蛋</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">京桥刹那</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">B站</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">基础调音类</td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 text-sm text-gray-700">哈雪大冒险</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">暗杠读秒p</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">B站</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">原创类</td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 text-sm text-gray-700">基米核</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">米基咚叮</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">B站</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">原创类</td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 text-sm text-gray-700">哈基米：Billie Jean</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">tukirin-</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">B站</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">流行改编类</td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 text-sm text-gray-700">来去曼波</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">还给我神ID</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">B站/网易云</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">曼波系列</td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 text-sm text-gray-700">大哈咒</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">kizznoluv</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">B站</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">古典融合类</td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 text-sm text-gray-700">曼波~（哈基米活全家音乐）</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">椰汁年糕鱼</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">网易云音乐</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">歌单合集</td>
+                  </tr>
+                  <tr>
+                    <td class="px-4 py-3 text-sm text-gray-700">哈基米无处不在(音乐合集)</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">Apple Music</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">Apple Music</td>
+                    <td class="px-4 py-3 text-sm text-gray-700">官方合集</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 网站建设建议卡片 -->
+        <div class="card md:col-span-2 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-yellow"></div>
+          <div class="relative z-10">
+            <h3 class="text-2xl font-bold text-yellow-600 mb-6 flex items-center">
+              <i class="fa-solid fa-lightbulb mr-3"></i>网站建设建议
+            </h3>
+            <div class="space-y-4">
+              <div class="flex items-start">
+                <div
+                  class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 mt-1"
+                >
+                  <i class="fa-solid fa-music text-yellow-600"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-gray-800 mb-1">音乐资源库</h4>
+                  <p class="text-sm text-gray-600">
+                    建立完整的哈基米音乐数据库，包括原创作品、翻唱版本、曼波系列等分类。
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-start">
+                <div
+                  class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 mt-1"
+                >
+                  <i class="fa-solid fa-history text-yellow-600"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-gray-800 mb-1">文化发展史展示</h4>
+                  <p class="text-sm text-gray-600">
+                    通过时间线、大事记等形式，系统展示哈基米文化从2022年至今的发展历程。
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-start">
+                <div
+                  class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 mt-1"
+                >
+                  <i class="fa-solid fa-users-gear text-yellow-600"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-gray-800 mb-1">创作者社区</h4>
+                  <p class="text-sm text-gray-600">
+                    建立UP主、音乐人、画师等创作者的交流社区，提供作品发布、粉丝互动等功能。
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-start">
+                <div
+                  class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3 mt-1"
+                >
+                  <i class="fa-solid fa-briefcase text-yellow-600"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-gray-800 mb-1">商业合作平台</h4>
+                  <p class="text-sm text-gray-600">建立品牌合作、IP授权、商业推广等服务平台。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 版权风险提示卡片 -->
+        <div class="card md:col-span-2 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-red"></div>
+          <div class="relative z-10">
+            <h3 class="text-2xl font-bold text-red-600 mb-6 flex items-center">
+              <i class="fa-solid fa-triangle-exclamation mr-3"></i>版权风险与合规建议
+            </h3>
+            <div class="space-y-4">
+              <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
+                <h4 class="font-bold text-red-800 mb-2">音乐作品版权</h4>
+                <p class="text-red-700 text-sm">
+                  哈基米音乐的版权状况复杂，包括原始《赛马娘》音频（版权归Cygames所有）、二次创作音乐（版权归各UP主和创作者所有）、翻唱和改编作品（涉及原曲版权和演绎版权）。
+                </p>
+              </div>
+              <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
+                <h4 class="font-bold text-red-800 mb-2">商标与品牌风险</h4>
+                <p class="text-red-700 text-sm">
+                  "哈基米"作为网络热词，目前尚未被正式注册为商标，存在与现有商标冲突、被他人抢先注册、商业使用引发争议等风险。
+                </p>
+              </div>
+              <div class="bg-red-50 p-4 rounded-lg border-l-4 border-red-400">
+                <h4 class="font-bold text-red-800 mb-2">内容审核风险</h4>
+                <p class="text-red-700 text-sm">
+                  哈基米文化涉及爱猫与恨猫的对立，存在引发争议的风险。建议建立严格的内容审核机制，避免发布攻击性内容。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 商业化路径卡片 -->
+        <div class="card md:col-span-2 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-blue"></div>
+          <div class="relative z-10">
+            <h3 class="text-2xl font-bold text-blue-600 mb-6 flex items-center">
+              <i class="fa-solid fa-sack-dollar mr-3"></i>商业化路径与盈利模式
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <div
+                  class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-3"
+                >
+                  <i class="fa-solid fa-download text-blue-600"></i>
+                </div>
+                <h4 class="font-bold text-gray-800 mb-1">内容付费模式</h4>
+                <p class="text-xs text-gray-600">
+                  提供高质量的哈基米音乐下载服务，推出付费会员制度
+                </p>
+              </div>
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <div
+                  class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-3"
+                >
+                  <i class="fa-solid fa-handshake text-blue-600"></i>
+                </div>
+                <h4 class="font-bold text-gray-800 mb-1">品牌合作与IP授权</h4>
+                <p class="text-xs text-gray-600">
+                  与餐饮、零售等行业合作，开发哈基米主题的周边产品
+                </p>
+              </div>
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <div
+                  class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-3"
+                >
+                  <i class="fa-solid fa-cubes text-blue-600"></i>
+                </div>
+                <h4 class="font-bold text-gray-800 mb-1">虚拟经济与数字资产</h4>
+                <p class="text-xs text-gray-600">
+                  探索虚拟货币和NFT等数字资产，开发主题游戏和虚拟世界
+                </p>
+              </div>
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <div
+                  class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mb-3"
+                >
+                  <i class="fa-solid fa-bullhorn text-blue-600"></i>
+                </div>
+                <h4 class="font-bold text-gray-800 mb-1">广告与流量变现</h4>
+                <p class="text-xs text-gray-600">
+                  通过优质内容吸引流量，实现广告变现，提供精准营销服务
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 发展趋势卡片 -->
+        <div class="card md:col-span-2 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-green"></div>
+          <div class="relative z-10">
+            <h3 class="text-2xl font-bold text-green-600 mb-6 flex items-center">
+              <i class="fa-solid fa-arrow-trend-up mr-3"></i>发展趋势与展望
+            </h3>
+            <div class="chart-container">
+              <canvas id="futureTrendChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- 结语卡片 -->
+        <div class="card md:col-span-4 p-8 relative">
+          <div class="absolute top-0 left-0 w-full h-full highlight-gradient-purple"></div>
+          <div class="relative z-10">
+            <h3 class="text-2xl font-bold text-purple-600 mb-6 flex items-center">
+              <i class="fa-solid fa-flag-checkered mr-3"></i>结语：哈基米文化现象的启示与展望
+            </h3>
+            <p class="text-gray-700 leading-relaxed mb-4">
+              通过对哈基米文化从2022年至2025年10月发展历程的系统梳理，我们可以得出以下重要启示：
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <h4 class="font-bold text-gray-800 mb-2">跨文化传播中的语义迁移</h4>
+                <p class="text-sm text-gray-600">
+                  "哈基米"从日语"蜂蜜水"演变为"猫咪代名词"，再到如今的"纯粹符号"，展示了网络文化传播的复杂性和不可预测性。
+                </p>
+              </div>
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <h4 class="font-bold text-gray-800 mb-2">亚文化破圈的机遇与挑战</h4>
+                <p class="text-sm text-gray-600">
+                  哈基米文化通过抖音等短视频平台实现了爆发式增长，但也因此失去了其在二次元圈层中的原始含义。
+                </p>
+              </div>
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <h4 class="font-bold text-gray-800 mb-2">文化现象的商业价值</h4>
+                <p class="text-sm text-gray-600">
+                  从肯德基的"哈基米宝宝蛋挞"到市值6000万美元的"哈基米币"，哈基米文化展现出了巨大的商业潜力。
+                </p>
+              </div>
+              <div class="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+                <h4 class="font-bold text-gray-800 mb-2">创作者生态的重要性</h4>
+                <p class="text-sm text-gray-600">
+                  哈基米音乐的繁荣离不开众多UP主和音乐人的创新创作，建立健康的创作者生态是文化现象持续发展的基础。
+                </p>
+              </div>
+            </div>
+            <p class="text-gray-700 leading-relaxed font-medium">
+              对于网站建设而言，建议采取<span class="text-purple-600 font-bold"
+                >"文化传承与商业创新并重"</span
+              >的策略，既要保护和传承哈基米文化的核心价值，也要积极探索商业变现的新模式。通过建立完善的内容体系、创作者生态和商业模式，打造一个真正有价值的哈基米文化平台。
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
-</body>
-<script>
+  </body>
+  <script>
     // 播放数据图表
-    const playDataCtx = document.getElementById('playDataChart').getContext('2d');
+    const playDataCtx = document.getElementById('playDataChart').getContext('2d')
     const playDataChart = new Chart(playDataCtx, {
-        type: 'bar',
-        data: {
-            labels: ['B站-哈基米调音', '抖音-哈基米挑战', '2023年总播放', '2025年Apple Music', 'YouTube-九大名曲'],
-            datasets: [{
-                label: '播放量（亿次）',
-                data: [0.9, 12, 50, 0.1, 0.5],
-                backgroundColor: [
-                    'rgba(54, 162, 235, 0.7)',
-                    'rgba(75, 192, 192, 0.7)',
-                    'rgba(153, 102, 255, 0.7)',
-                    'rgba(255, 159, 64, 0.7)',
-                    'rgba(255, 99, 132, 0.7)'
-                ],
-                borderColor: [
-                    'rgba(54, 162, 235, 1)',
-                    'rgba(75, 192, 192, 1)',
-                    'rgba(153, 102, 255, 1)',
-                    'rgba(255, 159, 64, 1)',
-                    'rgba(255, 99, 132, 1)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: '播放量（亿次）'
-                    }
-                }
+      type: 'bar',
+      data: {
+        labels: [
+          'B站-哈基米调音',
+          '抖音-哈基米挑战',
+          '2023年总播放',
+          '2025年Apple Music',
+          'YouTube-九大名曲',
+        ],
+        datasets: [
+          {
+            label: '播放量（亿次）',
+            data: [0.9, 12, 50, 0.1, 0.5],
+            backgroundColor: [
+              'rgba(54, 162, 235, 0.7)',
+              'rgba(75, 192, 192, 0.7)',
+              'rgba(153, 102, 255, 0.7)',
+              'rgba(255, 159, 64, 0.7)',
+              'rgba(255, 99, 132, 0.7)',
+            ],
+            borderColor: [
+              'rgba(54, 162, 235, 1)',
+              'rgba(75, 192, 192, 1)',
+              'rgba(153, 102, 255, 1)',
+              'rgba(255, 159, 64, 1)',
+              'rgba(255, 99, 132, 1)',
+            ],
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: '播放量（亿次）',
             },
-            plugins: {
-                legend: {
-                    display: false
-                },
-                title: {
-                    display: true,
-                    text: '哈基米音乐跨平台播放数据',
-                    font: {
-                        size: 16,
-                        weight: 'bold'
-                    }
-                }
-            }
-        }
-    });
+          },
+        },
+        plugins: {
+          legend: {
+            display: false,
+          },
+          title: {
+            display: true,
+            text: '哈基米音乐跨平台播放数据',
+            font: {
+              size: 16,
+              weight: 'bold',
+            },
+          },
+        },
+      },
+    })
 
     // 发展趋势图表
-    const futureTrendCtx = document.getElementById('futureTrendChart').getContext('2d');
+    const futureTrendCtx = document.getElementById('futureTrendChart').getContext('2d')
     const futureTrendChart = new Chart(futureTrendCtx, {
-        type: 'line',
-        data: {
-            labels: ['2022年', '2023年', '2024年', '2025年', '2026年（预测）'],
-            datasets: [
-                {
-                    label: '文化影响力',
-                    data: [10, 45, 70, 85, 90],
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    fill: true,
-                    tension: 0.4
-                },
-                {
-                    label: '商业价值',
-                    data: [5, 25, 60, 90, 95],
-                    borderColor: 'rgba(255, 159, 64, 1)',
-                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
-                    fill: true,
-                    tension: 0.4
-                },
-                {
-                    label: '创作活跃度',
-                    data: [8, 35, 65, 95, 85],
-                    borderColor: 'rgba(153, 102, 255, 1)',
-                    backgroundColor: 'rgba(153, 102, 255, 0.2)',
-                    fill: true,
-                    tension: 0.4
-                }
-            ]
-        },
-        options: {
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: '指数（0-100）'
-                    }
-                }
+      type: 'line',
+      data: {
+        labels: ['2022年', '2023年', '2024年', '2025年', '2026年（预测）'],
+        datasets: [
+          {
+            label: '文化影响力',
+            data: [10, 45, 70, 85, 90],
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            fill: true,
+            tension: 0.4,
+          },
+          {
+            label: '商业价值',
+            data: [5, 25, 60, 90, 95],
+            borderColor: 'rgba(255, 159, 64, 1)',
+            backgroundColor: 'rgba(255, 159, 64, 0.2)',
+            fill: true,
+            tension: 0.4,
+          },
+          {
+            label: '创作活跃度',
+            data: [8, 35, 65, 95, 85],
+            borderColor: 'rgba(153, 102, 255, 1)',
+            backgroundColor: 'rgba(153, 102, 255, 0.2)',
+            fill: true,
+            tension: 0.4,
+          },
+        ],
+      },
+      options: {
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 100,
+            title: {
+              display: true,
+              text: '指数（0-100）',
             },
-            plugins: {
-                title: {
-                    display: true,
-                    text: '哈基米文化发展趋势预测',
-                    font: {
-                        size: 16,
-                        weight: 'bold'
-                    }
-                }
-            }
-        }
-    });
-</script>
+          },
+        },
+        plugins: {
+          title: {
+            display: true,
+            text: '哈基米文化发展趋势预测',
+            font: {
+              size: 16,
+              weight: 'bold',
+            },
+          },
+        },
+      },
+    })
+  </script>
 </html>
