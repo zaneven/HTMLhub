@@ -23,22 +23,26 @@ import {
   DocumentOutline,
   CloudUploadOutline,
   OpenOutline,
+  CreateOutline,
 } from '@vicons/ionicons5'
 import { useRouter } from 'vue-router'
 import { useFilesStore } from '@/stores/files'
-import { useAuthStore } from '@/stores/auth'
 import { useAppMode } from '@/composables/useAppMode'
 import FileUpload from '@/components/admin/FileUpload.vue'
+import ProjectEditor from '@/components/admin/ProjectEditor.vue'
 import type { ProjectInfo } from '@/types'
 
 const router = useRouter()
 const filesStore = useFilesStore()
-const authStore = useAuthStore()
 const { isCloudMode } = useAppMode()
 const message = useMessage()
 
 // 上传弹窗状态
 const showUploadModal = ref(false)
+
+// 编辑弹窗状态
+const showEditModal = ref(false)
+const editingProject = ref<ProjectInfo | null>(null)
 
 // 只显示云端项目
 const cloudProjects = computed(() => {
@@ -100,7 +104,7 @@ const columns: DataTableColumns<ProjectInfo> = [
   {
     title: '操作',
     key: 'actions',
-    width: 140,
+    width: 200,
     fixed: 'right',
     render(row) {
       return h(
@@ -120,6 +124,20 @@ const columns: DataTableColumns<ProjectInfo> = [
               {
                 icon: () => h(NIcon, null, { default: () => h(OpenOutline) }),
                 default: () => '打开',
+              },
+            ),
+            // 编辑按钮
+            h(
+              NButton,
+              {
+                size: 'small',
+                quaternary: true,
+                type: 'info',
+                onClick: () => handleEdit(row),
+              },
+              {
+                icon: () => h(NIcon, null, { default: () => h(CreateOutline) }),
+                default: () => '编辑',
               },
             ),
             // 删除按钮
@@ -156,6 +174,23 @@ const columns: DataTableColumns<ProjectInfo> = [
 function handleOpen(project: ProjectInfo) {
   const url = filesStore.getFileUrl(project)
   window.open(url, '_blank')
+}
+
+// 编辑项目
+function handleEdit(project: ProjectInfo) {
+  editingProject.value = project
+  showEditModal.value = true
+}
+
+// 编辑完成
+function handleEditClose() {
+  showEditModal.value = false
+  editingProject.value = null
+}
+
+// 编辑保存成功
+function handleEditSaved() {
+  message.success('文件已保存')
 }
 
 // 刷新索引
@@ -267,5 +302,22 @@ function handleUploadSuccess() {
     :mask-closable="false"
   >
     <FileUpload @success="handleUploadSuccess" />
+  </n-modal>
+
+  <!-- 编辑弹窗 -->
+  <n-modal
+    v-model:show="showEditModal"
+    preset="card"
+    title="编辑项目"
+    style="width: 90vw; max-width: 1200px"
+    :mask-closable="false"
+    @after-leave="editingProject = null"
+  >
+    <ProjectEditor
+      v-if="editingProject"
+      :project="editingProject"
+      @close="handleEditClose"
+      @saved="handleEditSaved"
+    />
   </n-modal>
 </template>

@@ -1,7 +1,18 @@
 import type { Env } from './types'
 import { handleCORS, addCORSHeaders, notFound } from './utils/response'
 import { authenticate, logout } from './utils/auth'
-import { listFiles, uploadFile, uploadMultipleFiles, deleteFile, refreshIndex, getFileContent, serveR2File } from './routes/files'
+import {
+  listFiles,
+  uploadFile,
+  uploadMultipleFiles,
+  deleteFile,
+  refreshIndex,
+  getFileContent,
+  serveR2File,
+  listProjectFiles,
+  deleteProjectFile,
+  addProjectFile,
+} from './routes/files'
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -60,11 +71,30 @@ export default {
           response = await serveR2File(path.slice(4), env) // 移除 '/r2/' 前缀
           break
 
+        // 项目管理 API
+        // 获取项目的文件列表
+        case request.method === 'GET' && path === '/api/project/files':
+          response = await listProjectFiles(request, env)
+          break
+
+        // 删除项目内的单个文件
+        case request.method === 'DELETE' && path === '/api/project/file':
+          response = await deleteProjectFile(request, env)
+          break
+
+        // 向项目添加文件
+        case request.method === 'POST' && path === '/api/project/file':
+          response = await addProjectFile(request, env)
+          break
+
         // 健康检查
         case request.method === 'GET' && path === '/api/health':
-          response = new Response(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }), {
-            headers: { 'Content-Type': 'application/json' }
-          })
+          response = new Response(
+            JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }),
+            {
+              headers: { 'Content-Type': 'application/json' },
+            },
+          )
           break
 
         default:
@@ -74,10 +104,10 @@ export default {
       console.error('Unhandled error:', error)
       response = new Response(JSON.stringify({ success: false, error: '服务器内部错误' }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       })
     }
 
     return addCORSHeaders(response, origin)
-  }
+  },
 }

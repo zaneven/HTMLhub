@@ -410,6 +410,129 @@ export const useFilesStore = defineStore('files', () => {
     return `/${path}`
   }
 
+  /**
+   * 项目文件信息接口
+   */
+  interface ProjectFileInfo {
+    name: string
+    key: string
+    size: number
+    type: string
+    modifiedAt: string
+  }
+
+  /**
+   * 获取项目的文件列表 (仅云端模式)
+   */
+  async function listProjectFiles(projectPath: string): Promise<ProjectFileInfo[]> {
+    if (!isCloudMode.value) {
+      error.value = '当前为静态模式，无法获取项目文件'
+      return []
+    }
+
+    try {
+      const response = await fetch(
+        `${apiBaseUrl.value}/api/project/files?path=${encodeURIComponent(projectPath)}`,
+      )
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        return data.files || []
+      } else {
+        error.value = data.error || '获取项目文件列表失败'
+        return []
+      }
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '获取项目文件列表失败'
+      return []
+    }
+  }
+
+  /**
+   * 删除项目内的单个文件 (仅云端模式)
+   */
+  async function deleteProjectFile(fileKey: string): Promise<boolean> {
+    if (!isCloudMode.value) {
+      error.value = '当前为静态模式，无法删除文件'
+      return false
+    }
+
+    const authStore = useAuthStore()
+    if (!authStore.isAuthenticated) {
+      error.value = '请先登录'
+      return false
+    }
+
+    try {
+      const response = await fetch(
+        `${apiBaseUrl.value}/api/project/file?key=${encodeURIComponent(fileKey)}`,
+        {
+          method: 'DELETE',
+          headers: authStore.getAuthHeaders(),
+        },
+      )
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        return true
+      } else if (response.status === 401) {
+        await handleUnauthorized()
+        return false
+      } else {
+        error.value = data.error || '删除文件失败'
+        return false
+      }
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '删除文件失败'
+      return false
+    }
+  }
+
+  /**
+   * 向项目添加文件 (仅云端模式)
+   */
+  async function addProjectFile(file: File, projectPath: string): Promise<boolean> {
+    if (!isCloudMode.value) {
+      error.value = '当前为静态模式，无法添加文件'
+      return false
+    }
+
+    const authStore = useAuthStore()
+    if (!authStore.isAuthenticated) {
+      error.value = '请先登录'
+      return false
+    }
+
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('projectPath', projectPath)
+
+      const response = await fetch(`${apiBaseUrl.value}/api/project/file`, {
+        method: 'POST',
+        headers: authStore.getAuthHeaders(),
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        return true
+      } else if (response.status === 401) {
+        await handleUnauthorized()
+        return false
+      } else {
+        error.value = data.error || '添加文件失败'
+        return false
+      }
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '添加文件失败'
+      return false
+    }
+  }
+
   return {
     // 状态
     indexData,
@@ -437,5 +560,8 @@ export const useFilesStore = defineStore('files', () => {
     deleteProject,
     refreshIndex,
     getFileUrl,
+    listProjectFiles,
+    deleteProjectFile,
+    addProjectFile,
   }
 })
