@@ -7,8 +7,8 @@ export const useSettingsStore = defineStore('settings', () => {
   // 默认主题配置
   const defaultTheme: ThemeConfig = {
     mode: 'auto',
-    primaryColor: '#18a058',
-    borderRadius: 6,
+    primaryColor: '#4f46e5', // Indigo 600
+    borderRadius: 12,
     fontSize: 14,
   }
 

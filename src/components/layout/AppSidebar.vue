@@ -1,79 +1,83 @@
 <template>
-  <!-- 移动端抽屉模式 -->
+  <!-- 移动端抽屉 -->
   <n-drawer
     v-if="isMobile"
     v-model:show="drawerVisible"
     :width="280"
     placement="left"
-    class="mobile-sidebar"
+    class="refined-drawer"
   >
-    <n-drawer-content title="HTMLManager" closable>
-      <div class="sidebar-content mobile">
-        <!-- 移动端侧边栏内容 -->
-        <div class="quick-stats">
-          <n-card size="small" embedded>
-            <n-statistic label="分类数" :value="totalCategories" />
-            <n-divider style="margin: 8px 0" />
-            <n-statistic label="项目数" :value="totalProjects" />
-          </n-card>
-        </div>
-
-        <div class="category-section">
-          <div class="section-title">
-            <n-icon size="16">
-              <FolderOutline />
-            </n-icon>
-            <span>分类</span>
+    <n-drawer-content closable>
+      <div class="sidebar-inner">
+        <div class="sidebar-nav">
+          <div class="nav-group">
+            <div class="group-label">主要导航</div>
+            <n-menu
+              :options="categoryMenuOptions"
+              :value="selectedCategory"
+              @update:value="handleCategorySelect"
+              class="refined-menu"
+            />
           </div>
-
-          <n-menu
-            :options="categoryMenuOptions"
-            :value="selectedCategory"
-            @update:value="handleCategorySelect"
-          />
         </div>
       </div>
     </n-drawer-content>
   </n-drawer>
 
   <!-- 桌面端侧边栏 -->
-  <n-layout-sider v-else bordered :width="sidebarWidth" class="app-sidebar">
-    <div class="sidebar-content">
-      <!-- 侧边栏头部 -->
-      <div class="sidebar-header">
-        <n-space align="center" justify="space-between">
-          <div class="logo">
-            <n-icon size="24" color="#18a058">
-              <FolderOpenOutline />
-            </n-icon>
-            <span class="logo-text">HTMLManager</span>
+  <n-layout-sider
+    v-else
+    bordered
+    :width="sidebarWidth"
+    class="refined-sidebar"
+  >
+    <div class="sidebar-inner">
+      <div class="sidebar-brand">
+        <div class="brand">
+          <div class="brand-logo">
+            <n-icon size="22"><CodeSlashOutline /></n-icon>
           </div>
-        </n-space>
-      </div>
-
-      <!-- 快速统计 -->
-      <div class="quick-stats">
-        <n-card size="small" embedded>
-          <n-statistic label="分类数" :value="totalCategories" />
-          <n-divider style="margin: 8px 0" />
-          <n-statistic label="项目数" :value="totalProjects" />
-        </n-card>
-      </div>
-
-      <!-- 分类导航 -->
-      <div class="category-section">
-        <div class="section-title">
-          <n-icon size="16">
-            <FolderOutline />
-          </n-icon>
-          <span>分类</span>
+          <div class="brand-text">
+            <span class="brand-main">HTML</span>
+            <span class="brand-sub">HUB</span>
+          </div>
         </div>
+      </div>
 
-        <n-menu
-          :options="categoryMenuOptions"
-          :value="selectedCategory"
-          @update:value="handleCategorySelect"
-        />
+      <div class="sidebar-top">
+        <div class="stats-panel">
+          <div class="stat-item">
+            <span class="stat-num">{{ totalProjects }}</span>
+            <span class="stat-tag">总项目</span>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <span class="stat-num">{{ totalCategories }}</span>
+            <span class="stat-tag">目录数</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-nav">
+        <div class="nav-group">
+          <div class="group-label">项目目录</div>
+          <n-menu
+            :options="categoryMenuOptions"
+            :value="selectedCategory"
+            @update:value="handleCategorySelect"
+            class="refined-menu"
+          />
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="pro-badge">
+          <div class="badge-icon">✨</div>
+          <div class="badge-text">
+            <span class="badge-title">专业版已激活</span>
+            <span class="badge-desc">云端同步已开启</span>
+          </div>
+        </div>
       </div>
     </div>
   </n-layout-sider>
@@ -85,66 +89,43 @@ import {
   NLayoutSider,
   NDrawer,
   NDrawerContent,
-  NSpace,
   NIcon,
-  NCard,
-  NStatistic,
-  NDivider,
   NMenu,
   type MenuOption,
 } from 'naive-ui'
-import { FolderOpenOutline, FolderOutline, AppsOutline } from '@vicons/ionicons5'
+import { 
+  FolderOutline, 
+  AppsOutline,
+  CodeSlashOutline,
+} from '@vicons/ionicons5'
 import { useFilesStore } from '../../stores/files'
 
-// 响应式状态
 const drawerVisible = ref(false)
 const windowWidth = ref(window.innerWidth)
 
-// 响应式断点
 const isMobile = computed(() => windowWidth.value < 768)
 const isTablet = computed(() => windowWidth.value >= 768 && windowWidth.value < 1024)
-const sidebarWidth = computed(() => {
-  if (isTablet.value) return 240
-  return 280
-})
+const sidebarWidth = computed(() => isTablet.value ? 240 : 280)
 
-// 窗口大小监听
-function handleResize() {
-  windowWidth.value = window.innerWidth
-}
+function handleResize() { windowWidth.value = window.innerWidth }
 
-// 暴露给父组件的方法
 defineExpose({
-  toggleDrawer: () => {
-    drawerVisible.value = !drawerVisible.value
-  },
-  openDrawer: () => {
-    drawerVisible.value = true
-  },
-  closeDrawer: () => {
-    drawerVisible.value = false
-  },
+  toggleDrawer: () => { drawerVisible.value = !drawerVisible.value },
 })
 
-// 生命周期
 onMounted(() => {
   window.addEventListener('resize', handleResize)
-  handleResize() // 初始化
 })
 
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
 })
 
-// Store
 const filesStore = useFilesStore()
-
-// 计算属性
 const totalProjects = computed(() => filesStore.totalProjects)
 const totalCategories = computed(() => filesStore.totalCategories)
 const selectedCategory = computed(() => filesStore.selectedCategory)
 
-// 分类菜单选项
 const categoryMenuOptions = computed((): MenuOption[] => {
   const categories = filesStore.categories
   const options: MenuOption[] = [
@@ -157,8 +138,9 @@ const categoryMenuOptions = computed((): MenuOption[] => {
 
   categories.forEach((category) => {
     options.push({
-      label: `${category.name} (${category.projectCount})`,
+      label: category.name,
       key: category.name,
+      extra: () => h('span', { class: 'item-badge' }, category.projectCount.toString()),
       icon: () => h(NIcon, null, { default: () => h(FolderOutline) }),
     })
   })
@@ -166,172 +148,198 @@ const categoryMenuOptions = computed((): MenuOption[] => {
   return options
 })
 
-// 事件处理
 function handleCategorySelect(category: string) {
   filesStore.setSelectedCategory(category)
-  // 移动端选择后关闭抽屉
-  if (isMobile.value) {
-    drawerVisible.value = false
-  }
+  if (isMobile.value) drawerVisible.value = false
 }
 </script>
 
 <style scoped>
-.app-sidebar {
+.refined-sidebar {
   height: 100vh;
-  transition: width 0.3s ease;
+  background: var(--n-card-color);
 }
 
-.sidebar-content {
-  padding: 16px;
-  height: 100%;
+.sidebar-inner {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  overflow-y: auto;
+  height: 100%;
+  padding: 16px 12px;
 }
 
-.sidebar-content.mobile {
-  padding: 12px;
-  gap: 12px;
+.sidebar-brand {
+  padding: 12px 12px 28px;
 }
 
-.sidebar-header {
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--n-border-color);
-  flex-shrink: 0;
-}
-
-.logo {
+.brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 14px;
 }
 
-.logo-text {
-  font-weight: 600;
-  font-size: 16px;
-  color: var(--n-text-color);
-  white-space: nowrap;
+.brand-logo {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 8px 16px -4px rgba(139, 92, 246, 0.4);
+  transition: transform 0.3s ease;
 }
 
-.quick-stats {
-  flex-shrink: 0;
+.brand:hover .brand-logo {
+  transform: rotate(-5deg) scale(1.05);
 }
 
-.category-section {
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.brand-main {
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--n-text-color-1);
+  letter-spacing: -0.5px;
+}
+
+.brand-sub {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--n-text-color-3);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  opacity: 0.8;
+}
+
+.sidebar-top {
+  padding: 0 8px 24px;
+}
+
+.stats-panel {
+  background: rgba(var(--n-primary-color-rgb), 0.05);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  border: 1px solid rgba(var(--n-primary-color-rgb), 0.1);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-num {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--n-primary-color);
+}
+
+.stat-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--n-text-color-3);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 24px;
+  background: rgba(var(--n-text-color-rgb), 0.1);
+}
+
+.sidebar-nav {
   flex: 1;
-  min-height: 0;
   overflow-y: auto;
 }
 
-.section-title {
+.nav-group {
+  margin-bottom: 24px;
+}
+
+.group-label {
+  padding: 0 16px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--n-text-color-3);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+.refined-menu :deep(.n-menu-item-content) {
+  padding-left: 16px !important;
+  border-radius: 12px;
+  margin: 2px 4px;
+}
+
+.refined-menu :deep(.n-menu-item-content--selected) {
+  background: var(--n-primary-color) !important;
+  box-shadow: 0 4px 12px rgba(var(--n-primary-color-rgb), 0.2);
+}
+
+.refined-menu :deep(.n-menu-item-content--selected .n-menu-item-content-header) {
+  color: white !important;
+  font-weight: 700;
+}
+
+.refined-menu :deep(.n-menu-item-content--selected .n-icon) {
+  color: white !important;
+}
+
+.refined-menu :deep(.item-badge) {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(var(--n-text-color-rgb), 0.05);
+  color: var(--n-text-color-3);
+}
+
+.refined-menu :deep(.n-menu-item-content--selected .item-badge) {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.sidebar-footer {
+  padding: 16px 8px 0;
+}
+
+.pro-badge {
+  background: linear-gradient(135deg, #1e1e2d, #0a0a0f);
+  border-radius: 16px;
+  padding: 16px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--n-text-color-2);
-  white-space: nowrap;
+  gap: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* 移动端抽屉样式 */
-.mobile-sidebar {
-  z-index: 1000;
+.badge-icon {
+  font-size: 20px;
 }
 
-.mobile-sidebar :deep(.n-drawer-content) {
-  padding: 0;
+.badge-text {
+  display: flex;
+  flex-direction: column;
 }
 
-.mobile-sidebar .sidebar-content {
-  height: calc(100vh - 60px);
+.badge-title {
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
 }
 
-/* 平板端适配 */
-@media (max-width: 1023px) {
-  .sidebar-content {
-    padding: 12px;
-    gap: 12px;
-  }
-
-  .section-title {
-    font-size: 13px;
-  }
-}
-
-/* 移动端适配 */
-@media (max-width: 767px) {
-  .app-sidebar {
-    display: none;
-  }
-
-  .sidebar-content.mobile {
-    padding: 8px;
-    gap: 8px;
-  }
-
-  .quick-stats :deep(.n-card) {
-    padding: 8px;
-  }
-
-  .section-title {
-    font-size: 12px;
-    margin-bottom: 6px;
-  }
-}
-
-/* 桌面端优化 */
-@media (min-width: 1024px) {
-  .sidebar-content {
-    padding: 20px;
-    gap: 20px;
-  }
-}
-
-/* 大屏幕优化 */
-@media (min-width: 1440px) {
-  .sidebar-content {
-    padding: 24px;
-    gap: 24px;
-  }
-
-  .logo-text {
-    font-size: 18px;
-  }
-
-  .section-title {
-    font-size: 15px;
-  }
-}
-
-/* 滚动条优化 */
-.category-section::-webkit-scrollbar {
-  width: 4px;
-}
-
-.category-section::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.category-section::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 2px;
-}
-
-.category-section::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
-}
-
-/* 暗色主题下的滚动条 */
-@media (prefers-color-scheme: dark) {
-  .category-section::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .category-section::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
+.badge-desc {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  font-weight: 600;
 }
 </style>

@@ -12,7 +12,7 @@ const settingsStore = useSettingsStore()
 const filesStore = useFilesStore()
 const sidebarRef = ref()
 
-// 是否显示布局（登录页面和管理页面不显示侧边栏）
+// 是否显示布局
 const showLayout = computed(() => {
   return route.name !== 'login' && route.name !== 'admin'
 })
@@ -23,15 +23,85 @@ const theme = computed(() => {
 })
 
 // 主题覆盖配置
-const themeOverrides = computed(() => ({
-  common: {
-    primaryColor: settingsStore.currentTheme.primaryColor,
-    primaryColorHover: settingsStore.currentTheme.primaryColor + '20',
-    primaryColorPressed: settingsStore.currentTheme.primaryColor + '40',
-    borderRadius: `${settingsStore.currentTheme.borderRadius}px`,
-    fontSize: `${settingsStore.currentTheme.fontSize}px`,
-  },
-}))
+const themeOverrides = computed(() => {
+  const isDark = settingsStore.effectiveThemeMode === 'dark'
+  const primaryColor = settingsStore.currentTheme.primaryColor
+  const borderRadius = settingsStore.currentTheme.borderRadius
+
+  // 设计系统变量
+  const brand = {
+    primary: primaryColor,
+    primaryHover: primaryColor + 'cc',
+    primaryPressed: primaryColor + 'ee',
+    primarySuppl: primaryColor,
+    bg: isDark ? '#0f172a' : '#fcfcff',
+    card: isDark ? '#1e293b' : '#ffffff',
+    border: isDark ? '#334155' : '#e5e7eb',
+    text1: isDark ? '#f8fafc' : '#0f172a',
+    text2: isDark ? '#94a3b8' : '#475569',
+    text3: isDark ? '#64748b' : '#94a3b8',
+  }
+
+  return {
+    common: {
+      primaryColor: brand.primary,
+      primaryColorHover: brand.primaryHover,
+      primaryColorPressed: brand.primaryPressed,
+      primaryColorSuppl: brand.primarySuppl,
+      borderRadius: `${borderRadius}px`,
+      fontSize: `${settingsStore.currentTheme.fontSize}px`,
+      bodyColor: brand.bg,
+      cardColor: brand.card,
+      modalColor: brand.card,
+      popoverColor: brand.card,
+      textColor1: brand.text1,
+      textColor2: brand.text2,
+      textColor3: brand.text3,
+      borderColor: brand.border,
+      hoverColor: isDark ? '#1e1e2d' : '#f1f5f9',
+    },
+    Card: {
+      borderRadius: `${borderRadius}px`,
+      boxShadow: isDark 
+        ? '0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -4px rgba(0, 0, 0, 0.4)' 
+        : '0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -4px rgba(0, 0, 0, 0.04)',
+      borderColor: brand.border,
+      titleFontSizeMedium: '1.1rem',
+      titleFontWeight: '700',
+    },
+    Button: {
+      borderRadiusMedium: `${borderRadius}px`,
+      fontWeight: '600',
+      paddingMedium: '0 18px',
+      // 确保主按钮文字为白色，次要按钮文字颜色与主色一致且有足够对比度
+      textColorPrimary: '#ffffff',
+      textColorHoverPrimary: '#ffffff',
+      textColorPressedPrimary: '#ffffff',
+      textColorFocusPrimary: '#ffffff',
+      textColorGhostPrimary: brand.primary,
+      textColorTextPrimary: brand.primary,
+      // 亮色模式下的次要按钮
+      textColorSecondary: isDark ? '#ffffff' : '#1f2937',
+    },
+    Layout: {
+      color: brand.bg,
+      headerColor: isDark ? 'rgba(8, 8, 12, 0.8)' : 'rgba(252, 252, 255, 0.8)',
+      siderColor: brand.card,
+    },
+    Menu: {
+      itemBorderRadius: `${borderRadius}px`,
+      itemHeightMedium: '44px',
+      fontSizeMedium: '14px',
+    },
+    Input: {
+      borderRadius: `${borderRadius}px`,
+      color: isDark ? '#1e1e2d' : '#f8fafc',
+    },
+    Modal: {
+      borderRadius: `${borderRadius}px`,
+    }
+  }
+})
 
 // 切换侧边栏
 function handleToggleSidebar() {
@@ -88,12 +158,17 @@ onMounted(async () => {
 </template>
 
 <style>
-/* 全局样式，确保应用占满整个视口 */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* 全局样式 */
 html,
 body {
   height: 100%;
   margin: 0;
   padding: 0;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #app {
@@ -101,9 +176,26 @@ body {
   display: flex;
   flex-direction: column;
 }
-</style>
 
-<style scoped>
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.4);
+}
+
 .app-layout {
   height: 100vh;
   width: 100%;
@@ -115,37 +207,18 @@ body {
 }
 
 .main-layout-content {
-  padding: 16px;
-  overflow: auto;
-  height: calc(100vh - 64px); /* 减去头部高度 */
+  padding: 32px;
+  overflow-y: auto;
+  height: calc(100vh - 64px);
+  /* 使用固定的主色透明度背景，避免未定义变量导致渲染问题 */
+  background: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.03) 0%, transparent 50%);
 }
 
 /* 移动端适配 */
 @media (max-width: 767px) {
   .main-layout-content {
-    padding: 8px;
-    height: calc(100vh - 56px); /* 移动端头部高度 */
-  }
-}
-
-/* 平板端适配 */
-@media (min-width: 768px) and (max-width: 1023px) {
-  .main-layout-content {
-    padding: 12px;
-  }
-}
-
-/* 桌面端优化 */
-@media (min-width: 1024px) {
-  .main-layout-content {
-    padding: 20px;
-  }
-}
-
-/* 大屏幕优化 */
-@media (min-width: 1440px) {
-  .main-layout-content {
-    padding: 24px;
+    padding: 16px;
+    height: calc(100vh - 56px);
   }
 }
 </style>
