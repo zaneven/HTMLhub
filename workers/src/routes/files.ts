@@ -55,9 +55,20 @@ async function scanR2Files(env: Env): Promise<ProjectIndexData> {
       const existingProjectIndex = projects.findIndex((p) => p.id === projectId)
       
       if (existingProjectIndex !== -1) {
-        // 如果已经有了，看当前文件是不是更好的入口（比如 index.html）
-        if (isDirectory && fileName === 'index.html') {
-          projects[existingProjectIndex].indexPath = object.key
+        // 如果已经有了，看当前文件是不是更好的入口（比如根目录下的 index.html）
+        // 优先规则：1. 根目录下的 index.html > 2. 根目录下的其他 HTML > 3. 子目录下的 HTML
+        const existingProject = projects[existingProjectIndex]
+        const existingPathDepth = existingProject.indexPath.split('/').length
+        const currentPathDepth = object.key.split('/').length
+        
+        const isCurrentRootIndex = currentPathDepth === 4 && fileName === 'index.html'
+        const isExistingRootIndex = existingPathDepth === 4 && existingProject.indexPath.endsWith('index.html')
+
+        if (isCurrentRootIndex && !isExistingRootIndex) {
+          existingProject.indexPath = object.key
+        } else if (currentPathDepth < existingPathDepth && !isExistingRootIndex) {
+          // 如果当前文件更靠近根目录，且现有入口不是根目录 index.html，则更新
+          existingProject.indexPath = object.key
         }
         continue
       }
@@ -297,16 +308,6 @@ export async function uploadMultipleFiles(request: Request, env: Env): Promise<R
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       let relativePath = paths[i] || file.name
-
-      // 如果路径包含多级（来自文件夹上传），通常第一级是文件夹名
-      // 我们需要移除第一级，因为 projectName 已经包含了它
-      if (relativePath.includes('/')) {
-        const parts = relativePath.split('/')
-        if (parts.length > 1) {
-          // 移除第一级目录名
-          relativePath = parts.slice(1).join('/')
-        }
-      }
 
       // 生成存储路径: html-files/{category}/{projectName}/{relativePath}
       const key = `html-files/${category}/${projectName}/${relativePath}`
