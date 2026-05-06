@@ -34,19 +34,33 @@ async function scanR2Files(env: Env): Promise<ProjectIndexData> {
       if (parts.length < 3) continue
 
       const category = parts[1]
+      const projectNameInPath = parts[2]
       const fileName = parts[parts.length - 1]
 
-      // 只处理 HTML 文件
-      if (!fileName.endsWith('.html') && !fileName.endsWith('.htm')) continue
+      // 只处理 HTML 文件作为项目入口
+      if (!isHtmlFile(fileName)) continue
 
       // 判断是目录项目还是单文件项目
-      const isDirectory = parts.length === 4 && fileName === 'index.html'
-      const projectName = isDirectory ? parts[2] : fileName.replace(/\.(html|htm)$/, '')
-      const projectPath = isDirectory ? parts.slice(0, 3).join('/') : object.key
+      // 目录项目：html-files/{category}/{project}/...
+      // 单文件项目：html-files/{category}/{file}.html
+      const isDirectory = parts.length >= 4
+      const projectName = isDirectory ? projectNameInPath : fileName.replace(/\.(html|htm)$/, '')
+      const projectPath = isDirectory 
+        ? parts.slice(0, 3).join('/') 
+        : object.key
 
-      // 避免重复添加同一个目录项目
+      // 避免重复添加同一个项目
+      // 对于目录项目，我们优先使用根目录下的 index.html 作为入口
       const projectId = toBase64(projectPath)
-      if (projects.some((p) => p.id === projectId)) continue
+      const existingProjectIndex = projects.findIndex((p) => p.id === projectId)
+      
+      if (existingProjectIndex !== -1) {
+        // 如果已经有了，看当前文件是不是更好的入口（比如 index.html）
+        if (isDirectory && fileName === 'index.html') {
+          projects[existingProjectIndex].indexPath = object.key
+        }
+        continue
+      }
 
       projects.push({
         id: projectId,
@@ -260,8 +274,9 @@ export async function uploadMultipleFiles(request: Request, env: Env): Promise<R
       return badRequest('多文件上传必须提供项目名称')
     }
 
-    // 获取所有文件
+    // 获取所有文件和对应的路径
     const files = formData.getAll('files') as unknown as File[]
+    const paths = formData.getAll('paths') as string[]
 
     if (files.length === 0) {
       return badRequest('未提供文件')
@@ -279,9 +294,22 @@ export async function uploadMultipleFiles(request: Request, env: Env): Promise<R
 
     // 上传所有文件
     const uploadedKeys: string[] = []
-    for (const file of files) {
-      // 生成存储路径: html-files/{category}/{projectName}/{filename}
-      const key = `html-files/${category}/${projectName}/${file.name}`
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      let relativePath = paths[i] || file.name
+
+      // 如果路径包含多级（来自文件夹上传），通常第一级是文件夹名
+      // 我们需要移除第一级，因为 projectName 已经包含了它
+      if (relativePath.includes('/')) {
+        const parts = relativePath.split('/')
+        if (parts.length > 1) {
+          // 移除第一级目录名
+          relativePath = parts.slice(1).join('/')
+        }
+      }
+
+      // 生成存储路径: html-files/{category}/{projectName}/{relativePath}
+      const key = `html-files/${category}/${projectName}/${relativePath}`
 
       await env.HTML_FILES.put(key, file.stream(), {
         httpMetadata: {
@@ -491,12 +519,13 @@ export async function listProjectFiles(request: Request, env: Env): Promise<Resp
       })
 
       for (const object of listed.objects) {
-        const fileName = object.key.split('/').pop() || ''
+        // 计算相对于项目根目录的路径
+        const relativePath = object.key.slice(projectPath.endsWith('/') ? projectPath.length : projectPath.length + 1)
         files.push({
-          name: fileName,
+          name: relativePath,
           key: object.key,
           size: object.size,
-          type: getMimeType(fileName),
+          type: getMimeType(relativePath.split('/').pop() || ''),
           modifiedAt: object.uploaded.toISOString(),
         })
       }

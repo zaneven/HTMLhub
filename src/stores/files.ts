@@ -270,9 +270,12 @@ export const useFilesStore = defineStore('files', () => {
       formData.append('category', category)
       formData.append('projectName', projectName)
 
-      // 添加所有文件
+      // 添加所有文件及其相对路径
       for (const file of files) {
         formData.append('files', file)
+        // 尝试从 File 对象获取 webkitRelativePath
+        const relativePath = (file as any).webkitRelativePath || file.name
+        formData.append('paths', relativePath)
       }
 
       const response = await fetch(`${apiBaseUrl.value}/api/upload-multiple`, {
