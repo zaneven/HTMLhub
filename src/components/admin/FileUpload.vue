@@ -160,10 +160,10 @@ function customRequest() {
       <n-upload
         :file-list="fileList"
         multiple
+        directory
         directory-dnd
         :accept="supportedExtensions.join(',')"
         :custom-request="customRequest"
-        :input-props="{ webkitdirectory: true, multiple: true } as any"
         @update:file-list="handleFileChange"
       >
         <n-upload-dragger>
@@ -204,7 +204,7 @@ function customRequest() {
               <DocumentOutline />
             </n-icon>
             <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">
-              {{ file.name }}
+              {{ (file.file as any)?.webkitRelativePath || file.name }}
             </span>
             <span style="color: var(--n-text-color-3); font-size: 12px">
               {{ ((file.file?.size ?? 0) / 1024).toFixed(1) }} KB
