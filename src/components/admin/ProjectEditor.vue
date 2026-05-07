@@ -49,6 +49,12 @@ const files = ref<
 >([])
 const showUpload = ref(false)
 const uploading = ref(false)
+const isDirectory = ref(false)
+
+function toggleUploadMode(dir: boolean) {
+  isDirectory.value = dir
+  showUpload.value = true
+}
 
 // 支持的文件扩展名
 const supportedExtensions = [
@@ -107,11 +113,15 @@ async function handleUpload(options: { file: UploadFileInfo }) {
 
   uploading.value = true
   try {
-    const success = await filesStore.addProjectFile(file, props.project.path)
+    const relativePath = (file as any).webkitRelativePath
+    const success = await filesStore.addProjectFile(file, props.project.path, relativePath)
     if (success) {
       message.success(`已添加 ${file.name}`)
       await loadFiles()
-      showUpload.value = false
+      // 如果是单文件上传，上传完就关闭上传区
+      if (!isDirectory.value) {
+        showUpload.value = false
+      }
       emit('saved')
     } else {
       message.error(filesStore.error || '添加失败')
@@ -163,11 +173,17 @@ onMounted(() => {
       </div>
       <div class="header-right">
         <n-space>
-          <n-button size="small" type="primary" @click="showUpload = true">
+          <n-button size="small" type="primary" @click="toggleUploadMode(false)">
             <template #icon>
               <n-icon><AddOutline /></n-icon>
             </template>
             添加文件
+          </n-button>
+          <n-button size="small" type="info" @click="toggleUploadMode(true)">
+            <template #icon>
+              <n-icon><FolderOpenOutline /></n-icon>
+            </template>
+            添加文件夹
           </n-button>
           <n-button size="small" quaternary @click="loadFiles">
             <template #icon>
@@ -188,7 +204,8 @@ onMounted(() => {
     <div v-if="showUpload" class="upload-area">
       <n-upload
         multiple
-        :accept="supportedExtensions.join(',')"
+        :directory="isDirectory"
+        :accept="isDirectory ? undefined : supportedExtensions.join(',')"
         :custom-request="handleUpload as any"
         :show-file-list="false"
         :disabled="uploading"
@@ -196,14 +213,14 @@ onMounted(() => {
         <n-upload-dragger>
           <div class="upload-content">
             <n-icon size="32" :depth="3">
-              <FolderOpenOutline />
+              <component :is="isDirectory ? FolderOpenOutline : AddOutline" />
             </n-icon>
-            <p>点击或拖拽文件到此处添加</p>
+            <p>{{ isDirectory ? '点击或拖拽文件夹到此处添加' : '点击或拖拽文件到此处添加' }}</p>
             <p class="upload-hint">支持 HTML/JS/CSS/JSON/图片等静态资源</p>
           </div>
         </n-upload-dragger>
       </n-upload>
-      <n-button size="small" quaternary style="margin-top: 8px" @click="showUpload = false">
+      <n-button size="small" quaternary style="margin-top: 8px" @click="showUpload = false; isDirectory = false">
         取消
       </n-button>
     </div>

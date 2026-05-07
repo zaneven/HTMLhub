@@ -12,6 +12,7 @@ import {
   listProjectFiles,
   deleteProjectFile,
   addProjectFile,
+  addProjectFiles,
 } from './routes/files'
 
 export default {
@@ -85,6 +86,11 @@ export default {
         // 向项目添加文件
         case request.method === 'POST' && path === '/api/project/file':
           response = await addProjectFile(request, env)
+          break
+        
+        // 向项目添加多个文件 (支持文件夹)
+        case request.method === 'POST' && path === '/api/project/files':
+          response = await addProjectFiles(request, env)
           break
 
         // 健康检查

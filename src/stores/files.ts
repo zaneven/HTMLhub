@@ -507,7 +507,7 @@ export const useFilesStore = defineStore('files', () => {
   /**
    * 向项目添加文件 (仅云端模式)
    */
-  async function addProjectFile(file: File, projectPath: string): Promise<boolean> {
+  async function addProjectFile(file: File, projectPath: string, path?: string): Promise<boolean> {
     if (!isCloudMode.value) {
       error.value = '当前为静态模式，无法添加文件'
       return false
@@ -523,8 +523,72 @@ export const useFilesStore = defineStore('files', () => {
       const formData = new FormData()
       formData.append('file', file)
       formData.append('projectPath', projectPath)
+      if (path) {
+        formData.append('path', path)
+      }
 
       const response = await fetch(`${apiBaseUrl.value}/api/project/file`, {
+        method: 'POST',
+        headers: authStore.getAuthHeaders(),
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        return true
+      } else if (response.status === 401) {
+        await handleUnauthorized()
+        return false
+      } else {
+        error.value = data.error || '添加文件失败'
+        return false
+      }
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '添加文件失败'
+      return false
+    }
+  }
+
+  /**
+   * 向项目添加多个文件 (仅云端模式，支持文件夹结构)
+   */
+  async function addProjectFiles(files: File[], projectPath: string): Promise<boolean> {
+    if (!isCloudMode.value) {
+      error.value = '当前为静态模式，无法添加文件'
+      return false
+    }
+
+    const authStore = useAuthStore()
+    if (!authStore.isAuthenticated) {
+      error.value = '请先登录'
+      return false
+    }
+
+    try {
+      const formData = new FormData()
+      formData.append('projectPath', projectPath)
+
+      // 添加所有文件及其相对路径
+      for (const file of files) {
+        formData.append('files', file)
+        
+        let relativePath = (file as any).webkitRelativePath || file.name
+        
+        // 如果是通过文件夹上传的，webkitRelativePath 会包含文件夹名作为第一级
+        // 我们需要移除它，以保持项目内部的相对路径正确
+        if (relativePath.includes('/')) {
+          const parts = relativePath.split('/')
+          if (parts.length > 1) {
+            // 移除第一级目录名（通常是上传的文件夹名）
+            relativePath = parts.slice(1).join('/')
+          }
+        }
+        
+        formData.append('paths', relativePath)
+      }
+
+      const response = await fetch(`${apiBaseUrl.value}/api/project/files`, {
         method: 'POST',
         headers: authStore.getAuthHeaders(),
         body: formData,
@@ -577,5 +641,6 @@ export const useFilesStore = defineStore('files', () => {
     listProjectFiles,
     deleteProjectFile,
     addProjectFile,
+    addProjectFiles,
   }
 })

@@ -637,10 +637,20 @@ export async function addProjectFile(request: Request, env: Env): Promise<Respon
       return badRequest('不支持的文件类型')
     }
 
-    // 生成存储路径: {projectPath}/{filename}
+    // 获取相对路径并处理 (如果是从文件夹上传的)
+    let relativePath = (formData.get('path') as string) || file.name
+    if (relativePath.includes('/')) {
+      const parts = relativePath.split('/')
+      if (parts.length > 1) {
+        // 移除第一级目录名（通常是上传的文件夹名）
+        relativePath = parts.slice(1).join('/')
+      }
+    }
+
+    // 生成存储路径: {projectPath}/{relativePath}
     const key = projectPath.endsWith('/')
-      ? `${projectPath}${file.name}`
-      : `${projectPath}/${file.name}`
+      ? `${projectPath}${relativePath}`
+      : `${projectPath}/${relativePath}`
 
     // 上传到 R2
     await env.HTML_FILES.put(key, file.stream(), {
@@ -661,6 +671,69 @@ export async function addProjectFile(request: Request, env: Env): Promise<Respon
     })
   } catch (err) {
     console.error('Error adding project file:', err)
+    return serverError('添加文件失败')
+  }
+}
+
+/**
+ * 向项目添加多个文件 (支持文件夹结构)
+ */
+export async function addProjectFiles(request: Request, env: Env): Promise<Response> {
+  // 验证认证
+  if (!(await verifyAuth(request, env))) {
+    return unauthorized()
+  }
+
+  try {
+    const formData = await request.formData()
+    const projectPath = formData.get('projectPath') as string | null
+    const files = formData.getAll('files') as unknown as File[]
+    const paths = formData.getAll('paths') as string[]
+
+    if (!projectPath) {
+      return badRequest('未提供项目路径')
+    }
+
+    if (files.length === 0) {
+      return badRequest('未提供文件')
+    }
+
+    // 验证项目路径安全性
+    if (!projectPath.startsWith('html-files/')) {
+      return badRequest('无效的项目路径')
+    }
+
+    // 上传所有文件
+    const uploadedKeys: string[] = []
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i]
+      const relativePath = paths[i] || file.name
+
+      // 生成存储路径: {projectPath}/{relativePath}
+      const key = projectPath.endsWith('/')
+        ? `${projectPath}${relativePath}`
+        : `${projectPath}/${relativePath}`
+
+      await env.HTML_FILES.put(key, file.stream(), {
+        httpMetadata: {
+          contentType: getMimeType(file.name),
+        },
+        customMetadata: {
+          originalName: file.name,
+          uploadedAt: new Date().toISOString(),
+        },
+      })
+
+      uploadedKeys.push(key)
+    }
+
+    return success({
+      projectPath,
+      filesUploaded: files.length,
+      keys: uploadedKeys,
+    })
+  } catch (err) {
+    console.error('Error adding multiple project files:', err)
     return serverError('添加文件失败')
   }
 }
