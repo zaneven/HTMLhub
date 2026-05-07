@@ -639,13 +639,6 @@ export async function addProjectFile(request: Request, env: Env): Promise<Respon
 
     // 获取相对路径并处理 (如果是从文件夹上传的)
     let relativePath = (formData.get('path') as string) || file.name
-    if (relativePath.includes('/')) {
-      const parts = relativePath.split('/')
-      if (parts.length > 1) {
-        // 移除第一级目录名（通常是上传的文件夹名）
-        relativePath = parts.slice(1).join('/')
-      }
-    }
 
     // 生成存储路径: {projectPath}/{relativePath}
     const key = projectPath.endsWith('/')

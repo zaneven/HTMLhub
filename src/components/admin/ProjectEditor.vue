@@ -111,6 +111,15 @@ async function handleUpload(options: { file: UploadFileInfo }) {
   const file = options.file.file
   if (!file) return
 
+  // 如果是文件夹模式，仅上传支持的格式 html, js, css
+  if (isDirectory.value) {
+    const fileName = file.name.toLowerCase()
+    const isSupported = ['.html', '.htm', '.js', '.css'].some((ext) => fileName.endsWith(ext))
+    if (!isSupported) {
+      return
+    }
+  }
+
   uploading.value = true
   try {
     const relativePath = (file as any).webkitRelativePath
@@ -216,7 +225,9 @@ onMounted(() => {
               <component :is="isDirectory ? FolderOpenOutline : AddOutline" />
             </n-icon>
             <p>{{ isDirectory ? '点击或拖拽文件夹到此处添加' : '点击或拖拽文件到此处添加' }}</p>
-            <p class="upload-hint">支持 HTML/JS/CSS/JSON/图片等静态资源</p>
+            <p class="upload-hint">
+              {{ isDirectory ? '文件夹模式仅支持上传 HTML/JS/CSS 文件' : '支持 HTML/JS/CSS/JSON/图片等静态资源' }}
+            </p>
           </div>
         </n-upload-dragger>
       </n-upload>

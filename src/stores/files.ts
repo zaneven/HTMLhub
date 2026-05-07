@@ -572,19 +572,7 @@ export const useFilesStore = defineStore('files', () => {
       // 添加所有文件及其相对路径
       for (const file of files) {
         formData.append('files', file)
-        
-        let relativePath = (file as any).webkitRelativePath || file.name
-        
-        // 如果是通过文件夹上传的，webkitRelativePath 会包含文件夹名作为第一级
-        // 我们需要移除它，以保持项目内部的相对路径正确
-        if (relativePath.includes('/')) {
-          const parts = relativePath.split('/')
-          if (parts.length > 1) {
-            // 移除第一级目录名（通常是上传的文件夹名）
-            relativePath = parts.slice(1).join('/')
-          }
-        }
-        
+        const relativePath = (file as any).webkitRelativePath || file.name
         formData.append('paths', relativePath)
       }
 
