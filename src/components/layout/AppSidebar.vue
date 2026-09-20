@@ -70,15 +70,7 @@
         </div>
       </div>
 
-      <div class="sidebar-footer">
-        <div class="pro-badge">
-          <div class="badge-icon">✨</div>
-          <div class="badge-text">
-            <span class="badge-title">专业版已激活</span>
-            <span class="badge-desc">云端同步已开启</span>
-          </div>
-        </div>
-      </div>
+
     </div>
   </n-layout-sider>
 </template>
@@ -306,40 +298,5 @@ function handleCategorySelect(category: string) {
 .refined-menu :deep(.n-menu-item-content--selected .item-badge) {
   background: rgba(255, 255, 255, 0.2);
   color: white;
-}
-
-.sidebar-footer {
-  padding: 16px 8px 0;
-}
-
-.pro-badge {
-  background: linear-gradient(135deg, #1e1e2d, #0a0a0f);
-  border-radius: 16px;
-  padding: 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.badge-icon {
-  font-size: 20px;
-}
-
-.badge-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.badge-title {
-  color: white;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.badge-desc {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 11px;
-  font-weight: 600;
 }
 </style>

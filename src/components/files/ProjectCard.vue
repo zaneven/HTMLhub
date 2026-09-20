@@ -229,23 +229,23 @@ async function handleCopyLink() {
 
 <style scoped lang="scss">
 .project-card-demo {
-  background: var(--bg-surface, #111827);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md, 12px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   transition: all var(--transition-normal, 0.25s ease);
   position: relative;
-  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.2));
+  box-shadow: var(--shadow-sm);
   cursor: pointer;
   height: 100%;
 }
 
 .project-card-demo:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lg, 0 12px 28px -4px rgba(0, 0, 0, 0.5));
-  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary-hover, #818cf8);
 }
 
 .card-top-glow {
@@ -301,15 +301,15 @@ async function handleCopyLink() {
 }
 
 .card-file-icon.icon-cyan {
-  background: rgba(14, 165, 233, 0.12);
-  color: #0ea5e9;
-  border: 1px solid rgba(14, 165, 233, 0.25);
+  background: var(--color-cloud-bg, rgba(14, 165, 233, 0.12));
+  color: var(--color-cloud, #0284c7);
+  border: 1px solid var(--color-cloud-border, rgba(14, 165, 233, 0.25));
 }
 
 .card-file-icon.icon-green {
-  background: rgba(16, 185, 129, 0.12);
-  color: #10b981;
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: var(--color-local-bg, rgba(16, 185, 129, 0.12));
+  color: var(--color-local, #059669);
+  border: 1px solid var(--color-local-border, rgba(16, 185, 129, 0.25));
 }
 
 .card-title-info {
@@ -320,7 +320,7 @@ async function handleCopyLink() {
 .card-title-text {
   font-size: 14px;
   font-weight: 600;
-  color: var(--text-main, #f8fafc);
+  color: var(--text-main);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -329,7 +329,7 @@ async function handleCopyLink() {
 
 .card-subtitle-path {
   font-size: 11px;
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
   font-family: var(--font-mono, monospace);
   margin-top: 2px;
   overflow: hidden;
@@ -352,15 +352,15 @@ async function handleCopyLink() {
 }
 
 .badge-cloud {
-  background: var(--color-cloud-bg, rgba(14, 165, 233, 0.12));
-  color: var(--color-cloud, #0ea5e9);
-  border: 1px solid var(--color-cloud-border, rgba(14, 165, 233, 0.3));
+  background: var(--color-cloud-bg);
+  color: var(--color-cloud);
+  border: 1px solid var(--color-cloud-border);
 }
 
 .badge-local {
-  background: var(--color-local-bg, rgba(16, 185, 129, 0.12));
-  color: var(--color-local, #10b981);
-  border: 1px solid var(--color-local-border, rgba(16, 185, 129, 0.3));
+  background: var(--color-local-bg);
+  color: var(--color-local);
+  border: 1px solid var(--color-local-border);
 }
 
 /* 核心元信息区域 */
@@ -383,14 +383,14 @@ async function handleCopyLink() {
   font-size: 11px;
   padding: 3px 7px;
   border-radius: var(--radius-sm, 6px);
-  background: var(--bg-surface-elevated, #1e293b);
-  color: var(--text-secondary, #94a3b8);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  background: var(--bg-surface-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
   white-space: nowrap;
 }
 
 .meta-chip .chip-icon {
-  color: var(--text-muted, #64748b);
+  color: var(--text-muted);
 }
 
 .meta-chip.status-chip {
@@ -411,7 +411,7 @@ async function handleCopyLink() {
 .card-meta-footer {
   padding: 10px 16px 12px;
   margin-top: auto;
-  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  border-top: 1px solid var(--border-subtle);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -425,9 +425,9 @@ async function handleCopyLink() {
 }
 
 .card-btn-action {
-  background: var(--bg-surface-elevated, #1e293b);
-  border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.1));
-  color: var(--text-secondary, #94a3b8);
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
   border-radius: var(--radius-sm, 6px);
   padding: 5px 8px;
   display: inline-flex;
@@ -438,9 +438,9 @@ async function handleCopyLink() {
 }
 
 .card-btn-action:hover {
-  background: var(--bg-surface-subtle, rgba(255, 255, 255, 0.1));
-  color: var(--text-main, #f8fafc);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--bg-surface-subtle);
+  color: var(--text-main);
+  border-color: var(--border-medium);
 }
 
 .card-btn-action.btn-danger:hover {
@@ -474,11 +474,11 @@ async function handleCopyLink() {
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-sm);
 }
 
 .card-btn-primary:hover {
   background: var(--color-primary-hover, #818cf8);
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.35);
 }
 </style>
