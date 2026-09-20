@@ -1,0 +1,2201 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTMLManager - Nebula TechCraft 设计系统与元素预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* ==========================================================================
+       1. CSS 变量与设计令牌 (Design Tokens)
+       ========================================================================== */
+    :root {
+      /* 基础字体 */
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', Menlo, Monaco, Consolas, monospace;
+
+      /* 动画与过渡 */
+      --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-spring: 350ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+      /* 圆角系统 */
+      --radius-xs: 4px;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-xl: 24px;
+      --radius-full: 9999px;
+
+      /* 默认主色调（Hyper Indigo） */
+      --primary-hue: 239;
+      --primary-sat: 84%;
+      --color-primary: hsl(var(--primary-hue), var(--primary-sat), 60%);
+      --color-primary-light: hsl(var(--primary-hue), var(--primary-sat), 70%);
+      --color-primary-dark: hsl(var(--primary-hue), var(--primary-sat), 50%);
+      --color-primary-bg: hsla(var(--primary-hue), var(--primary-sat), 60%, 0.12);
+      --color-primary-border: hsla(var(--primary-hue), var(--primary-sat), 60%, 0.3);
+      --color-primary-glow: hsla(var(--primary-hue), var(--primary-sat), 60%, 0.45);
+
+      /* 渐变令牌 */
+      --gradient-brand: linear-gradient(135deg, hsl(var(--primary-hue), var(--primary-sat), 60%) 0%, #06b6d4 100%);
+      --gradient-card-glow: radial-gradient(circle at 50% 0%, hsla(var(--primary-hue), var(--primary-sat), 60%, 0.15), transparent 70%);
+
+      /* 语义色 */
+      --color-cloud: #0ea5e9;
+      --color-cloud-bg: rgba(14, 165, 233, 0.12);
+      --color-cloud-border: rgba(14, 165, 233, 0.3);
+      
+      --color-local: #10b981;
+      --color-local-bg: rgba(16, 185, 129, 0.12);
+      --color-local-border: rgba(16, 185, 129, 0.3);
+
+      --color-success: #10b981;
+      --color-warning: #f59e0b;
+      --color-warning-bg: rgba(245, 158, 11, 0.12);
+      --color-danger: #ef4444;
+      --color-danger-bg: rgba(239, 68, 68, 0.12);
+      --color-code: #8b5cf6;
+      --color-code-bg: rgba(139, 92, 246, 0.12);
+    }
+
+    /* 深色模式令牌 (Nebula Dark) */
+    [data-theme="dark"] {
+      --bg-page: #0b0f17;
+      --bg-surface: #111827;
+      --bg-surface-elevated: #1e293b;
+      --bg-surface-glass: rgba(17, 24, 39, 0.75);
+      --bg-surface-subtle: rgba(255, 255, 255, 0.03);
+      --bg-input: #162032;
+
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-medium: rgba(255, 255, 255, 0.15);
+      --border-focus: var(--color-primary);
+
+      --text-main: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+      --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.5), 0 2px 6px -1px rgba(0, 0, 0, 0.4);
+      --shadow-lg: 0 12px 28px -4px rgba(0, 0, 0, 0.6), 0 6px 12px -2px rgba(0, 0, 0, 0.4);
+      --shadow-glow: 0 0 24px -2px var(--color-primary-glow);
+    }
+
+    /* 浅色模式令牌 (Lumina Light) */
+    [data-theme="light"] {
+      --bg-page: #f8fafc;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f1f5f9;
+      --bg-surface-glass: rgba(255, 255, 255, 0.85);
+      --bg-surface-subtle: rgba(0, 0, 0, 0.02);
+      --bg-input: #f8fafc;
+
+      --border-subtle: #e2e8f0;
+      --border-medium: #cbd5e1;
+      --border-focus: var(--color-primary);
+
+      --text-main: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+
+      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 12px -2px rgba(15, 23, 42, 0.08), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+      --shadow-lg: 0 16px 32px -4px rgba(15, 23, 42, 0.12), 0 6px 12px -2px rgba(15, 23, 42, 0.06);
+      --shadow-glow: 0 4px 20px -2px var(--color-primary-glow);
+    }
+
+    /* ==========================================================================
+       2. 全局重置与排版
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.5;
+      font-size: 14px;
+      transition: background-color var(--transition-normal), color var(--transition-normal);
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* 星轨网格背景装饰 */
+    .ambient-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background-image: 
+        radial-gradient(at 10% 20%, hsla(var(--primary-hue), 80%, 55%, 0.1) 0px, transparent 50%),
+        radial-gradient(at 90% 80%, rgba(6, 182, 212, 0.08) 0px, transparent 50%);
+    }
+
+    .container {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* 矢量图标通用样式 */
+    .icon {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      stroke-width: 0;
+      stroke: currentColor;
+      fill: currentColor;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+    .icon-stroke {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ==========================================================================
+       3. 页面头部与全局控制条
+       ========================================================================== */
+    .header-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: var(--bg-surface-glass);
+      border-bottom: 1px solid var(--border-subtle);
+      transition: all var(--transition-normal);
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 70px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: var(--text-main);
+    }
+
+    .brand-logo-badge {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      background: var(--gradient-brand);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      box-shadow: 0 4px 14px var(--color-primary-glow);
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-tag {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: var(--radius-full);
+      background: var(--color-primary-bg);
+      color: var(--color-primary-light);
+      border: 1px solid var(--color-primary-border);
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* 主题调色板切换器 */
+    .palette-picker {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-surface-subtle);
+      padding: 4px;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .color-dot-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: transform var(--transition-fast), border-color var(--transition-fast);
+    }
+    .color-dot-btn:hover {
+      transform: scale(1.15);
+    }
+    .color-dot-btn.active {
+      border-color: #fff;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+    }
+
+    /* 主题模式切换按钮 */
+    .theme-toggle-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      padding: 7px 14px;
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all var(--transition-fast);
+    }
+    .theme-toggle-btn:hover {
+      border-color: var(--border-medium);
+      background: var(--bg-surface);
+    }
+
+    /* 快捷导航药丸 */
+    .quick-nav {
+      display: flex;
+      gap: 8px;
+      padding: 12px 0 20px;
+      overflow-x: auto;
+    }
+
+    .quick-pill {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      white-space: nowrap;
+      transition: all var(--transition-fast);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .quick-pill:hover, .quick-pill.active {
+      color: var(--text-main);
+      border-color: var(--color-primary-border);
+      background: var(--color-primary-bg);
+    }
+
+    /* ==========================================================================
+       4. 章节容器与标题体系
+       ========================================================================== */
+    .section {
+      padding: 48px 0;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .section-header {
+      margin-bottom: 32px;
+    }
+
+    .section-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-primary);
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .section-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      max-width: 680px;
+    }
+
+    /* ==========================================================================
+       5. 颜色规范展板 (Color Grid)
+       ========================================================================== */
+    .colors-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .color-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      position: relative;
+    }
+    .color-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-md);
+      border-color: var(--border-medium);
+    }
+
+    .color-preview-box {
+      height: 80px;
+      width: 100%;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      padding: 8px;
+    }
+
+    .color-copy-hint {
+      font-size: 11px;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(4px);
+      padding: 2px 6px;
+      border-radius: var(--radius-xs);
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+      font-family: var(--font-mono);
+    }
+    .color-card:hover .color-copy-hint {
+      opacity: 1;
+    }
+
+    .color-meta {
+      padding: 12px;
+    }
+
+    .color-name {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-main);
+      margin-bottom: 2px;
+    }
+
+    .color-val {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ==========================================================================
+       6. 排版与字体展板 (Typography Scale)
+       ========================================================================== */
+    .typo-spec-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .typo-spec-table th, .typo-spec-table td {
+      padding: 16px 20px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .typo-spec-table th {
+      background: var(--bg-surface-elevated);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+    .typo-spec-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* ==========================================================================
+       7. 纯矢量图标与徽章体系 (Vector Icons & Badges)
+       ========================================================================== */
+    .icons-showcase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .icon-item-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      text-align: center;
+      transition: all var(--transition-fast);
+    }
+    .icon-item-card:hover {
+      background: var(--bg-surface-elevated);
+      border-color: var(--color-primary-border);
+      color: var(--color-primary);
+    }
+    .icon-item-card .icon-glyph {
+      font-size: 24px;
+    }
+    .icon-item-card span {
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    /* 徽章 Badge 体系 */
+    .badges-collection {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      background: var(--bg-surface);
+      padding: 20px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: var(--radius-full);
+      line-height: 1;
+    }
+
+    .badge-cloud {
+      background: var(--color-cloud-bg);
+      color: var(--color-cloud);
+      border: 1px solid var(--color-cloud-border);
+    }
+
+    .badge-local {
+      background: var(--color-local-bg);
+      color: var(--color-local);
+      border: 1px solid var(--color-local-border);
+    }
+
+    .badge-warning {
+      background: var(--color-warning-bg);
+      color: var(--color-warning);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .badge-code {
+      background: var(--color-code-bg);
+      color: var(--color-code);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      font-family: var(--font-mono);
+    }
+
+    .badge-kbd {
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-medium);
+      padding: 3px 6px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      border-radius: var(--radius-xs);
+      box-shadow: 0 1px 0 var(--border-medium);
+    }
+
+    /* ==========================================================================
+       8. 基础交互控件 (Atoms & Buttons)
+       ========================================================================== */
+    .controls-demo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 24px;
+    }
+
+    .demo-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 24px;
+    }
+
+    .demo-panel-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    /* 按钮规范 */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1;
+      padding: 9px 16px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      border: 1px solid transparent;
+      outline: none;
+      transition: all var(--transition-fast);
+      text-decoration: none;
+      user-select: none;
+    }
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--color-primary);
+      color: #fff;
+      box-shadow: 0 2px 8px var(--color-primary-glow);
+    }
+    .btn-primary:hover {
+      background: var(--color-primary-light);
+      box-shadow: 0 4px 14px var(--color-primary-glow);
+    }
+
+    .btn-gradient {
+      background: var(--gradient-brand);
+      color: #fff;
+      box-shadow: 0 2px 10px var(--color-primary-glow);
+    }
+    .btn-gradient:hover {
+      filter: brightness(1.08);
+      box-shadow: 0 4px 16px var(--color-primary-glow);
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      border-color: var(--border-subtle);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-surface);
+      border-color: var(--border-medium);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+    }
+    .btn-ghost:hover {
+      background: var(--bg-surface-subtle);
+      color: var(--text-main);
+    }
+
+    .btn-danger {
+      background: var(--color-danger-bg);
+      color: var(--color-danger);
+      border-color: rgba(239, 68, 68, 0.25);
+    }
+    .btn-danger:hover {
+      background: var(--color-danger);
+      color: #fff;
+    }
+
+    .btn-icon {
+      padding: 9px;
+      border-radius: var(--radius-sm);
+    }
+
+    /* 输入框与快捷搜索栏 */
+    .input-box-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      transition: all var(--transition-fast);
+    }
+    .input-box-wrapper:focus-within {
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-bg);
+      background: var(--bg-surface);
+    }
+
+    .input-prefix-icon {
+      margin-left: 12px;
+      color: var(--text-muted);
+      font-size: 16px;
+    }
+
+    .input-field {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--text-main);
+      font-family: var(--font-sans);
+    }
+    .input-field::placeholder {
+      color: var(--text-muted);
+    }
+
+    .input-suffix-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-right: 10px;
+    }
+
+    /* 分段控制器 (Segmented Control) */
+    .segmented-control {
+      display: inline-flex;
+      background: var(--bg-surface-elevated);
+      padding: 3px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .segment-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-xs);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .segment-btn:hover {
+      color: var(--text-main);
+    }
+    .segment-btn.active {
+      background: var(--bg-surface);
+      color: var(--text-main);
+      box-shadow: var(--shadow-sm);
+      font-weight: 600;
+    }
+
+    /* ==========================================================================
+       9. 核心业务组件（卡片、行、预览框）
+       ========================================================================== */
+    /* Bento-Style Project Card */
+    .project-card-demo {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all var(--transition-normal);
+      position: relative;
+      box-shadow: var(--shadow-sm);
+    }
+    .project-card-demo:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--color-primary-border);
+    }
+
+    .card-top-glow {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--gradient-brand);
+      opacity: 0;
+      transition: opacity var(--transition-normal);
+    }
+    .project-card-demo:hover .card-top-glow {
+      opacity: 1;
+    }
+
+    .card-header-area {
+      padding: 18px 18px 12px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-file-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .card-file-icon.icon-blue {
+      background: rgba(99, 102, 241, 0.12);
+      color: var(--color-primary);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+    }
+    .card-file-icon.icon-cyan {
+      background: rgba(14, 165, 233, 0.12);
+      color: #0ea5e9;
+      border: 1px solid rgba(14, 165, 233, 0.25);
+    }
+
+    .card-title-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .card-subtitle-path {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      margin-top: 2px;
+    }
+
+    /* 窗口控制三色圆点 (Mac Chrome Dots) */
+    .mac-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--border-medium);
+      display: inline-block;
+    }
+    .mac-dot:nth-child(1) { background: #ff5f56; }
+    .mac-dot:nth-child(2) { background: #ffbd2e; }
+    .mac-dot:nth-child(3) { background: #27c93f; }
+
+    /* 高信噪比技术卡片属性与元信息区块 (Card Meta Body) */
+    .card-body-meta {
+      padding: 0 18px 14px;
+    }
+
+    .card-meta-chips {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .meta-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-surface-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border-subtle);
+      white-space: nowrap;
+    }
+
+    .meta-chip .chip-icon {
+      font-size: 12px;
+      width: 12px;
+      height: 12px;
+      color: var(--text-muted);
+    }
+
+    .meta-chip.mono-chip {
+      font-family: var(--font-mono);
+      color: var(--text-main);
+      background: var(--bg-surface-subtle);
+    }
+
+    .meta-chip.status-chip {
+      color: var(--color-success);
+      background: rgba(16, 185, 129, 0.08);
+      border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    .status-indicator-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--color-success);
+      box-shadow: 0 0 6px var(--color-success);
+    }
+
+    .card-meta-footer {
+      padding: 12px 18px 14px;
+      margin-top: auto;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .meta-tags-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* 列表视图行 (Project Row) */
+    .project-row-demo {
+      display: grid;
+      grid-template-columns: 2fr 1.2fr 100px 120px 140px;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 20px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      margin-bottom: 8px;
+      transition: all var(--transition-fast);
+    }
+    .project-row-demo:hover {
+      background: var(--bg-surface-elevated);
+      border-color: var(--border-medium);
+    }
+
+    /* ==========================================================================
+       10. 交互式实景原型 (Interactive Live Prototype)
+       ========================================================================== */
+    .prototype-frame {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 640px;
+    }
+
+    .prototype-chrome-header {
+      background: var(--bg-surface-elevated);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .prototype-layout-body {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* 原型左侧栏 */
+    .prototype-sidebar {
+      width: 240px;
+      background: var(--bg-surface-glass);
+      border-right: 1px solid var(--border-subtle);
+      padding: 16px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .mini-stat-card {
+      background: var(--bg-surface-subtle);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .mini-stat-num {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      font-family: var(--font-mono);
+    }
+    .mini-stat-lbl {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .proto-category-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .proto-cat-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      user-select: none;
+    }
+    .proto-cat-item:hover {
+      background: var(--bg-surface-subtle);
+      color: var(--text-main);
+    }
+    .proto-cat-item.active {
+      background: var(--color-primary-bg);
+      color: var(--color-primary-light);
+      font-weight: 600;
+      border: 1px solid var(--color-primary-border);
+    }
+
+    /* 原型主工作区 */
+    .prototype-main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: var(--bg-page);
+    }
+
+    .proto-toolbar {
+      padding: 14px 20px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .proto-scroll-content {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .proto-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+
+    /* ==========================================================================
+       11. 代码令牌与配置导出卡片
+       ========================================================================== */
+    .code-export-box {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .code-export-header {
+      padding: 12px 18px;
+      background: var(--bg-surface-subtle);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .code-export-pre {
+      padding: 20px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-main);
+      max-height: 380px;
+    }
+
+    /* ==========================================================================
+       12. 全局浮动 Toast 提示
+       ========================================================================== */
+    .toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .toast-item {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--color-primary-border);
+      color: var(--text-main);
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      box-shadow: var(--shadow-lg);
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: toastIn 0.3s var(--transition-spring) forwards;
+      pointer-events: auto;
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(12px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* 响应式调整 */
+    @media (max-width: 900px) {
+      .prototype-sidebar {
+        display: none;
+      }
+      .project-row-demo {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient-bg"></div>
+
+  <!-- SVG 图标定义池 (100% 纯矢量，拒绝任何 Emoji) -->
+  <svg style="display: none;">
+    <defs>
+      <!-- 文件夹 -->
+      <g id="icon-folder">
+        <path class="icon-stroke" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+      </g>
+      <!-- 打开的文件夹 -->
+      <g id="icon-folder-open">
+        <path class="icon-stroke" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2l-2 5z"/>
+      </g>
+      <!-- HTML 文件 -->
+      <g id="icon-file-html">
+        <path class="icon-stroke" d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <polyline class="icon-stroke" points="14 2 14 8 20 8"/>
+        <path class="icon-stroke" d="M10 13l-2 2 2 2M14 13l2 2-2 2"/>
+      </g>
+      <!-- 搜索 -->
+      <g id="icon-search">
+        <circle class="icon-stroke" cx="11" cy="11" r="8"/>
+        <line class="icon-stroke" x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </g>
+      <!-- 云端 (Cloud) -->
+      <g id="icon-cloud">
+        <path class="icon-stroke" d="M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"/>
+      </g>
+      <!-- 本地设备 (Desktop) -->
+      <g id="icon-desktop">
+        <rect class="icon-stroke" x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+        <line class="icon-stroke" x1="8" y1="21" x2="16" y2="21"/>
+        <line class="icon-stroke" x1="12" y1="17" x2="12" y2="21"/>
+      </g>
+      <!-- 排序 -->
+      <g id="icon-sort">
+        <path class="icon-stroke" d="M7 15l5 5 5-5M7 9l5-5 5-5"/>
+      </g>
+      <!-- 预览/眼睛 -->
+      <g id="icon-eye">
+        <path class="icon-stroke" d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle class="icon-stroke" cx="12" cy="12" r="3"/>
+      </g>
+      <!-- 外链打开 -->
+      <g id="icon-external">
+        <path class="icon-stroke" d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/>
+      </g>
+      <!-- 时钟 (Clock) -->
+      <g id="icon-clock">
+        <circle class="icon-stroke" cx="12" cy="12" r="9"/>
+        <polyline class="icon-stroke" points="12 7 12 12 15 15"/>
+      </g>
+      <!-- 设置 -->
+      <g id="icon-settings">
+        <circle class="icon-stroke" cx="12" cy="12" r="3"/>
+        <path class="icon-stroke" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
+      </g>
+      <!-- 网格与列表 -->
+      <g id="icon-grid">
+        <rect class="icon-stroke" x="3" y="3" width="7" height="7"/>
+        <rect class="icon-stroke" x="14" y="3" width="7" height="7"/>
+        <rect class="icon-stroke" x="14" y="14" width="7" height="7"/>
+        <rect class="icon-stroke" x="3" y="14" width="7" height="7"/>
+      </g>
+      <g id="icon-list">
+        <line class="icon-stroke" x1="8" y1="6" x2="21" y2="6"/>
+        <line class="icon-stroke" x1="8" y1="12" x2="21" y2="12"/>
+        <line class="icon-stroke" x1="8" y1="18" x2="21" y2="18"/>
+        <line class="icon-stroke" x1="3" y1="6" x2="3.01" y2="6"/>
+        <line class="icon-stroke" x1="3" y1="12" x2="3.01" y2="12"/>
+        <line class="icon-stroke" x1="3" y1="18" x2="3.01" y2="18"/>
+      </g>
+      <!-- 日月模式 -->
+      <g id="icon-moon">
+        <path class="icon-stroke" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+      </g>
+      <g id="icon-sun">
+        <circle class="icon-stroke" cx="12" cy="12" r="5"/>
+        <line class="icon-stroke" x1="12" y1="1" x2="12" y2="3"/>
+        <line class="icon-stroke" x1="12" y1="21" x2="12" y2="23"/>
+        <line class="icon-stroke" x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line class="icon-stroke" x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line class="icon-stroke" x1="1" y1="12" x2="3" y2="12"/>
+        <line class="icon-stroke" x1="21" y1="12" x2="23" y2="12"/>
+        <line class="icon-stroke" x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line class="icon-stroke" x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </g>
+      <!-- 复制与勾选 -->
+      <g id="icon-copy">
+        <rect class="icon-stroke" x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+        <path class="icon-stroke" d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+      </g>
+      <g id="icon-check">
+        <polyline class="icon-stroke" points="20 6 9 17 4 12"/>
+      </g>
+    </defs>
+  </svg>
+
+  <!-- 顶部导航条 -->
+  <header class="header-nav">
+    <div class="container header-content">
+      <a href="#" class="brand">
+        <div class="brand-logo-badge">
+          <svg class="icon icon-stroke" viewBox="0 0 24 24" style="font-size: 20px;"><use href="#icon-folder-open"/></svg>
+        </div>
+        <div>
+          <div class="brand-title">
+            HTMLManager
+            <span class="brand-tag">Nebula Craft v2</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- 右侧快速调控 -->
+      <div class="nav-actions">
+        <!-- 主色快速调色盘 -->
+        <div class="palette-picker" title="切换品牌主色调">
+          <button class="color-dot-btn active" style="background: #6366f1;" data-hue="239" title="极光靛蓝 (Hyper Indigo)"></button>
+          <button class="color-dot-btn" style="background: #06b6d4;" data-hue="188" title="赛博青蓝 (Cyber Cyan)"></button>
+          <button class="color-dot-btn" style="background: #10b981;" data-hue="160" title="翡翠绿 (Emerald)"></button>
+          <button class="color-dot-btn" style="background: #a855f7;" data-hue="271" title="霓虹紫 (Neon Violet)"></button>
+        </div>
+
+        <!-- 明暗模式切换 -->
+        <button id="themeToggleBtn" class="theme-toggle-btn">
+          <svg class="icon" viewBox="0 0 24 24" style="font-size: 16px;"><use href="#icon-sun"/></svg>
+          <span id="themeToggleText">浅色模式</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- 快速章节跳转锚点 -->
+    <nav class="quick-nav">
+      <a href="#section-colors" class="quick-pill active">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+        色彩令牌 (Colors)
+      </a>
+      <a href="#section-typography" class="quick-pill">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#icon-file-html"/></svg>
+        排版系统 (Typography)
+      </a>
+      <a href="#section-icons" class="quick-pill">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#icon-folder"/></svg>
+        矢量图标与徽章 (Icons & Badges)
+      </a>
+      <a href="#section-controls" class="quick-pill">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#icon-settings"/></svg>
+        交互控件 (Controls)
+      </a>
+      <a href="#section-components" class="quick-pill">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#icon-grid"/></svg>
+        业务卡片 (Project Cards)
+      </a>
+      <a href="#section-prototype" class="quick-pill">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#icon-eye"/></svg>
+        完整实景原型 (Live Prototype)
+      </a>
+      <a href="#section-export" class="quick-pill">
+        <svg class="icon" viewBox="0 0 24 24"><use href="#icon-copy"/></svg>
+        代码与配置导出 (Export)
+      </a>
+    </nav>
+
+    <!-- SECTION 1: 色彩系统 -->
+    <section id="section-colors" class="section">
+      <div class="section-header">
+        <div class="section-badge">TOKEN SPEC 01</div>
+        <h2 class="section-title">色彩系统与设计令牌 (Color System)</h2>
+        <p class="section-desc">基于专业级 DevTools 与工坊质感打造的高信噪比色谱，点击色块即可自动复制十六进制 HEX 与 CSS 变量。</p>
+      </div>
+
+      <div class="colors-grid">
+        <!-- 核心品牌色 -->
+        <div class="color-card" onclick="copyColor('#6366F1', '--color-primary')">
+          <div class="color-preview-box" style="background: #6366F1;">
+            <span class="color-copy-hint">点击复制</span>
+          </div>
+          <div class="color-meta">
+            <div class="color-name">Brand Primary</div>
+            <div class="color-val">#6366F1</div>
+          </div>
+        </div>
+
+        <!-- 品牌渐变 -->
+        <div class="color-card" onclick="copyColor('linear-gradient(135deg, #4F46E5, #06B6D4)', '--gradient-brand')">
+          <div class="color-preview-box" style="background: linear-gradient(135deg, #4F46E5, #06B6D4);">
+            <span class="color-copy-hint">点击复制</span>
+          </div>
+          <div class="color-meta">
+            <div class="color-name">Gradient Brand</div>
+            <div class="color-val">Indigo -> Cyan</div>
+          </div>
+        </div>
+
+        <!-- 云端存储色 (Cloud Accent) -->
+        <div class="color-card" onclick="copyColor('#0EA5E9', '--color-cloud')">
+          <div class="color-preview-box" style="background: #0EA5E9;">
+            <span class="color-copy-hint">点击复制</span>
+          </div>
+          <div class="color-meta">
+            <div class="color-name">Cloud Accent (R2)</div>
+            <div class="color-val">#0EA5E9</div>
+          </div>
+        </div>
+
+        <!-- 本地资产色 (Local Accent) -->
+        <div class="color-card" onclick="copyColor('#10B981', '--color-local')">
+          <div class="color-preview-box" style="background: #10B981;">
+            <span class="color-copy-hint">点击复制</span>
+          </div>
+          <div class="color-meta">
+            <div class="color-name">Local Accent (FS)</div>
+            <div class="color-val">#10B981</div>
+          </div>
+        </div>
+
+        <!-- 状态警告 (Amber) -->
+        <div class="color-card" onclick="copyColor('#F59E0B', '--color-warning')">
+          <div class="color-preview-box" style="background: #F59E0B;">
+            <span class="color-copy-hint">点击复制</span>
+          </div>
+          <div class="color-meta">
+            <div class="color-name">Warning State</div>
+            <div class="color-val">#F59E0B</div>
+          </div>
+        </div>
+
+        <!-- 危险破坏 (Danger) -->
+        <div class="color-card" onclick="copyColor('#EF4444', '--color-danger')">
+          <div class="color-preview-box" style="background: #EF4444;">
+            <span class="color-copy-hint">点击复制</span>
+          </div>
+          <div class="color-meta">
+            <div class="color-name">Danger / Delete</div>
+            <div class="color-val">#EF4444</div>
+          </div>
+        </div>
+
+        <!-- 代码标签紫 (Code Violet) -->
+        <div class="color-card" onclick="copyColor('#8B5CF6', '--color-code')">
+          <div class="color-preview-box" style="background: #8B5CF6;">
+            <span class="color-copy-hint">点击复制</span>
+          </div>
+          <div class="color-meta">
+            <div class="color-name">Code Token .html</div>
+            <div class="color-val">#8B5CF6</div>
+          </div>
+        </div>
+
+        <!-- 深空基底色 (Space Dark) -->
+        <div class="color-card" onclick="copyColor('#0B0F17', '--bg-page')">
+          <div class="color-preview-box" style="background: #0B0F17; border: 1px solid rgba(255,255,255,0.1);">
+            <span class="color-copy-hint">点击复制</span>
+          </div>
+          <div class="color-meta">
+            <div class="color-name">Canvas Dark</div>
+            <div class="color-val">#0B0F17</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: 排版与字体 -->
+    <section id="section-typography" class="section">
+      <div class="section-header">
+        <div class="section-badge">TOKEN SPEC 02</div>
+        <h2 class="section-title">排版与字阶系统 (Typography)</h2>
+        <p class="section-desc">西文以 Inter 呈现清晰结构，元数据、代码与体积以 JetBrains Mono 等宽呈现，保证极高的扫描阅读效率。</p>
+      </div>
+
+      <table class="typo-spec-table">
+        <thead>
+          <tr>
+            <th style="width: 200px;">层级 / Token</th>
+            <th style="width: 180px;">参数配置</th>
+            <th>展示样例与适用场景</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Display Title (H1)</strong></td>
+            <td><code style="font-family: var(--font-mono); font-size: 12px;">24px / 700 / 32px</code></td>
+            <td>
+              <span style="font-size: 24px; font-weight: 700; letter-spacing: -0.02em;">HTMLManager 资源控制台</span>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">应用主标头、登录页品牌标语</div>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Section Heading (H2)</strong></td>
+            <td><code style="font-family: var(--font-mono); font-size: 12px;">18px / 600 / 26px</code></td>
+            <td>
+              <span style="font-size: 18px; font-weight: 600;">全部项目 (All Projects)</span>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">主内容区顶栏、抽屉大标题</div>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Card Title (H3)</strong></td>
+            <td><code style="font-family: var(--font-mono); font-size: 12px;">15px / 600 / 22px</code></td>
+            <td>
+              <span style="font-size: 15px; font-weight: 600;">portfolio-showcase.html</span>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">卡片标题、列表第一列主要对象名</div>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Body Regular</strong></td>
+            <td><code style="font-family: var(--font-mono); font-size: 12px;">14px / 400 / 20px</code></td>
+            <td>
+              <span>自动索引并支持在沙盒内实时预览、全屏投屏展示。</span>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">正文描述、表单说明文案</div>
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Data Mono (等宽)</strong></td>
+            <td><code style="font-family: var(--font-mono); font-size: 12px;">12px / 500 / JetBrains</code></td>
+            <td>
+              <span style="font-family: var(--font-mono); color: var(--color-primary-light);">size: 24.8 KB | hash: a1f8b3c9 | 2026-09-20</span>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">文件体积、更新日期、分类哈希、快捷键</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- SECTION 3: 纯矢量图标与徽章 -->
+    <section id="section-icons" class="section">
+      <div class="section-header">
+        <div class="section-badge">TOKEN SPEC 03</div>
+        <h2 class="section-title">纯矢量图标与状态徽章 (Pure Vector Icons & Badges)</h2>
+        <p class="section-desc"><strong>严格遵循“零 Emoji，100% 矢量图标”规范</strong>。所有图标基于 24x24 视口、2px 精细描边精心刻画，具备优异的可缩放性与专业感。</p>
+      </div>
+
+      <div class="icons-showcase-grid">
+        <div class="icon-item-card">
+          <svg class="icon icon-stroke icon-glyph"><use href="#icon-folder"/></svg>
+          <span>Folder</span>
+        </div>
+        <div class="icon-item-card">
+          <svg class="icon icon-stroke icon-glyph"><use href="#icon-folder-open"/></svg>
+          <span>FolderOpen</span>
+        </div>
+        <div class="icon-item-card">
+          <svg class="icon icon-stroke icon-glyph"><use href="#icon-file-html"/></svg>
+          <span>FileHTML</span>
+        </div>
+        <div class="icon-item-card">
+          <svg class="icon icon-stroke icon-glyph"><use href="#icon-cloud"/></svg>
+          <span>Cloud (R2)</span>
+        </div>
+        <div class="icon-item-card">
+          <svg class="icon icon-stroke icon-glyph"><use href="#icon-desktop"/></svg>
+          <span>Desktop (Local)</span>
+        </div>
+        <div class="icon-item-card">
+          <svg class="icon icon-stroke icon-glyph"><use href="#icon-search"/></svg>
+          <span>Search</span>
+        </div>
+        <div class="icon-item-card">
+          <svg class="icon icon-stroke icon-glyph"><use href="#icon-eye"/></svg>
+          <span>Preview</span>
+        </div>
+        <div class="icon-item-card">
+          <svg class="icon icon-stroke icon-glyph"><use href="#icon-external"/></svg>
+          <span>ExternalOpen</span>
+        </div>
+        <div class="icon-item-card">
+          <svg class="icon icon-stroke icon-glyph"><use href="#icon-grid"/></svg>
+          <span>GridView</span>
+        </div>
+        <div class="icon-item-card">
+          <svg class="icon icon-stroke icon-glyph"><use href="#icon-list"/></svg>
+          <span>ListView</span>
+        </div>
+        <div class="icon-item-card">
+          <svg class="icon icon-stroke icon-glyph"><use href="#icon-sort"/></svg>
+          <span>Sort</span>
+        </div>
+        <div class="icon-item-card">
+          <svg class="icon icon-stroke icon-glyph"><use href="#icon-settings"/></svg>
+          <span>Settings</span>
+        </div>
+      </div>
+
+      <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">资产来源与状态药丸徽章 (Source Badges)</h3>
+      <div class="badges-collection">
+        <!-- 云端存储徽章 -->
+        <span class="badge-pill badge-cloud">
+          <svg class="icon" viewBox="0 0 24 24"><use href="#icon-cloud"/></svg>
+          云端 R2 存储
+        </span>
+
+        <!-- 本地静态文件徽章 -->
+        <span class="badge-pill badge-local">
+          <svg class="icon" viewBox="0 0 24 24"><use href="#icon-desktop"/></svg>
+          本地静态资产
+        </span>
+
+        <!-- HTML 格式徽章 -->
+        <span class="badge-pill badge-code">
+          <svg class="icon" viewBox="0 0 24 24"><use href="#icon-file-html"/></svg>
+          .html
+        </span>
+
+        <!-- 警告徽章 -->
+        <span class="badge-pill badge-warning">
+          <svg class="icon" viewBox="0 0 24 24"><line class="icon-stroke" x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="1"/></svg>
+          未分类 (Root)
+        </span>
+
+        <!-- 快捷键徽标 -->
+        <span class="badge-kbd">⌘ K</span>
+        <span class="badge-kbd">ESC</span>
+        <span class="badge-kbd">Ctrl + Shift + P</span>
+      </div>
+    </section>
+
+    <!-- SECTION 4: 基础交互控件 -->
+    <section id="section-controls" class="section">
+      <div class="section-header">
+        <div class="section-badge">TOKEN SPEC 04</div>
+        <h2 class="section-title">基础交互控件 (Atomic Controls)</h2>
+        <p class="section-desc">涵盖微光流光按钮、集成了快捷键的悬浮搜索框、视图模式切换胶囊等核心控件体系。</p>
+      </div>
+
+      <div class="controls-demo-grid">
+        <!-- 按钮体系面板 -->
+        <div class="demo-panel">
+          <div class="demo-panel-title">
+            <svg class="icon" viewBox="0 0 24 24"><use href="#icon-settings"/></svg>
+            操作按钮系统 (Action Buttons)
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-gradient">
+              <svg class="icon" viewBox="0 0 24 24"><use href="#icon-eye"/></svg>
+              即刻预览
+            </button>
+
+            <button class="btn btn-primary">
+              <svg class="icon" viewBox="0 0 24 24"><use href="#icon-external"/></svg>
+              新窗口打开
+            </button>
+
+            <button class="btn btn-secondary">
+              <svg class="icon" viewBox="0 0 24 24"><use href="#icon-copy"/></svg>
+              复制直链
+            </button>
+          </div>
+
+          <div class="btn-row">
+            <button class="btn btn-ghost">
+              取消返回
+            </button>
+
+            <button class="btn btn-danger">
+              <svg class="icon" viewBox="0 0 24 24"><polyline class="icon-stroke" points="3 6 5 6 21 6"/><path class="icon-stroke" d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+              删除文件
+            </button>
+
+            <button class="btn btn-secondary btn-icon" title="设置">
+              <svg class="icon" viewBox="0 0 24 24"><use href="#icon-settings"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 搜索框与视图切换面板 -->
+        <div class="demo-panel">
+          <div class="demo-panel-title">
+            <svg class="icon" viewBox="0 0 24 24"><use href="#icon-search"/></svg>
+            全局智能搜索栏与视图分段器
+          </div>
+
+          <!-- 搜索输入框组件 -->
+          <div class="input-box-wrapper" style="margin-bottom: 20px;">
+            <svg class="icon input-prefix-icon" viewBox="0 0 24 24"><use href="#icon-search"/></svg>
+            <input type="text" class="input-field" placeholder="搜索文件名、标题或分类标签...">
+            <div class="input-suffix-actions">
+              <span class="badge-kbd">⌘ K</span>
+            </div>
+          </div>
+
+          <!-- 视图模式切换 -->
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 13px; color: var(--text-secondary);">视图模式 (View Mode):</span>
+            <div class="segmented-control">
+              <button class="segment-btn active" id="btnModeGrid">
+                <svg class="icon" viewBox="0 0 24 24"><use href="#icon-grid"/></svg>
+                网格视图
+              </button>
+              <button class="segment-btn" id="btnModeList">
+                <svg class="icon" viewBox="0 0 24 24"><use href="#icon-list"/></svg>
+                列表视图
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: 业务卡片组件 -->
+    <section id="section-components" class="section">
+      <div class="section-header">
+        <div class="section-badge">TOKEN SPEC 05</div>
+        <h2 class="section-title">核心业务组件 (Core Domain Components)</h2>
+        <p class="section-desc">HTMLManager 核心卡片与列表行设计，聚焦高信噪比技术卡片排版、双通道来源标签、全维元信息网格与即时操作栏。</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 20px; margin-bottom: 32px;">
+        <!-- 卡片 1: 云端 R2 项目 -->
+        <div class="project-card-demo">
+          <div class="card-top-glow"></div>
+          <div class="card-header-area">
+            <div class="card-title-group" style="min-width: 0;">
+              <div class="card-file-icon icon-cyan">
+                <svg class="icon" viewBox="0 0 24 24"><use href="#icon-cloud"/></svg>
+              </div>
+              <div style="min-width: 0;">
+                <div class="card-title-text" title="design-system-spec.html">design-system-spec.html</div>
+                <div class="card-subtitle-path">docs / visual-craft</div>
+              </div>
+            </div>
+            <span class="badge-pill badge-cloud">云端 R2</span>
+          </div>
+
+          <div class="card-body-meta">
+            <div class="card-meta-chips">
+              <span class="meta-chip">
+                <svg class="icon chip-icon" viewBox="0 0 24 24"><use href="#icon-clock"/></svg>
+                <span>12 分钟前更新</span>
+              </span>
+              <span class="meta-chip mono-chip">48.2 KB</span>
+              <span class="meta-chip status-chip">
+                <span class="status-indicator-dot"></span>
+                <span>已同步</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="card-meta-footer">
+            <button class="btn btn-secondary btn-icon" title="复制直链" onclick="showToast('已复制直链: design-system-spec.html')">
+              <svg class="icon" viewBox="0 0 24 24"><use href="#icon-copy"/></svg>
+            </button>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-icon" title="外部打开" onclick="showToast('在新标签页打开: design-system-spec.html')">
+                <svg class="icon" viewBox="0 0 24 24"><use href="#icon-external"/></svg>
+              </button>
+              <button class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;" onclick="showToast('已打开: design-system-spec.html')">
+                <svg class="icon" viewBox="0 0 24 24"><use href="#icon-eye"/></svg>
+                打开
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡片 2: 本地静态项目 -->
+        <div class="project-card-demo">
+          <div class="card-top-glow"></div>
+          <div class="card-header-area">
+            <div class="card-title-group" style="min-width: 0;">
+              <div class="card-file-icon icon-blue">
+                <svg class="icon" viewBox="0 0 24 24"><use href="#icon-file-html"/></svg>
+              </div>
+              <div style="min-width: 0;">
+                <div class="card-title-text" title="dashboard-v2-preview.html">dashboard-v2-preview.html</div>
+                <div class="card-subtitle-path">apps / admin-console</div>
+              </div>
+            </div>
+            <span class="badge-pill badge-local">本地静态</span>
+          </div>
+
+          <div class="card-body-meta">
+            <div class="card-meta-chips">
+              <span class="meta-chip">
+                <svg class="icon chip-icon" viewBox="0 0 24 24"><use href="#icon-clock"/></svg>
+                <span>2 小时前更新</span>
+              </span>
+              <span class="meta-chip mono-chip">128.6 KB</span>
+              <span class="meta-chip status-chip">
+                <span class="status-indicator-dot"></span>
+                <span>就绪</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="card-meta-footer">
+            <button class="btn btn-secondary btn-icon" title="复制直链" onclick="showToast('已复制直链: dashboard-v2-preview.html')">
+              <svg class="icon" viewBox="0 0 24 24"><use href="#icon-copy"/></svg>
+            </button>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-icon" title="外部打开" onclick="showToast('在新标签页打开: dashboard-v2-preview.html')">
+                <svg class="icon" viewBox="0 0 24 24"><use href="#icon-external"/></svg>
+              </button>
+              <button class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;" onclick="showToast('已打开: dashboard-v2-preview.html')">
+                <svg class="icon" viewBox="0 0 24 24"><use href="#icon-eye"/></svg>
+                打开
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卡片 3: 报表总结项目 -->
+        <div class="project-card-demo">
+          <div class="card-top-glow"></div>
+          <div class="card-header-area">
+            <div class="card-title-group" style="min-width: 0;">
+              <div class="card-file-icon icon-cyan">
+                <svg class="icon" viewBox="0 0 24 24"><use href="#icon-file-html"/></svg>
+              </div>
+              <div style="min-width: 0;">
+                <div class="card-title-text" title="sales-analytics-report.html">sales-analytics-report.html</div>
+                <div class="card-subtitle-path">reports / quarterly</div>
+              </div>
+            </div>
+            <span class="badge-pill badge-cloud">云端 R2</span>
+          </div>
+
+          <div class="card-body-meta">
+            <div class="card-meta-chips">
+              <span class="meta-chip">
+                <svg class="icon chip-icon" viewBox="0 0 24 24"><use href="#icon-clock"/></svg>
+                <span>昨天更新</span>
+              </span>
+              <span class="meta-chip mono-chip">96.4 KB</span>
+              <span class="meta-chip status-chip">
+                <span class="status-indicator-dot"></span>
+                <span>已归档</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="card-meta-footer">
+            <button class="btn btn-secondary btn-icon" title="复制直链" onclick="showToast('已复制直链: sales-analytics-report.html')">
+              <svg class="icon" viewBox="0 0 24 24"><use href="#icon-copy"/></svg>
+            </button>
+            <div style="display: flex; gap: 8px;">
+              <button class="btn btn-secondary btn-icon" title="外部打开" onclick="showToast('在新标签页打开: sales-analytics-report.html')">
+                <svg class="icon" viewBox="0 0 24 24"><use href="#icon-external"/></svg>
+              </button>
+              <button class="btn btn-primary" style="padding: 6px 14px; font-size: 12px;" onclick="showToast('已打开: sales-analytics-report.html')">
+                <svg class="icon" viewBox="0 0 24 24"><use href="#icon-eye"/></svg>
+                打开
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 列表行视图 (List Row Showcase) -->
+      <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">列表高密度视图展现 (List Row View)</h3>
+      <div class="project-row-demo">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <svg class="icon" viewBox="0 0 24 24" style="color: var(--color-primary); font-size: 18px;"><use href="#icon-file-html"/></svg>
+          <div>
+            <div style="font-weight: 600; font-size: 14px;">portfolio-developer-2026.html</div>
+            <div style="font-size: 11px; color: var(--text-muted); font-family: var(--font-mono);">hash: e9a2c310</div>
+          </div>
+        </div>
+        <div>
+          <span class="badge-pill" style="background: var(--bg-surface-elevated); color: var(--text-secondary); border: 1px solid var(--border-subtle);">
+            showcases / web-apps
+          </span>
+        </div>
+        <div>
+          <span class="badge-pill badge-cloud">云端</span>
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary);">
+          92.4 KB
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 8px;">
+          <button class="btn btn-secondary" style="padding: 5px 10px; font-size: 12px;">
+            <svg class="icon" viewBox="0 0 24 24"><use href="#icon-eye"/></svg>
+            预览
+          </button>
+          <button class="btn btn-primary" style="padding: 5px 10px; font-size: 12px;">
+            打开
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: 完整实景微缩可交互原型 -->
+    <section id="section-prototype" class="section">
+      <div class="section-header">
+        <div class="section-badge">LIVE DEMO 06</div>
+        <h2 class="section-title">全景可交互原型 (Interactive Full-Scale Showcase)</h2>
+        <p class="section-desc">在当前页面直接感受 Nebula TechCraft 风格重构后的 HTMLManager 实际操作体验，支持搜索筛选、分类切换与视图模式变换。</p>
+      </div>
+
+      <div class="prototype-frame">
+        <!-- 模拟浏览器顶部导航栏 -->
+        <div class="prototype-chrome-header">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="display: flex; gap: 6px;">
+              <span class="mac-dot"></span>
+              <span class="mac-dot"></span>
+              <span class="mac-dot"></span>
+            </div>
+            <div style="font-weight: 700; font-size: 14px; margin-left: 12px; display: flex; align-items: center; gap: 6px;">
+              <svg class="icon" viewBox="0 0 24 24" style="color: var(--color-primary);"><use href="#icon-folder-open"/></svg>
+              HTMLManager
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="input-box-wrapper" style="width: 260px; height: 32px;">
+              <svg class="icon input-prefix-icon" viewBox="0 0 24 24" style="font-size: 14px;"><use href="#icon-search"/></svg>
+              <input type="text" id="protoSearchInput" class="input-field" placeholder="实时过滤项目..." style="font-size: 12px; padding: 6px 8px;">
+            </div>
+            <button class="btn btn-secondary btn-icon" style="padding: 6px 8px;" title="系统偏好">
+              <svg class="icon" viewBox="0 0 24 24"><use href="#icon-settings"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="prototype-layout-body">
+          <!-- 侧边栏 -->
+          <aside class="prototype-sidebar">
+            <div class="mini-stat-card">
+              <div>
+                <div class="mini-stat-lbl">分类总数</div>
+                <div class="mini-stat-num">8</div>
+              </div>
+              <div style="width: 1px; height: 28px; background: var(--border-subtle);"></div>
+              <div>
+                <div class="mini-stat-lbl">在线项目</div>
+                <div class="mini-stat-num" id="protoProjectCount">3</div>
+              </div>
+            </div>
+
+            <div>
+              <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.05em;">
+                项目分类
+              </div>
+              <ul class="proto-category-list" id="protoCatList">
+                <li class="proto-cat-item active" data-cat="all">
+                  <span>全部项目</span>
+                  <span style="font-family: var(--font-mono); font-size: 11px;">3</span>
+                </li>
+                <li class="proto-cat-item" data-cat="docs">
+                  <span>文档指南 (docs)</span>
+                  <span style="font-family: var(--font-mono); font-size: 11px;">1</span>
+                </li>
+                <li class="proto-cat-item" data-cat="demos">
+                  <span>案例效果 (demos)</span>
+                  <span style="font-family: var(--font-mono); font-size: 11px;">1</span>
+                </li>
+                <li class="proto-cat-item" data-cat="tools">
+                  <span>实用工具 (tools)</span>
+                  <span style="font-family: var(--font-mono); font-size: 11px;">1</span>
+                </li>
+              </ul>
+            </div>
+          </aside>
+
+          <!-- 主界面 -->
+          <main class="prototype-main">
+            <div class="proto-toolbar">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="protoCurrentCatTitle" style="font-weight: 600; font-size: 14px;">全部项目</span>
+                <span style="color: var(--text-muted); font-size: 13px;">(共 3 个)</span>
+              </div>
+
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <div class="segmented-control" style="transform: scale(0.9);">
+                  <button class="segment-btn active" id="protoGridToggle">
+                    <svg class="icon" viewBox="0 0 24 24"><use href="#icon-grid"/></svg>
+                  </button>
+                  <button class="segment-btn" id="protoListToggle">
+                    <svg class="icon" viewBox="0 0 24 24"><use href="#icon-list"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="proto-scroll-content">
+              <div class="proto-cards-grid" id="protoCardContainer">
+                <!-- 动态卡片注入 -->
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 7: 代码导出与集成配置 -->
+    <section id="section-export" class="section">
+      <div class="section-header">
+        <div class="section-badge">DEVELOPER INTEGRATION 07</div>
+        <h2 class="section-title">Naive UI 与工程化落地配置 (Theme Overrides Code)</h2>
+        <p class="section-desc">您可以直接复制以下配置直接覆盖入项目现有 <code style="font-family: var(--font-mono);">src/App.vue</code> 与 <code style="font-family: var(--font-mono);">themeOverrides</code> 中。</p>
+      </div>
+
+      <div class="code-export-box">
+        <div class="code-export-header">
+          <span style="font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary);">theme-overrides-nebula.ts</span>
+          <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;" onclick="copyCodeSnippet()">
+            <svg class="icon" viewBox="0 0 24 24"><use href="#icon-copy"/></svg>
+            一键复制配置代码
+          </button>
+        </div>
+        <pre class="code-export-pre"><code id="codeSnippetTarget">import type { GlobalThemeOverrides } from 'naive-ui'
+
+export const nebulaThemeOverrides: GlobalThemeOverrides = {
+  common: {
+    primaryColor: '#6366F1',
+    primaryColorHover: '#818CF8',
+    primaryColorPressed: '#4F46E5',
+    primaryColorSuppl: '#4F46E5',
+    infoColor: '#06B6D4',
+    successColor: '#10B981',
+    warningColor: '#F59E0B',
+    errorColor: '#EF4444',
+    baseColor: '#0B0F17',
+    bodyColor: '#0B0F17',
+    cardColor: 'rgba(17, 24, 39, 0.75)',
+    modalColor: '#111827',
+    popoverColor: '#1E293B',
+    borderRadius: '10px',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    fontFamilyMono: "'JetBrains Mono', 'Fira Code', monospace",
+  },
+  Card: {
+    borderRadius: '12px',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    boxShadow: '0 4px 12px -2px rgba(0, 0, 0, 0.5)',
+  },
+  Button: {
+    borderRadiusMedium: '8px',
+    fontWeight: '500',
+  },
+  Input: {
+    borderRadius: '8px',
+    color: '#162032',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderHover: '1px solid #6366F1',
+    borderFocus: '1px solid #6366F1',
+    boxShadowFocus: '0 0 0 2px rgba(99, 102, 241, 0.25)',
+  },
+  Menu: {
+    borderRadius: '8px',
+    itemColorActive: 'rgba(99, 102, 241, 0.15)',
+    itemTextColorActive: '#818CF8',
+  }
+}</code></pre>
+      </div>
+    </section>
+  </main>
+
+  <!-- 全局 Toast 容器 -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- 脚本逻辑：交互、调色盘、实景原型 -->
+  <script>
+    // 1. 主题模式切换 (Dark / Light)
+    const htmlEl = document.documentElement;
+    const themeBtn = document.getElementById('themeToggleBtn');
+    const themeText = document.getElementById('themeToggleText');
+
+    themeBtn.addEventListener('click', () => {
+      const currentTheme = htmlEl.getAttribute('data-theme');
+      const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      htmlEl.setAttribute('data-theme', nextTheme);
+      themeText.textContent = nextTheme === 'dark' ? '浅色模式' : '深色模式';
+      showToast(nextTheme === 'dark' ? '已切换至 Nebula 深色模式' : '已切换至 Lumina 浅色模式');
+    });
+
+    // 2. 调色盘主色调切换
+    const colorDots = document.querySelectorAll('.color-dot-btn');
+    colorDots.forEach(dot => {
+      dot.addEventListener('click', () => {
+        colorDots.forEach(d => d.classList.remove('active'));
+        dot.classList.add('active');
+        const hue = dot.getAttribute('data-hue');
+        document.documentElement.style.setProperty('--primary-hue', hue);
+        showToast(`品牌主色调已更新 (Hue: ${hue})`);
+      });
+    });
+
+    // 3. 点击复制颜色
+    function copyColor(hex, varName) {
+      navigator.clipboard.writeText(`${hex} /* ${varName} */`);
+      showToast(`已复制色彩代码: ${hex}`);
+    }
+
+    // 4. 一键复制代码
+    function copyCodeSnippet() {
+      const code = document.getElementById('codeSnippetTarget').innerText;
+      navigator.clipboard.writeText(code);
+      showToast('已成功复制 Naive UI 适配代码！');
+    }
+
+    // 5. Toast 提示函数
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      const item = document.createElement('div');
+      item.className = 'toast-item';
+      item.innerHTML = `
+        <svg class="icon icon-stroke" viewBox="0 0 24 24" style="color: var(--color-primary); font-size: 16px;"><polyline points="20 6 9 17 4 12"/></svg>
+        <span>${msg}</span>
+      `;
+      container.appendChild(item);
+      setTimeout(() => {
+        item.style.opacity = '0';
+        item.style.transform = 'translateY(-10px)';
+        item.style.transition = 'all 0.3s ease';
+        setTimeout(() => item.remove(), 300);
+      }, 2500);
+    }
+
+    // 6. 原型交互数据与逻辑
+    const mockProjects = [
+      {
+        id: 1,
+        name: 'interactive-analytics-dashboard.html',
+        cat: 'demos',
+        source: 'cloud',
+        size: '128.4 KB',
+        updated: '10 分钟前',
+        status: '已同步'
+      },
+      {
+        id: 2,
+        name: 'api-reference-manual.html',
+        cat: 'docs',
+        source: 'local',
+        size: '45.1 KB',
+        updated: '1 小时前',
+        status: '就绪'
+      },
+      {
+        id: 3,
+        name: 'svg-icon-generator-tool.html',
+        cat: 'tools',
+        source: 'cloud',
+        size: '89.6 KB',
+        updated: '昨天',
+        status: '已同步'
+      }
+    ];
+
+    let currentProtoCat = 'all';
+    let currentProtoKeyword = '';
+    let isProtoGrid = true;
+
+    function renderProtoItems() {
+      const container = document.getElementById('protoCardContainer');
+      container.innerHTML = '';
+
+      const filtered = mockProjects.filter(p => {
+        const matchesCat = currentProtoCat === 'all' || p.cat === currentProtoCat;
+        const matchesKey = !currentProtoKeyword || p.name.toLowerCase().includes(currentProtoKeyword.toLowerCase());
+        return matchesCat && matchesKey;
+      });
+
+      document.getElementById('protoProjectCount').textContent = filtered.length;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 48px; color: var(--text-muted);">
+            <svg class="icon" viewBox="0 0 24 24" style="font-size: 36px; margin-bottom: 8px;"><use href="#icon-folder"/></svg>
+            <p>未找到符合条件的项目文件</p>
+          </div>
+        `;
+        return;
+      }
+
+      if (isProtoGrid) {
+        container.style.display = 'grid';
+        container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(280px, 1fr))';
+        container.style.gap = '14px';
+
+        filtered.forEach(p => {
+          const card = document.createElement('div');
+          card.className = 'project-card-demo';
+          card.innerHTML = `
+            <div class="card-top-glow"></div>
+            <div class="card-header-area" style="padding: 14px 14px 8px;">
+              <div class="card-title-group" style="min-width: 0;">
+                <div class="card-file-icon ${p.source === 'cloud' ? 'icon-cyan' : 'icon-blue'}" style="width: 30px; height: 30px; font-size: 15px; flex-shrink: 0;">
+                  <svg class="icon" viewBox="0 0 24 24"><use href="${p.source === 'cloud' ? '#icon-cloud' : '#icon-file-html'}"/></svg>
+                </div>
+                <div style="min-width: 0;">
+                  <div class="card-title-text" style="font-size: 13px;" title="${p.name}">${p.name}</div>
+                  <div class="card-subtitle-path">${p.cat} / main</div>
+                </div>
+              </div>
+              <span class="badge-pill ${p.source === 'cloud' ? 'badge-cloud' : 'badge-local'}" style="font-size: 11px; padding: 2px 7px; flex-shrink: 0;">
+                ${p.source === 'cloud' ? '云端' : '本地'}
+              </span>
+            </div>
+
+            <div class="card-body-meta" style="padding: 0 14px 10px;">
+              <div class="card-meta-chips" style="gap: 6px;">
+                <span class="meta-chip" style="font-size: 10px; padding: 2px 6px;">
+                  <svg class="icon chip-icon" viewBox="0 0 24 24" style="width: 10px; height: 10px;"><use href="#icon-clock"/></svg>
+                  <span>${p.updated}</span>
+                </span>
+                <span class="meta-chip mono-chip" style="font-size: 10px; padding: 2px 6px;">${p.size}</span>
+                <span class="meta-chip status-chip" style="font-size: 10px; padding: 2px 6px;">
+                  <span class="status-indicator-dot" style="width: 5px; height: 5px;"></span>
+                  <span>${p.status}</span>
+                </span>
+              </div>
+            </div>
+
+            <div class="card-meta-footer" style="padding: 8px 14px 10px;">
+              <button class="btn btn-secondary btn-icon" style="padding: 4px 7px;" title="复制直链" onclick="showToast('已复制直链: ${p.name}')">
+                <svg class="icon" viewBox="0 0 24 24" style="font-size: 13px;"><use href="#icon-copy"/></svg>
+              </button>
+              <div style="display: flex; gap: 6px;">
+                <button class="btn btn-secondary btn-icon" style="padding: 4px 7px;" title="外部打开" onclick="showToast('在新标签页打开: ${p.name}')">
+                  <svg class="icon" viewBox="0 0 24 24" style="font-size: 13px;"><use href="#icon-external"/></svg>
+                </button>
+                <button class="btn btn-primary" style="padding: 4px 10px; font-size: 11px;" onclick="showToast('模拟打开: ${p.name}')">
+                  <svg class="icon" viewBox="0 0 24 24" style="font-size: 12px;"><use href="#icon-eye"/></svg>
+                  打开
+                </button>
+              </div>
+            </div>
+          `;
+          container.appendChild(card);
+        });
+      } else {
+        container.style.display = 'flex';
+        container.style.flexDirection = 'column';
+        container.style.gap = '8px';
+
+        filtered.forEach(p => {
+          const row = document.createElement('div');
+          row.className = 'project-row-demo';
+          row.style.padding = '10px 14px';
+          row.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+              <svg class="icon" viewBox="0 0 24 24" style="color: var(--color-primary);"><use href="#icon-file-html"/></svg>
+              <span style="font-weight: 600; font-size: 13px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${p.name}</span>
+            </div>
+            <div>
+              <span class="badge-pill" style="font-size: 11px; background: var(--bg-surface-elevated); color: var(--text-secondary);">${p.cat}</span>
+            </div>
+            <div>
+              <span class="badge-pill ${p.source === 'cloud' ? 'badge-cloud' : 'badge-local'}" style="font-size: 11px;">${p.source === 'cloud' ? '云端' : '本地'}</span>
+            </div>
+            <div style="font-family: var(--font-mono); font-size: 11px; color: var(--text-muted);">${p.size}</div>
+            <div style="display: flex; justify-content: flex-end; gap: 6px;">
+              <button class="btn btn-primary" style="padding: 4px 10px; font-size: 11px;" onclick="showToast('模拟打开: ${p.name}')">打开</button>
+            </div>
+          `;
+          container.appendChild(row);
+        });
+      }
+    }
+
+    // 搜索输入过滤
+    document.getElementById('protoSearchInput').addEventListener('input', (e) => {
+      currentProtoKeyword = e.target.value.trim();
+      renderProtoItems();
+    });
+
+    // 分类点击过滤
+    document.querySelectorAll('.proto-cat-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.proto-cat-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        currentProtoCat = item.getAttribute('data-cat');
+        document.getElementById('protoCurrentCatTitle').textContent = item.querySelector('span').textContent;
+        renderProtoItems();
+      });
+    });
+
+    // 视图切换
+    const gridBtn = document.getElementById('protoGridToggle');
+    const listBtn = document.getElementById('protoListToggle');
+
+    gridBtn.addEventListener('click', () => {
+      gridBtn.classList.add('active');
+      listBtn.classList.remove('active');
+      isProtoGrid = true;
+      renderProtoItems();
+    });
+
+    listBtn.addEventListener('click', () => {
+      listBtn.classList.add('active');
+      gridBtn.classList.remove('active');
+      isProtoGrid = false;
+      renderProtoItems();
+    });
+
+    // 初始化渲染
+    renderProtoItems();
+  </script>
+</body>
+</html>

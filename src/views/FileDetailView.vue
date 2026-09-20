@@ -229,7 +229,7 @@ function handleDownload() {
 }
 
 function handleIframeLoad() {
-  console.log('Preview loaded successfully')
+  // preview loaded
 }
 
 function handleIframeError() {

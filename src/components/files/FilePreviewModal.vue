@@ -156,7 +156,7 @@ import {
   OpenOutline,
   DownloadOutline
 } from '@vicons/ionicons5'
-import { getFilePreviewUrl } from '@/utils/fileUtils'
+import { getFilePreviewUrl, formatFileSize, formatDate } from '@/utils/fileUtils'
 import type { FileInfo } from '@/types'
 
 interface Props {
@@ -239,7 +239,6 @@ function loadPreview() {
 }
 
 function handleIframeLoad() {
-  console.log('Iframe loaded successfully')
   loading.value = false
   error.value = null
 }
@@ -272,30 +271,10 @@ function resetState() {
   showFileInfo.value = false
 }
 
-// 工具函数
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
-
-function formatDate(dateString: string): string {
-  const date = new Date(dateString)
-  return date.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
+// formatFileSize 和 formatDate 已从 @/utils/fileUtils 导入
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .file-preview-modal {
   --n-body-padding: 0;
 }
@@ -344,7 +323,7 @@ function formatDate(dateString: string): string {
 }
 
 /* 响应式设计 */
-@media (max-width: 768px) {
+@media (max-width: $breakpoint-sm) {
   .file-preview-modal {
     width: 95vw !important;
     height: 95vh !important;

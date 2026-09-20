@@ -19,9 +19,11 @@ const searchStore = useSearchStore()
 
 // 页面加载时初始化数据
 onMounted(async () => {
-  // 加载文件数据
-  await filesStore.loadIndexData()
-  
+  // 仅在数据未加载时加载（App.vue onMounted 可能已加载）
+  if (!filesStore.indexData) {
+    await filesStore.loadIndexData()
+  }
+
   // 重置搜索状态
   searchStore.clearSearch()
 })

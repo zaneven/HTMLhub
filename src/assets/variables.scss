@@ -1,0 +1,15 @@
+// ==========================================
+// 全局响应式断点
+// ==========================================
+$breakpoint-xs: 480px;    // 超小屏幕
+$breakpoint-sm: 768px;    // 移动端
+$breakpoint-md: 1024px;   // 平板端 / 桌面端分界
+$breakpoint-lg: 1440px;   // 大屏幕
+
+// ==========================================
+// 布局尺寸
+// ==========================================
+$header-height-desktop: 64px;
+$header-height-mobile: 56px;
+$sidebar-width-desktop: 280px;
+$sidebar-width-tablet: 240px;

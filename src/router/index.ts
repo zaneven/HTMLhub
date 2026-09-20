@@ -83,11 +83,24 @@ const router = createRouter({
 })
 
 /**
+ * Token 本地过期时间缓存（避免每次导航都请求远程验证）
+ */
+let tokenCacheValid = false
+let tokenCacheTimestamp = 0
+const TOKEN_CACHE_TTL = 60_000 // 本地缓存 60 秒
+
+/**
  * 验证 token 是否有效
  */
 async function validateToken(token: string): Promise<boolean> {
   const apiUrl = import.meta.env.VITE_API_URL
   if (!apiUrl) return false
+
+  // 本地缓存未过期，跳过远程验证
+  const now = Date.now()
+  if (tokenCacheValid && now - tokenCacheTimestamp < TOKEN_CACHE_TTL) {
+    return true
+  }
 
   try {
     const response = await fetch(`${apiUrl}/api/refresh`, {
@@ -99,12 +112,16 @@ async function validateToken(token: string): Promise<boolean> {
 
     if (response.status === 401) {
       localStorage.removeItem('auth_token')
+      tokenCacheValid = false
       return false
     }
 
+    tokenCacheValid = response.ok
+    tokenCacheTimestamp = now
     return response.ok
   } catch {
-    return true
+    // 网络错误时保持缓存状态
+    return tokenCacheValid || true
   }
 }
 
@@ -134,6 +151,7 @@ router.beforeEach(async (to, from, next) => {
 
   if (!token) {
     // 未登录，跳转登录页
+    tokenCacheValid = false
     next({ name: 'login' })
     return
   }

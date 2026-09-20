@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterView, useRoute } from 'vue-router'
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, computed, ref, watch } from 'vue'
 import { darkTheme, lightTheme, zhCN, dateZhCN } from 'naive-ui'
 import { useSettingsStore } from './stores/settings'
 import { useFilesStore } from './stores/files'
@@ -21,6 +21,15 @@ const showLayout = computed(() => {
 const theme = computed(() => {
   return settingsStore.effectiveThemeMode === 'dark' ? darkTheme : lightTheme
 })
+
+// 监听主题模式变化，同步到 html 根节点 data-theme 属性
+watch(
+  () => settingsStore.effectiveThemeMode,
+  (mode) => {
+    document.documentElement.setAttribute('data-theme', mode)
+  },
+  { immediate: true }
+)
 
 // 主题覆盖配置
 const themeOverrides = computed(() => {

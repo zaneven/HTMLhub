@@ -19,6 +19,13 @@ export default defineConfig(() => {
         '@': fileURLToPath(new URL('./src', import.meta.url))
       },
     },
+    css: {
+      preprocessorOptions: {
+        scss: {
+          additionalData: `@use "@/assets/variables.scss" as *;`,
+        },
+      },
+    },
     // 静态资源配置
     publicDir: 'public',
     server: {
