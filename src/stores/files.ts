@@ -25,6 +25,7 @@ export const useFilesStore = defineStore('files', () => {
   const uploading = ref(false)
   const error = ref<string | null>(null)
   const selectedCategory = ref<string>('')
+  const showUploadModal = ref(false)
 
   // 计算属性
   const projects = computed(() => indexData.value?.projects || [])
@@ -648,6 +649,7 @@ export const useFilesStore = defineStore('files', () => {
     uploading,
     error,
     selectedCategory,
+    showUploadModal,
 
     // 计算属性
     projects,

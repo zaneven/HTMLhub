@@ -226,18 +226,18 @@ body {
 }
 
 .main-layout-content {
-  padding: 32px;
+  padding: 20px 24px;
   overflow-y: auto;
-  height: calc(100vh - 64px);
-  /* 使用固定的主色透明度背景，避免未定义变量导致渲染问题 */
-  background: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.03) 0%, transparent 50%);
+  height: calc(100vh - 56px);
+  background: var(--n-body-color, #f8fafc);
+  font-variant-numeric: tabular-nums;
 }
 
 /* 移动端适配 */
 @media (max-width: 767px) {
   .main-layout-content {
-    padding: 16px;
-    height: calc(100vh - 56px);
+    padding: 14px;
+    height: calc(100vh - 52px);
   }
 }
 </style>

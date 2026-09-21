@@ -1,93 +1,51 @@
 <template>
   <div class="app-main">
-    <!-- 工具栏 -->
-    <div class="toolbar">
-      <div class="toolbar-left">
-        <div class="category-info" v-if="selectedCategory">
-          <div class="category-icon">
-            <n-icon size="20">
-              <FolderOpenOutline />
-            </n-icon>
-          </div>
-          <div class="category-text">
-            <span class="category-label">当前目录</span>
-            <span class="category-value">{{ selectedCategory }}</span>
-          </div>
-        </div>
-        <div class="all-projects-info" v-else>
-          <span class="all-projects-label">所有项目</span>
-        </div>
-        <n-divider vertical />
-        <div class="stats-badge">
-          <span class="count-number">{{ filteredProjects.length }}</span>
-          <span class="count-label">个项目</span>
-        </div>
-      </div>
-
-      <div class="toolbar-right">
-        <n-space size="small">
-          <n-button v-if="isCloudMode && isAuthenticated" :loading="loading" secondary circle @click="handleRefresh">
-            <template #icon>
-              <n-icon><RefreshOutline /></n-icon>
-            </template>
-          </n-button>
-          <n-button v-if="isCloudMode && isAuthenticated" type="primary" class="upload-btn" @click="showUploadModal = true">
-            <template #icon>
-              <n-icon><CloudUploadOutline /></n-icon>
-            </template>
-            上传项目
-          </n-button>
-        </n-space>
-      </div>
-    </div>
-
-    <!-- 主内容区 -->
+    <!-- 主内容区：直接呈现纯净高效的项目资产面板 -->
     <div class="main-content">
       <!-- 加载状态 -->
       <div v-if="loading && filteredProjects.length === 0" class="loading-container">
         <n-spin size="large">
           <template #description>
-            <span class="loading-text">正在检索项目资源...</span>
+            <span class="loading-text">正在检索项目索引...</span>
           </template>
         </n-spin>
       </div>
 
       <!-- 错误状态 -->
       <div v-else-if="error" class="error-container">
-        <n-result status="error" title="加载失败" :description="error">
+        <n-result status="error" title="索引加载遇到问题" :description="error">
           <template #footer>
-            <n-button @click="handleRefresh">重试</n-button>
+            <n-button type="primary" @click="handleRefresh">重新加载索引</n-button>
           </template>
         </n-result>
       </div>
 
-      <!-- 空状态 -->
+      <!-- 空状态：指向明确行动的方向性引导 -->
       <div v-else-if="filteredProjects.length === 0" class="empty-container">
-        <n-empty description="此目录下暂无项目" size="large">
-          <template #icon>
-            <n-icon><FolderOpenOutline /></n-icon>
-          </template>
-          <template #extra>
-            <n-space vertical align="center" size="large">
-              <p class="empty-hint">您可以尝试切换分类或上传新项目</p>
-              <n-space>
-                <n-button secondary @click="clearCategory" v-if="selectedCategory">
-                  返回全部项目
-                </n-button>
-                <n-button
-                  v-if="isCloudMode && isAuthenticated"
-                  type="primary"
-                  @click="showUploadModal = true"
-                >
-                  立即上传
-                </n-button>
-              </n-space>
-            </n-space>
-          </template>
-        </n-empty>
+        <div class="empty-box">
+          <div class="empty-icon-wrap">
+            <n-icon size="36" class="empty-icon"><FolderOpenOutline /></n-icon>
+          </div>
+          <h3 class="empty-title">当前视图未检索到项目</h3>
+          <p class="empty-desc">
+            {{ selectedCategory ? `分类「${selectedCategory}」下暂无 HTML 资源` : '尚未扫描到任何本地静态网页或云端部署项目' }}
+          </p>
+          <div class="empty-actions">
+            <n-button v-if="selectedCategory" secondary @click="clearCategory">
+              查看全部项目
+            </n-button>
+            <n-button
+              v-if="isCloudMode && isAuthenticated"
+              type="primary"
+              @click="filesStore.showUploadModal = true"
+            >
+              上传首个项目
+            </n-button>
+          </div>
+        </div>
       </div>
 
-      <!-- 项目卡片网格 -->
+      <!-- 项目卡片网格：工坊级高信噪比排版 -->
       <div v-else class="projects-grid">
         <ProjectCard
           v-for="project in filteredProjects"
@@ -100,21 +58,21 @@
     </div>
   </div>
 
-  <!-- 上传弹窗 -->
+  <!-- 全局上传弹窗 -->
   <n-modal
-    v-model:show="showUploadModal"
+    v-model:show="filesStore.showUploadModal"
     preset="card"
-    title="上传静态项目"
-    style="width: 580px; max-width: 92vw"
+    title="上传 HTML 项目"
+    style="width: 580px; max-width: 92vw; border-radius: 12px;"
     :mask-closable="false"
   >
     <FileUpload @success="handleUploadSuccess" />
   </n-modal>
 
-  <!-- 编辑弹窗 (静态网站管理与满屏预览工作台) -->
+  <!-- 全屏工作台 (多设备视口全屏预览与文件管理工作台) -->
   <n-modal
     v-model:show="showEditModal"
-    style="width: 98vw; height: 96vh; max-width: none; margin: 2vh auto"
+    style="width: 98vw; height: 96vh; max-width: none; margin: 2vh auto; border-radius: 14px;"
     :mask-closable="false"
     @after-leave="editingProject = null"
   >
@@ -131,20 +89,13 @@
 import { computed, ref } from 'vue'
 import { 
   NButton, 
-  NEmpty, 
   NSpin, 
   NIcon, 
-  NDivider, 
-  NSpace, 
   NModal, 
   NResult,
   useMessage 
 } from 'naive-ui'
-import {
-  FolderOpenOutline,
-  CloudUploadOutline,
-  RefreshOutline,
-} from '@vicons/ionicons5'
+import { FolderOpenOutline } from '@vicons/ionicons5'
 import { useFilesStore } from '@/stores/files'
 import { useAuthStore } from '@/stores/auth'
 import { useAppMode } from '@/composables/useAppMode'
@@ -153,231 +104,141 @@ import FileUpload from '@/components/admin/FileUpload.vue'
 import ProjectEditor from '@/components/admin/ProjectEditor.vue'
 import type { ProjectInfo } from '@/types'
 
-// Store
 const filesStore = useFilesStore()
 const authStore = useAuthStore()
 const { isCloudMode } = useAppMode()
 const message = useMessage()
 
-// 响应式状态
-const showUploadModal = ref(false)
+// 编辑工作台状态
 const showEditModal = ref(false)
 const editingProject = ref<ProjectInfo | null>(null)
 
-// 计算属性
 const loading = computed(() => filesStore.loading)
 const error = computed(() => filesStore.error)
-const selectedCategory = computed(() => filesStore.selectedCategory)
 const filteredProjects = computed(() => filesStore.filteredProjects)
+const selectedCategory = computed(() => filesStore.selectedCategory)
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 
-// 方法
+function handleRefresh() {
+  filesStore.reloadIndexData()
+}
+
 function clearCategory() {
   filesStore.setSelectedCategory('')
 }
 
-// 刷新索引
-async function handleRefresh() {
-  const success = await filesStore.refreshIndex()
-  if (success) {
-    message.success('索引刷新成功')
-  } else {
-    message.error(filesStore.error || '刷新失败')
-  }
-}
-
-// 处理上传成功
-function handleUploadSuccess() {
-  showUploadModal.value = false
-  message.success('上传成功')
-}
-
-// 处理编辑
 function handleEdit(project: ProjectInfo) {
   editingProject.value = project
   showEditModal.value = true
 }
 
-// 关闭编辑
 function handleEditClose() {
   showEditModal.value = false
   editingProject.value = null
 }
 
-// 保存编辑
 function handleEditSaved() {
-  message.success('项目已更新')
+  filesStore.reloadIndexData()
 }
 
-// 处理删除
 async function handleDelete(project: ProjectInfo) {
   const success = await filesStore.deleteProject(project)
   if (success) {
-    message.success('删除成功')
+    message.success(`已删除项目: ${project.name}`)
   } else {
     message.error(filesStore.error || '删除失败')
   }
+}
+
+function handleUploadSuccess() {
+  filesStore.showUploadModal = false
+  message.success('上传成功并同步完成')
 }
 </script>
 
 <style scoped>
 .app-main {
-  display: flex;
-  flex-direction: column;
   height: 100%;
-  padding: 24px;
-  background-color: var(--n-color);
-}
-
-.toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding: 16px 20px;
-  background-color: var(--n-card-color);
-  border-radius: 20px;
-  border: 1px solid var(--n-border-color);
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
-}
-
-.toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.category-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.category-icon {
-  width: 40px;
-  height: 40px;
-  background-color: var(--n-primary-color-hover);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--n-primary-color);
-}
-
-.category-text {
   display: flex;
   flex-direction: column;
-  line-height: 1.2;
-}
-
-.category-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--n-text-color-3);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.category-value {
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--n-text-color);
-}
-
-.all-projects-label {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--n-text-color);
-  letter-spacing: -0.5px;
-}
-
-.stats-badge {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.count-number {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--n-primary-color);
-}
-
-.count-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--n-text-color-3);
-}
-
-.upload-btn {
-  font-weight: 700;
-  padding: 0 20px;
 }
 
 .main-content {
   flex: 1;
-  overflow-y: auto;
-  padding: 4px;
 }
 
+/* 工坊级响应式网格布局 */
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* 状态容器 */
 .loading-container,
 .error-container,
 .empty-container {
+  min-height: 380px;
   display: flex;
-  justify-content: center;
   align-items: center;
-  min-height: 400px;
+  justify-content: center;
 }
 
 .loading-text {
-  font-weight: 600;
+  font-size: 13px;
+  color: var(--n-text-color-3);
+  margin-top: 8px;
+}
+
+/* 方向性空状态 */
+.empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 360px;
+  padding: 32px 16px;
+}
+
+.empty-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(var(--n-text-color-rgb), 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.empty-icon {
   color: var(--n-text-color-3);
 }
 
-.empty-hint {
+.empty-title {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--n-text-color-1);
+}
+
+.empty-desc {
+  margin: 0 0 20px;
+  font-size: 13px;
   color: var(--n-text-color-3);
-  font-size: 14px;
+  line-height: 1.5;
 }
 
-.projects-grid {
-  display: grid;
-  gap: 24px;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+.empty-actions {
+  display: flex;
+  gap: 10px;
 }
 
-  /* 响应式适配 */
-  @media (max-width: 767px) {
-    .app-main {
-      padding: 12px;
-    }
-
-    .toolbar {
-      flex-direction: column;
-      gap: 16px;
-      align-items: stretch;
-      padding: 16px;
-    }
-
-    .toolbar-left {
-      justify-content: space-between;
-    }
-
-    .toolbar-right {
-      display: flex;
-      justify-content: flex-end;
-    }
-
-    .projects-grid {
-      grid-template-columns: 1fr;
-      gap: 16px;
-    }
+@media (max-width: 640px) {
+  .projects-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
-
-  /* 大屏幕优化 */
-  @media (min-width: 1440px) {
-    .projects-grid {
-      gap: 32px;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    }
-  }
+}
 </style>

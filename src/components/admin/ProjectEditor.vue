@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick, type Component } from 'vue'
 import {
   NIcon,
   NButton,
@@ -12,7 +12,6 @@ import {
   NUploadDragger,
   NInput,
   NTooltip,
-  NSelect,
   NModal,
   useMessage,
   type UploadCustomRequestOptions,
@@ -37,6 +36,11 @@ import {
   ContractOutline,
   LockClosedOutline,
   CloudOutline,
+  DesktopOutline,
+  TvOutline,
+  LaptopOutline,
+  PhonePortraitOutline,
+  ExpandOutline,
 } from '@vicons/ionicons5'
 import { useFilesStore } from '@/stores/files'
 import type { ProjectInfo } from '@/types'
@@ -58,21 +62,65 @@ const loading = ref(false)
 const searchPattern = ref('')
 const iframeKey = ref(0)
 
-// 屏幕视口分辨率预设（正常屏幕比例）
+// 屏幕视口分辨率预设（正常屏幕比例与工业工坊预设）
 interface ScreenResolution {
   label: string
+  shortLabel: string
   value: string
   width: number
   height: number
   isFluid?: boolean
+  icon: Component
+  ratio: string
 }
 
 const resolutions: ScreenResolution[] = [
-  { label: '标准桌面 (1440 × 900 · 16:10)', value: '1440x900', width: 1440, height: 900 },
-  { label: '全高清大屏 (1920 × 1080 · 16:9)', value: '1920x1080', width: 1920, height: 1080 },
-  { label: '紧凑桌面 (1280 × 720 · 16:9)', value: '1280x720', width: 1280, height: 720 },
-  { label: '移动端视口 (375 × 812 · 手机)', value: '375x812', width: 375, height: 812 },
-  { label: '流式铺满 (100% 自适应)', value: 'fluid', width: 0, height: 0, isFluid: true },
+  {
+    label: '标准桌面 (1440 × 900)',
+    shortLabel: '标准 1440',
+    value: '1440x900',
+    width: 1440,
+    height: 900,
+    icon: DesktopOutline,
+    ratio: '16:10',
+  },
+  {
+    label: '全高清大屏 (1920 × 1080)',
+    shortLabel: '高清 1920',
+    value: '1920x1080',
+    width: 1920,
+    height: 1080,
+    icon: TvOutline,
+    ratio: '16:9',
+  },
+  {
+    label: '紧凑桌面 (1280 × 720)',
+    shortLabel: '紧凑 1280',
+    value: '1280x720',
+    width: 1280,
+    height: 720,
+    icon: LaptopOutline,
+    ratio: '16:9',
+  },
+  {
+    label: '移动端视口 (375 × 812)',
+    shortLabel: '移动 375',
+    value: '375x812',
+    width: 375,
+    height: 812,
+    icon: PhonePortraitOutline,
+    ratio: '9:19.5',
+  },
+  {
+    label: '流式铺满 (100% 自适应)',
+    shortLabel: '流式铺满',
+    value: 'fluid',
+    width: 0,
+    height: 0,
+    isFluid: true,
+    icon: ExpandOutline,
+    ratio: '100%',
+  },
 ]
 
 // 当前选中的视口分辨率，默认 1440x900 标准桌面
@@ -99,7 +147,7 @@ const autoScaleRatio = computed(() => {
   const targetH = currentResolution.value.height
   if (targetW <= 0 || targetH <= 0) return 1
 
-  // 预留四周 32px 边距
+  // 预留四周 40px 边距
   const availW = Math.max(stageWidth.value - 40, 200)
   const availH = Math.max(stageHeight.value - 40, 200)
 
@@ -134,14 +182,6 @@ function handleResetAutoFit() {
   isAutoFit.value = true
   manualScale.value = autoScaleRatio.value
 }
-
-// 分辨率选择选项列表
-const resolutionSelectOptions = computed(() => {
-  return resolutions.map((r) => ({
-    label: r.label,
-    value: r.value,
-  }))
-})
 
 // 切换分辨率时重置为自适应
 function handleResolutionChange(val: string) {
@@ -356,7 +396,7 @@ onBeforeUnmount(() => {
     <header class="console-header">
       <div class="header-brand-group">
         <div class="brand-avatar">
-          <n-icon size="22" color="#6366f1">
+          <n-icon size="20" class="brand-avatar-icon">
             <DocumentTextOutline />
           </n-icon>
         </div>
@@ -542,16 +582,34 @@ onBeforeUnmount(() => {
       <main class="preview-panel">
         <!-- 预览区顶部控制工具条 -->
         <div class="preview-navbar">
-          <!-- 左侧：视口比例选择器 -->
+          <!-- 左侧：工业工坊分段视口切换坞 (Studio Viewport Dock) -->
           <div class="navbar-left">
-            <span class="navbar-label">屏幕视口比例:</span>
-            <n-select
-              :value="selectedResValue"
-              :options="resolutionSelectOptions"
-              size="small"
-              style="width: 250px"
-              @update:value="handleResolutionChange"
-            />
+            <div class="viewport-dock">
+              <button
+                v-for="res in resolutions"
+                :key="res.value"
+                type="button"
+                class="viewport-dock-btn"
+                :class="{ 'is-active': selectedResValue === res.value }"
+                :title="res.label"
+                @click="handleResolutionChange(res.value)"
+              >
+                <n-icon size="13"><component :is="res.icon" /></n-icon>
+                <span class="viewport-btn-text">{{ res.shortLabel }}</span>
+              </button>
+            </div>
+
+            <!-- 取景器指示胶囊 -->
+            <div class="viewport-telemetry-badge">
+              <template v-if="!currentResolution.isFluid">
+                <span class="telemetry-dims">{{ currentResolution.width }} × {{ currentResolution.height }}</span>
+                <span class="telemetry-sep">·</span>
+                <span class="telemetry-ratio">{{ currentResolution.ratio }}</span>
+              </template>
+              <template v-else>
+                <span class="telemetry-dims">100% 全宽流式</span>
+              </template>
+            </div>
           </div>
 
           <!-- 右侧：缩放控制与页面刷新 -->
@@ -699,19 +757,24 @@ onBeforeUnmount(() => {
 .header-brand-group {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
 }
 
 .brand-avatar {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 8px;
-  background: rgba(99, 102, 241, 0.12);
+  background: var(--n-color);
+  border: 1px solid var(--n-border-color);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.brand-avatar-icon {
+  color: #4f46e5;
 }
 
 .brand-info {
@@ -726,7 +789,7 @@ onBeforeUnmount(() => {
 
 .project-title {
   margin: 0;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--n-text-color);
   white-space: nowrap;
@@ -758,7 +821,7 @@ onBeforeUnmount(() => {
 
 .project-live-address a:hover {
   text-decoration: underline;
-  color: #6366f1;
+  color: #4f46e5;
 }
 
 /* 双栏主体 */
@@ -770,7 +833,7 @@ onBeforeUnmount(() => {
 
 /* 左侧文件面板 */
 .files-panel {
-  width: 350px;
+  width: 340px;
   border-right: 1px solid var(--n-border-color);
   background: var(--n-color);
   display: flex;
@@ -927,7 +990,7 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 18px;
+  padding: 8px 18px;
   border-bottom: 1px solid var(--n-border-color);
   background: var(--n-color);
   flex-shrink: 0;
@@ -936,13 +999,73 @@ onBeforeUnmount(() => {
 .navbar-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
-.navbar-label {
-  font-size: 13px;
+/* 工业工坊分段视口切换坞 */
+.viewport-dock {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  background: var(--n-color-embedded);
+  border: 1px solid var(--n-border-color);
+  border-radius: 6px;
+  gap: 2px;
+}
+
+.viewport-dock-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  color: var(--n-text-color-3);
+  font-size: 12px;
   font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.viewport-dock-btn:hover {
+  color: var(--n-text-color-1);
+}
+
+.viewport-dock-btn.is-active {
+  background: var(--n-color);
+  color: var(--n-text-color-1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  font-weight: 600;
+}
+
+/* 取景器信息指示胶囊 */
+.viewport-telemetry-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: var(--n-color-embedded);
+  border: 1px solid var(--n-border-color);
+  font-size: 11px;
+  font-family: var(--font-mono, monospace);
+  color: var(--n-text-color-3);
+}
+
+.telemetry-dims {
+  font-weight: 600;
   color: var(--n-text-color-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.telemetry-sep {
+  opacity: 0.5;
+}
+
+.telemetry-ratio {
+  color: var(--n-text-color-3);
 }
 
 .navbar-right {

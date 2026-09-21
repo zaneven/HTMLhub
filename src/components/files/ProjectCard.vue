@@ -1,94 +1,76 @@
 <template>
-  <div class="project-card-demo" @click="handleCardClick">
-    <!-- 顶部品牌渐变流光掠影 -->
-    <div class="card-top-glow"></div>
-
-    <!-- 头部区域 -->
-    <div class="card-header-area">
-      <div class="card-title-group">
+  <div class="project-card" @click="handleCardClick">
+    <!-- 头部区域：图标 + 标题 + 来源标识 -->
+    <div class="card-header">
+      <div class="card-identity">
         <div class="card-file-icon" :class="iconColorClass">
-          <n-icon size="18">
+          <n-icon size="16">
             <component :is="iconComponent" />
           </n-icon>
         </div>
-        <div class="card-title-info">
-          <div class="card-title-text" :title="project.name">
+        <div class="card-text-block">
+          <div class="card-title" :title="project.name">
             {{ project.name }}
           </div>
-          <div class="card-subtitle-path">
+          <div class="card-subpath">
             {{ project.category }} / {{ project.type === 'directory' ? 'project' : 'html' }}
           </div>
         </div>
       </div>
 
-      <div class="card-header-badges">
-        <!-- 双通道来源标签 -->
-        <span 
-          class="badge-pill" 
-          :class="project.source === 'cloud' ? 'badge-cloud' : 'badge-local'"
-        >
-          <n-icon size="12" style="margin-right: 3px;">
-            <CloudOutline v-if="project.source === 'cloud'" />
-            <DesktopOutline v-else />
-          </n-icon>
-          {{ project.source === 'cloud' ? '云端 R2' : '本地静态' }}
-        </span>
+      <!-- 来源硬核微标 -->
+      <div class="card-source-tag" :class="project.source === 'cloud' ? 'source-cloud' : 'source-local'">
+        <n-icon size="12" class="source-icon">
+          <CloudOutline v-if="project.source === 'cloud'" />
+          <DesktopOutline v-else />
+        </n-icon>
+        <span>{{ project.source === 'cloud' ? '云端 R2' : '本地' }}</span>
       </div>
     </div>
 
-    <!-- 核心元信息区域 (高信噪比技术芯片，取代冗余代码剪影) -->
-    <div class="card-body-meta">
-      <div class="card-meta-chips">
-        <!-- 分类路径 -->
-        <span class="meta-chip">
-          <n-icon size="12" class="chip-icon"><FolderOutline /></n-icon>
-          <span>{{ project.category }}</span>
-        </span>
-
-        <!-- 相对更新时间 -->
-        <span class="meta-chip">
-          <n-icon size="12" class="chip-icon"><TimeOutline /></n-icon>
-          <span>{{ formatRelativeTime(project.modifiedAt) }}</span>
-        </span>
-
-        <!-- 状态指示小绿点 -->
-        <span class="meta-chip status-chip">
-          <span class="status-indicator-dot"></span>
-          <span>{{ project.source === 'cloud' ? '已同步' : '就绪' }}</span>
-        </span>
-      </div>
+    <!-- 核心元数据行：紧凑高信噪比单行排版，拒绝药丸标签堆砌 -->
+    <div class="card-meta-line">
+      <span class="meta-item">
+        <n-icon size="12" class="meta-icon"><TimeOutline /></n-icon>
+        <span class="meta-text">{{ formatRelativeTime(project.modifiedAt) }}</span>
+      </span>
+      <span class="meta-sep">·</span>
+      <span class="meta-item">
+        <span class="status-dot"></span>
+        <span class="meta-text">{{ project.source === 'cloud' ? '已同步' : '就绪' }}</span>
+      </span>
     </div>
 
-    <!-- 底部操作栏 -->
-    <div class="card-meta-footer" @click.stop>
-      <!-- 左侧：一键复制直链与管理员工具 -->
-      <div class="footer-actions-left">
+    <!-- 底部操作条：极简工坊动作 -->
+    <div class="card-footer" @click.stop>
+      <div class="footer-actions">
+        <!-- 复制直链 -->
         <button 
-          class="card-btn-action" 
+          class="icon-action-btn" 
           title="复制直链" 
           @click.stop="handleCopyLink"
         >
-          <n-icon size="14"><CopyOutline /></n-icon>
+          <n-icon size="13"><CopyOutline /></n-icon>
         </button>
 
-        <!-- 管理员工具：编辑与删除 -->
+        <!-- 管理员专属工具 -->
         <template v-if="project.source === 'cloud' && isAuthenticated">
           <button 
-            class="card-btn-action btn-edit" 
-            title="管理项目与预览" 
+            class="icon-action-btn" 
+            title="管理项目与设置" 
             @click.stop="$emit('edit', project)"
           >
-            <n-icon size="14"><CreateOutline /></n-icon>
+            <n-icon size="13"><CreateOutline /></n-icon>
           </button>
           
           <n-popconfirm @positive-click.stop="$emit('delete', project)" @click.stop>
             <template #trigger>
               <button 
-                class="card-btn-action btn-danger" 
+                class="icon-action-btn btn-danger" 
                 title="删除项目" 
                 @click.stop
               >
-                <n-icon size="14"><TrashOutline /></n-icon>
+                <n-icon size="13"><TrashOutline /></n-icon>
               </button>
             </template>
             确定要永久删除此项目吗？
@@ -96,17 +78,15 @@
         </template>
       </div>
 
-      <!-- 右侧动作组：仅保留一个清晰的在新窗口访问站点按钮 -->
-      <div class="footer-actions-right">
-        <button 
-          class="card-btn-primary" 
-          title="在新标签页中访问该网页"
-          @click.stop="handleOpenExternal"
-        >
-          <n-icon size="14" style="margin-right: 4px;"><OpenOutline /></n-icon>
-          访问站点
-        </button>
-      </div>
+      <!-- 右侧：单一明确的在新标签页打开外部访问按钮 -->
+      <button 
+        class="open-external-btn" 
+        title="在新窗口中独立访问"
+        @click.stop="handleOpenExternal"
+      >
+        <span>访问</span>
+        <n-icon size="12"><OpenOutline /></n-icon>
+      </button>
     </div>
   </div>
 </template>
@@ -117,7 +97,6 @@ import { NIcon, NPopconfirm, useMessage } from 'naive-ui'
 import { 
   FolderOpenOutline, 
   DocumentTextOutline, 
-  FolderOutline,
   TimeOutline,
   OpenOutline,
   CloudOutline,
@@ -141,50 +120,42 @@ const emit = defineEmits<{
 
 const filesStore = useFilesStore()
 const authStore = useAuthStore()
+const message = useMessage()
+
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 
-let message: ReturnType<typeof useMessage> | null = null
-try {
-  message = useMessage()
-} catch {
-  message = null
-}
-
 const iconComponent = computed(() => {
-  if (props.project.source === 'cloud') {
-    return CloudOutline
-  }
   return props.project.type === 'directory' ? FolderOpenOutline : DocumentTextOutline
 })
 
 const iconColorClass = computed(() => {
-  if (props.project.source === 'cloud') {
-    return 'icon-cyan'
+  if (props.project.type === 'directory') {
+    return 'icon-dir'
   }
-  return props.project.type === 'directory' ? 'icon-green' : 'icon-blue'
+  return 'icon-doc'
 })
 
 function formatRelativeTime(dateString: string): string {
-  if (!dateString) return '刚刚'
-  const date = new Date(dateString)
-  if (isNaN(date.getTime())) return dateString
+  try {
+    const date = new Date(dateString)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffSec = Math.floor(diffMs / 1000)
+    const diffMin = Math.floor(diffSec / 60)
+    const diffHour = Math.floor(diffMin / 60)
+    const diffDay = Math.floor(diffHour / 24)
 
-  const now = new Date()
-  const diffSec = Math.floor((now.getTime() - date.getTime()) / 1000)
-
-  if (diffSec < 60) return '刚刚'
-  if (diffSec < 3600) return `${Math.floor(diffSec / 60)} 分钟前`
-  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)} 小时前`
-  if (diffSec < 86400 * 30) return `${Math.floor(diffSec / 86400)} 天前`
-
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  })
+    if (diffSec < 60) return '刚刚'
+    if (diffMin < 60) return `${diffMin}分钟前`
+    if (diffHour < 24) return `${diffHour}小时前`
+    if (diffDay < 30) return `${diffDay}天前`
+    
+    return date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' })
+  } catch {
+    return dateString
+  }
 }
 
-// 直接点击卡片时，打开编辑和预览窗口
 function handleCardClick() {
   emit('edit', props.project)
 }
@@ -209,62 +180,49 @@ async function handleCopyLink() {
       document.execCommand('copy')
       document.body.removeChild(textarea)
     }
-    if (message) {
-      message.success(`已复制直链: ${props.project.name}`)
-    }
+    message?.success(`已复制直链: ${props.project.name}`)
   } catch {
-    if (message) {
-      message.error('复制直链失败')
-    }
+    message?.error('复制直链失败')
   }
 }
 </script>
 
-<style scoped lang="scss">
-.project-card-demo {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md, 12px);
-  overflow: hidden;
+<style scoped>
+.project-card {
+  background: var(--n-card-color, #ffffff);
+  border: 1px solid var(--n-border-color, #e2e8f0);
+  border-radius: 12px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
-  transition: all var(--transition-normal, 0.25s ease);
-  position: relative;
-  box-shadow: var(--shadow-sm);
+  justify-content: space-between;
   cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
   height: 100%;
 }
 
-.project-card-demo:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-primary-hover, #818cf8);
+.project-card:hover {
+  border-color: #818cf8;
+  box-shadow: 0 4px 14px -2px rgba(15, 23, 42, 0.06);
 }
 
-.card-top-glow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--gradient-brand, linear-gradient(135deg, #6366f1 0%, #06b6d4 100%));
-  opacity: 0;
-  transition: opacity var(--transition-normal, 0.25s ease);
+:root[data-theme='dark'] .project-card:hover,
+.dark .project-card:hover {
+  border-color: #6366f1;
+  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.4);
 }
 
-.project-card-demo:hover .card-top-glow {
-  opacity: 1;
-}
-
-.card-header-area {
-  padding: 16px 16px 12px;
+/* 头部 */
+.card-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  margin-bottom: 12px;
 }
 
-.card-title-group {
+.card-identity {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -273,205 +231,184 @@ async function handleCopyLink() {
 }
 
 .card-file-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm, 8px);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: transform 0.2s ease;
 }
 
-.project-card-demo:hover .card-file-icon {
-  transform: scale(1.05);
+.icon-dir {
+  background: rgba(79, 70, 229, 0.08);
+  color: #4f46e5;
 }
 
-.card-file-icon.icon-blue {
-  background: rgba(99, 102, 241, 0.12);
-  color: var(--color-primary, #6366f1);
-  border: 1px solid rgba(99, 102, 241, 0.25);
+.icon-doc {
+  background: rgba(2, 132, 199, 0.08);
+  color: #0284c7;
 }
 
-.card-file-icon.icon-cyan {
-  background: var(--color-cloud-bg, rgba(14, 165, 233, 0.12));
-  color: var(--color-cloud, #0284c7);
-  border: 1px solid var(--color-cloud-border, rgba(14, 165, 233, 0.25));
+:root[data-theme='dark'] .icon-dir,
+.dark .icon-dir {
+  background: rgba(129, 140, 248, 0.15);
+  color: #a5b4fc;
 }
 
-.card-file-icon.icon-green {
-  background: var(--color-local-bg, rgba(16, 185, 129, 0.12));
-  color: var(--color-local, #059669);
-  border: 1px solid var(--color-local-border, rgba(16, 185, 129, 0.25));
+:root[data-theme='dark'] .icon-doc,
+.dark .icon-doc {
+  background: rgba(56, 189, 248, 0.15);
+  color: #7dd3fc;
 }
 
-.card-title-info {
+.card-text-block {
   min-width: 0;
   flex: 1;
 }
 
-.card-title-text {
+.card-title {
   font-size: 14px;
-  font-weight: 600;
-  color: var(--text-main);
+  font-weight: 700;
+  color: var(--n-text-color-1, #0f172a);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
-.card-subtitle-path {
+.card-subpath {
   font-size: 11px;
-  color: var(--text-muted);
-  font-family: var(--font-mono, monospace);
+  color: var(--n-text-color-3, #64748b);
+  font-family: monospace;
   margin-top: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.card-header-badges {
-  flex-shrink: 0;
-}
-
-.badge-pill {
-  display: inline-flex;
-  align-items: center;
-  font-size: 11px;
-  font-weight: 500;
-  padding: 3px 8px;
-  border-radius: 9999px;
-  line-height: 1;
-}
-
-.badge-cloud {
-  background: var(--color-cloud-bg);
-  color: var(--color-cloud);
-  border: 1px solid var(--color-cloud-border);
-}
-
-.badge-local {
-  background: var(--color-local-bg);
-  color: var(--color-local);
-  border: 1px solid var(--color-local-border);
-}
-
-/* 核心元信息区域 */
-.card-body-meta {
-  padding: 0 16px 14px;
-  flex: 1;
-}
-
-.card-meta-chips {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.meta-chip {
+/* 来源微标 */
+.card-source-tag {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   font-size: 11px;
-  padding: 3px 7px;
-  border-radius: var(--radius-sm, 6px);
-  background: var(--bg-surface-elevated);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-subtle);
-  white-space: nowrap;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  flex-shrink: 0;
 }
 
-.meta-chip .chip-icon {
-  color: var(--text-muted);
+.source-cloud {
+  background: rgba(2, 132, 199, 0.08);
+  color: #0284c7;
+  border: 1px solid rgba(2, 132, 199, 0.2);
 }
 
-.meta-chip.status-chip {
-  color: var(--color-success, #10b981);
+.source-local {
   background: rgba(16, 185, 129, 0.08);
-  border-color: rgba(16, 185, 129, 0.2);
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.2);
 }
 
-.status-indicator-dot {
+:root[data-theme='dark'] .source-cloud,
+.dark .source-cloud {
+  background: rgba(56, 189, 248, 0.12);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.25);
+}
+
+:root[data-theme='dark'] .source-local,
+.dark .source-local {
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+/* 单行纯净元数据 */
+.card-meta-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--n-text-color-3, #64748b);
+  margin-bottom: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meta-sep {
+  opacity: 0.4;
+}
+
+.status-dot {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--color-success, #10b981);
-  box-shadow: 0 0 6px var(--color-success, #10b981);
+  background: #10b981;
 }
 
-/* 底部操作区 */
-.card-meta-footer {
-  padding: 10px 16px 12px;
-  margin-top: auto;
-  border-top: 1px solid var(--border-subtle);
+/* 底部操作 */
+.card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(var(--n-text-color-rgb), 0.06);
 }
 
-.footer-actions-left {
+.footer-actions {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.card-btn-action {
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-subtle);
-  color: var(--text-secondary);
-  border-radius: var(--radius-sm, 6px);
-  padding: 5px 8px;
-  display: inline-flex;
+.icon-action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(var(--n-text-color-rgb), 0.04);
+  border: 1px solid rgba(var(--n-text-color-rgb), 0.08);
+  color: var(--n-text-color-2);
+  display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
 }
 
-.card-btn-action:hover {
-  background: var(--bg-surface-subtle);
-  color: var(--text-main);
-  border-color: var(--border-medium);
+.icon-action-btn:hover {
+  background: rgba(var(--n-text-color-rgb), 0.08);
+  color: var(--n-text-color-1);
 }
 
-.card-btn-action.btn-danger:hover {
-  color: var(--color-danger, #ef4444);
-  border-color: rgba(239, 68, 68, 0.4);
+.icon-action-btn.btn-danger:hover {
+  color: #ef4444;
   background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
 }
 
-.card-btn-action.btn-edit:hover {
-  color: var(--color-primary, #6366f1);
-  border-color: rgba(99, 102, 241, 0.4);
-  background: rgba(99, 102, 241, 0.1);
-}
-
-.footer-actions-right {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.card-btn-primary {
-  background: var(--color-primary, #6366f1);
-  border: 1px solid transparent;
-  color: #ffffff;
-  border-radius: var(--radius-sm, 6px);
-  padding: 5px 12px;
-  font-size: 12px;
-  font-weight: 500;
+.open-external-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #4f46e5;
+  color: #ffffff;
+  border: none;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: var(--shadow-sm);
+  transition: background-color 0.15s ease;
 }
 
-.card-btn-primary:hover {
-  background: var(--color-primary-hover, #818cf8);
-  box-shadow: 0 0 12px rgba(99, 102, 241, 0.35);
+.open-external-btn:hover {
+  background: #4338ca;
 }
 </style>
