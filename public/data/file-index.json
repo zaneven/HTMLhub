@@ -1,15 +1,15 @@
 {
   "version": "2.0.0",
-  "generatedAt": "2026-09-21T02:01:55.476Z",
+  "generatedAt": "2026-09-21T02:26:55.578Z",
   "stats": {
     "totalCategories": 1,
-    "totalProjects": 1
+    "totalProjects": 3
   },
   "categories": [
     {
       "id": "5oql5ZGK5oC757uT",
       "name": "报告总结",
-      "projectCount": 1
+      "projectCount": 3
     }
   ],
   "projects": [
@@ -29,6 +29,44 @@
           "size": 42341,
           "type": "text/html",
           "modifiedAt": "2026-03-15T07:43:18.223Z"
+        }
+      ]
+    },
+    {
+      "id": "cHVibGljL2h0bWwtZmlsZXMv5oql5ZGK5oC757uTL2Rlc2lnbi1wcmV2aWV3Lmh0bWw=",
+      "name": "design-preview",
+      "category": "报告总结",
+      "path": "public/html-files/报告总结/design-preview.html",
+      "indexPath": "public/html-files/报告总结/design-preview.html",
+      "type": "file",
+      "createdAt": "2026-09-20T10:18:17.778Z",
+      "modifiedAt": "2026-09-20T10:18:17.779Z",
+      "files": [
+        {
+          "name": "design-preview.html",
+          "key": "public/html-files/报告总结/design-preview.html",
+          "size": 79405,
+          "type": "text/html",
+          "modifiedAt": "2026-09-20T10:18:17.779Z"
+        }
+      ]
+    },
+    {
+      "id": "cHVibGljL2h0bWwtZmlsZXMv5oql5ZGK5oC757uTL2Rlc2lnbi1zeXN0ZW0tcHJldmlldy5odG1s",
+      "name": "design-system-preview",
+      "category": "报告总结",
+      "path": "public/html-files/报告总结/design-system-preview.html",
+      "indexPath": "public/html-files/报告总结/design-system-preview.html",
+      "type": "file",
+      "createdAt": "2026-09-20T10:18:17.779Z",
+      "modifiedAt": "2026-09-20T10:18:17.779Z",
+      "files": [
+        {
+          "name": "design-system-preview.html",
+          "key": "public/html-files/报告总结/design-system-preview.html",
+          "size": 79405,
+          "type": "text/html",
+          "modifiedAt": "2026-09-20T10:18:17.779Z"
         }
       ]
     }

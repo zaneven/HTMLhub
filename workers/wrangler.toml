@@ -2,9 +2,8 @@ name = "htmlmanager-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
-# 自定义域名绑定
-# 域名: htmlmanager-api.getprompt.top
-# DNS 配置: 在 Cloudflare 添加 CNAME 记录，或使用 Pages 自定义域名
+# 自定义域名绑定 (可选)
+# 如果你没有独立域名，可以注释掉下面 routes 块，直接使用默认分配的 *.workers.dev 免费域名
 routes = [
   { pattern = "htmlmanager-api.getprompt.top", custom_domain = true }
 ]
@@ -13,12 +12,12 @@ routes = [
 [vars]
 # ADMIN_PASSWORD 应该通过 wrangler secret put ADMIN_PASSWORD 设置
 
-# R2 存储桶绑定
+# R2 存储桶绑定 (对应执行 wrangler r2 bucket create htmlmanager-files)
 [[r2_buckets]]
 binding = "HTML_FILES"
 bucket_name = "htmlmanager-files"
 
-# KV 命名空间绑定 (用于缓存索引)
+# KV 命名空间绑定 (执行 wrangler kv namespace create FILE_INDEX 获取到的 ID 替换此处)
 [[kv_namespaces]]
 binding = "FILE_INDEX"
 id = "7266aa1135814e9c805fe781c128fa5f"
