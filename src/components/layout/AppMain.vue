@@ -111,10 +111,10 @@
     <FileUpload @success="handleUploadSuccess" />
   </n-modal>
 
-  <!-- 编辑弹窗 (静态网站管理工作台) -->
+  <!-- 编辑弹窗 (静态网站管理与满屏预览工作台) -->
   <n-modal
     v-model:show="showEditModal"
-    style="width: 94vw; max-width: 1380px"
+    style="width: 98vw; height: 96vh; max-width: none; margin: 2vh auto"
     :mask-closable="false"
     @after-leave="editingProject = null"
   >

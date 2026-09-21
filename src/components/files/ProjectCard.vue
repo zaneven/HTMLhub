@@ -1,5 +1,5 @@
 <template>
-  <div class="project-card-demo" @click="handleClick">
+  <div class="project-card-demo" @click="handleCardClick">
     <!-- 顶部品牌渐变流光掠影 -->
     <div class="card-top-glow"></div>
 
@@ -75,7 +75,7 @@
         <template v-if="project.source === 'cloud' && isAuthenticated">
           <button 
             class="card-btn-action btn-edit" 
-            title="管理项目文件" 
+            title="管理项目与预览" 
             @click.stop="$emit('edit', project)"
           >
             <n-icon size="14"><CreateOutline /></n-icon>
@@ -96,21 +96,15 @@
         </template>
       </div>
 
-      <!-- 右侧动作组 -->
+      <!-- 右侧动作组：仅保留一个清晰的在新窗口访问站点按钮 -->
       <div class="footer-actions-right">
         <button 
-          class="card-btn-action" 
-          title="外部新窗口打开" 
+          class="card-btn-primary" 
+          title="在新标签页中访问该网页"
           @click.stop="handleOpenExternal"
         >
-          <n-icon size="14"><OpenOutline /></n-icon>
-        </button>
-        <button 
-          class="card-btn-primary" 
-          @click.stop="handleClick"
-        >
-          <n-icon size="14" style="margin-right: 4px;"><EyeOutline /></n-icon>
-          打开
+          <n-icon size="14" style="margin-right: 4px;"><OpenOutline /></n-icon>
+          访问站点
         </button>
       </div>
     </div>
@@ -125,7 +119,6 @@ import {
   DocumentTextOutline, 
   FolderOutline,
   TimeOutline,
-  EyeOutline,
   OpenOutline,
   CloudOutline,
   DesktopOutline,
@@ -141,7 +134,7 @@ const props = defineProps<{
   project: ProjectInfo
 }>()
 
-defineEmits<{
+const emit = defineEmits<{
   (e: 'edit', project: ProjectInfo): void
   (e: 'delete', project: ProjectInfo): void
 }>()
@@ -191,9 +184,9 @@ function formatRelativeTime(dateString: string): string {
   })
 }
 
-function handleClick() {
-  const url = filesStore.getFileUrl(props.project)
-  window.open(url, '_blank')
+// 直接点击卡片时，打开编辑和预览窗口
+function handleCardClick() {
+  emit('edit', props.project)
 }
 
 function handleOpenExternal() {

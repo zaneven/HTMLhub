@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import {
   NIcon,
   NButton,
@@ -12,6 +12,7 @@ import {
   NUploadDragger,
   NInput,
   NTooltip,
+  NSelect,
   NModal,
   useMessage,
   type UploadCustomRequestOptions,
@@ -31,8 +32,9 @@ import {
   ImageOutline,
   SearchOutline,
   CloudUploadOutline,
-  DesktopOutline,
-  PhonePortraitOutline,
+  AddOutline,
+  RemoveOutline,
+  ContractOutline,
 } from '@vicons/ionicons5'
 import { useFilesStore } from '@/stores/files'
 import type { ProjectInfo } from '@/types'
@@ -53,14 +55,104 @@ const message = useMessage()
 const loading = ref(false)
 const searchPattern = ref('')
 const iframeKey = ref(0)
-const previewDevice = ref<'desktop' | 'mobile'>('desktop')
+
+// 屏幕视口分辨率预设（正常屏幕比例）
+interface ScreenResolution {
+  label: string
+  value: string
+  width: number
+  height: number
+  isFluid?: boolean
+}
+
+const resolutions: ScreenResolution[] = [
+  { label: '标准桌面 (1440 × 900 · 16:10)', value: '1440x900', width: 1440, height: 900 },
+  { label: '全高清大屏 (1920 × 1080 · 16:9)', value: '1920x1080', width: 1920, height: 1080 },
+  { label: '紧凑桌面 (1280 × 720 · 16:9)', value: '1280x720', width: 1280, height: 720 },
+  { label: '移动端视口 (375 × 812 · 手机)', value: '375x812', width: 375, height: 812 },
+  { label: '流式铺满 (100% 自适应)', value: 'fluid', width: 0, height: 0, isFluid: true },
+]
+
+// 当前选中的视口分辨率，默认 1440x900 标准桌面
+const selectedResValue = ref<string>('1440x900')
+
+const currentResolution = computed(() => {
+  return resolutions.find((r) => r.value === selectedResValue.value) || resolutions[0]!
+})
+
+// 视口舞台 DOM 引用及自适应缩放测量
+const stageRef = ref<HTMLElement | null>(null)
+const stageWidth = ref(1000)
+const stageHeight = ref(700)
+let resizeObserver: ResizeObserver | null = null
+
+// 缩放模式与数值
+const isAutoFit = ref(true)
+const manualScale = ref(1)
+
+// 自动计算的适合比例
+const autoScaleRatio = computed(() => {
+  if (currentResolution.value.isFluid) return 1
+  const targetW = currentResolution.value.width
+  const targetH = currentResolution.value.height
+  if (targetW <= 0 || targetH <= 0) return 1
+
+  // 预留四周 32px 边距
+  const availW = Math.max(stageWidth.value - 40, 200)
+  const availH = Math.max(stageHeight.value - 40, 200)
+
+  const scaleW = availW / targetW
+  const scaleH = availH / targetH
+  const bestFit = Math.min(scaleW, scaleH)
+
+  // 最多放大到 1.1，保留合理下限
+  return Math.max(Math.min(bestFit, 1.1), 0.2)
+})
+
+// 当前生效的缩放比例
+const effectiveScale = computed(() => {
+  if (currentResolution.value.isFluid) return 1
+  return isAutoFit.value ? autoScaleRatio.value : manualScale.value
+})
+
+// 缩放步进（放大）
+function handleZoomIn() {
+  isAutoFit.value = false
+  manualScale.value = Math.min(Number((manualScale.value + 0.05).toFixed(2)), 1.5)
+}
+
+// 缩放步进（缩小）
+function handleZoomOut() {
+  isAutoFit.value = false
+  manualScale.value = Math.max(Number((manualScale.value - 0.05).toFixed(2)), 0.2)
+}
+
+// 恢复自适应缩放
+function handleResetAutoFit() {
+  isAutoFit.value = true
+  manualScale.value = autoScaleRatio.value
+}
+
+// 分辨率选择选项列表
+const resolutionSelectOptions = computed(() => {
+  return resolutions.map((r) => ({
+    label: r.label,
+    value: r.value,
+  }))
+})
+
+// 切换分辨率时重置为自适应
+function handleResolutionChange(val: string) {
+  selectedResValue.value = val
+  isAutoFit.value = true
+}
 
 // 增量上传弹窗状态
 const showUploadModal = ref(false)
 const uploadModalType = ref<'file' | 'directory'>('file')
 const uploading = ref(false)
 
-// 项目文件原始列表
+// 项目文件列表
 interface ProjectFileInfo {
   name: string
   key: string
@@ -77,7 +169,7 @@ const filteredFiles = computed(() => {
   return rawFiles.value.filter((f) => f.name.toLowerCase().includes(q))
 })
 
-// 项目直链地址（固定预览当前项目根目录的 HTML 入口）
+// 项目入口直链地址（固定为当前项目根目录的 HTML 入口）
 const projectLiveUrl = computed(() => {
   return filesStore.getFileUrl(props.project)
 })
@@ -224,31 +316,57 @@ function handleOpenExternal() {
   window.open(projectLiveUrl.value, '_blank', 'noopener,noreferrer')
 }
 
+// 测量舞台尺寸
+function updateStageDimensions() {
+  if (stageRef.value) {
+    stageWidth.value = stageRef.value.clientWidth
+    stageHeight.value = stageRef.value.clientHeight
+  }
+}
+
 onMounted(() => {
   loadFiles()
+  nextTick(() => {
+    updateStageDimensions()
+    if (stageRef.value) {
+      resizeObserver = new ResizeObserver(() => {
+        updateStageDimensions()
+      })
+      resizeObserver.observe(stageRef.value)
+    }
+  })
+})
+
+onBeforeUnmount(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
+  }
 })
 </script>
 
 <template>
-  <div class="project-manager-wrapper">
+  <div class="project-fullscreen-console">
     <!-- 顶部工作台标题栏 -->
-    <header class="manager-header">
-      <div class="header-left">
+    <header class="console-header">
+      <div class="header-brand-group">
         <div class="brand-avatar">
-          <n-icon size="20" color="#6366f1">
+          <n-icon size="22" color="#6366f1">
             <DocumentTextOutline />
           </n-icon>
         </div>
         <div class="brand-info">
-          <div class="project-name-row">
-            <h3 class="project-name">{{ project.name }}</h3>
-            <n-tag type="info" size="tiny" round>{{ project.category }}</n-tag>
-            <span class="meta-stat-pill">
-              {{ projectStats.totalFiles }} 个文件 · {{ projectStats.totalSizeStr }}
+          <div class="brand-title-line">
+            <h3 class="project-title">{{ project.name }}</h3>
+            <n-tag type="info" size="small" round :bordered="false">
+              {{ project.category }}
+            </n-tag>
+            <span class="file-summary-badge">
+              {{ projectStats.totalFiles }} 个静态文件 · {{ projectStats.totalSizeStr }}
             </span>
           </div>
           <div class="project-live-address" :title="projectLiveUrl">
-            <span>在线地址: </span>
+            <span class="address-label">访问入口:</span>
             <a :href="projectLiveUrl" target="_blank" rel="noopener noreferrer">
               {{ projectLiveUrl }}
             </a>
@@ -256,7 +374,7 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="header-right">
+      <div class="header-actions">
         <n-space size="small" align="center">
           <n-button size="small" type="primary" @click="handleOpenExternal">
             <template #icon>
@@ -279,16 +397,15 @@ onMounted(() => {
       </div>
     </header>
 
-    <!-- 双栏主体：左侧文件管理，右侧固定 HTML 网页实时预览 -->
-    <div class="manager-body">
-      <!-- 左栏：文件目录与管理 -->
-      <aside class="files-sidebar">
-        <!-- 工具操作栏 -->
-        <div class="sidebar-toolbar">
+    <!-- 双栏工作台主体 -->
+    <div class="console-body">
+      <!-- 左栏：静态文件管理目录 (固定宽度) -->
+      <aside class="files-panel">
+        <div class="panel-toolbar">
           <n-input
             v-model:value="searchPattern"
             size="small"
-            placeholder="搜索文件..."
+            placeholder="搜索项目文件..."
             clearable
           >
             <template #prefix>
@@ -296,7 +413,7 @@ onMounted(() => {
             </template>
           </n-input>
 
-          <div class="sidebar-action-buttons">
+          <div class="toolbar-button-group">
             <n-button size="tiny" secondary type="primary" @click="openUploadModal('file')">
               <template #icon>
                 <n-icon><CloudUploadOutline /></n-icon>
@@ -317,48 +434,48 @@ onMounted(() => {
                   </template>
                 </n-button>
               </template>
-              刷新文件列表
+              刷新文件目录
             </n-tooltip>
           </div>
         </div>
 
         <!-- 文件列表 -->
-        <div class="sidebar-file-list">
+        <div class="panel-file-list">
           <n-spin :show="loading">
-            <div v-if="rawFiles.length === 0 && !loading" class="empty-status">
+            <div v-if="rawFiles.length === 0 && !loading" class="empty-hint-box">
               <n-empty description="当前项目暂无文件" size="small" />
             </div>
 
-            <div v-else-if="filteredFiles.length === 0 && !loading" class="empty-status">
+            <div v-else-if="filteredFiles.length === 0 && !loading" class="empty-hint-box">
               <n-empty description="未找到匹配的文件" size="small" />
             </div>
 
-            <div v-else class="file-rows-wrapper">
+            <div v-else class="file-items-scroll">
               <div
                 v-for="file in filteredFiles"
                 :key="file.key"
-                class="file-item-row"
+                class="file-row"
               >
-                <div class="item-left">
+                <div class="file-row-meta">
                   <n-icon size="16" :color="getFileVisual(file.name).color">
                     <component :is="getFileVisual(file.name).icon" />
                   </n-icon>
-                  <span class="item-filename" :title="file.name">
+                  <span class="file-row-name" :title="file.name">
                     {{ file.name }}
                   </span>
                   <span
                     v-if="file.name.toLowerCase() === 'index.html' || file.name.toLowerCase().endsWith('/index.html')"
-                    class="entry-tag"
+                    class="entry-badge"
                   >
                     入口
                   </span>
                 </div>
 
-                <div class="item-right">
-                  <span class="item-size">{{ formatSize(file.size) }}</span>
+                <div class="file-row-ops">
+                  <span class="file-row-size">{{ formatSize(file.size) }}</span>
                   <n-popconfirm @positive-click="handleDeleteFile(file.key, file.name)">
                     <template #trigger>
-                      <button class="btn-item-delete" type="button" title="删除文件">
+                      <button class="btn-file-delete" type="button" title="删除文件">
                         <n-icon size="13"><TrashOutline /></n-icon>
                       </button>
                     </template>
@@ -370,68 +487,110 @@ onMounted(() => {
           </n-spin>
         </div>
 
-        <!-- 底部状态条 -->
-        <footer class="sidebar-bottom-stat">
-          <span>共 {{ projectStats.totalFiles }} 个文件</span>
-          <span class="dot-separator">·</span>
-          <span>总大小 {{ projectStats.totalSizeStr }}</span>
+        <footer class="panel-footer">
+          <span>{{ projectStats.totalFiles }} 个静态文件</span>
+          <span class="footer-separator">·</span>
+          <span>共占用 {{ projectStats.totalSizeStr }}</span>
         </footer>
       </aside>
 
-      <!-- 右栏：固定的 HTML 预览窗口 (始终预览项目根目录 HTML 入口) -->
-      <main class="preview-stage">
-        <!-- 预览控制条 -->
-        <div class="preview-control-bar">
-          <div class="control-bar-left">
-            <span class="preview-title-badge">项目实时预览</span>
-            <span class="preview-url-text" :title="projectLiveUrl">{{ projectLiveUrl }}</span>
+      <!-- 右栏：固定 HTML 预览舞台 (支持正常屏幕比例与适当缩放) -->
+      <main class="preview-panel">
+        <!-- 预览区顶部控制工具条 -->
+        <div class="preview-navbar">
+          <!-- 左侧：视口比例选择器 -->
+          <div class="navbar-left">
+            <span class="navbar-label">屏幕视口比例:</span>
+            <n-select
+              :value="selectedResValue"
+              :options="resolutionSelectOptions"
+              size="small"
+              style="width: 250px"
+              @update:value="handleResolutionChange"
+            />
           </div>
 
-          <div class="control-bar-right">
+          <!-- 右侧：缩放控制与页面刷新 -->
+          <div class="navbar-right">
             <n-space size="small" align="center">
-              <!-- 设备视口切换 -->
-              <div class="device-switch-group">
+              <!-- 缩放控制工具组 (流式模式下禁用) -->
+              <div v-if="!currentResolution.isFluid" class="zoom-controls">
                 <button
-                  class="btn-device"
-                  :class="{ 'is-active': previewDevice === 'desktop' }"
-                  title="桌面视口 (100%)"
-                  @click="previewDevice = 'desktop'"
+                  class="btn-zoom"
+                  title="缩小 5%"
+                  :disabled="effectiveScale <= 0.2"
+                  @click="handleZoomOut"
                 >
-                  <n-icon size="15"><DesktopOutline /></n-icon>
+                  <n-icon size="14"><RemoveOutline /></n-icon>
+                </button>
+                <span class="zoom-value-text" :class="{ 'is-auto': isAutoFit }">
+                  {{ Math.round(effectiveScale * 100) }}%
+                </span>
+                <button
+                  class="btn-zoom"
+                  title="放大 5%"
+                  :disabled="effectiveScale >= 1.5"
+                  @click="handleZoomIn"
+                >
+                  <n-icon size="14"><AddOutline /></n-icon>
                 </button>
                 <button
-                  class="btn-device"
-                  :class="{ 'is-active': previewDevice === 'mobile' }"
-                  title="移动视口 (375px)"
-                  @click="previewDevice = 'mobile'"
+                  class="btn-zoom-fit"
+                  :class="{ 'is-active': isAutoFit }"
+                  title="自适应屏幕大小"
+                  @click="handleResetAutoFit"
                 >
-                  <n-icon size="15"><PhonePortraitOutline /></n-icon>
+                  <n-icon size="13" style="margin-right: 3px;"><ContractOutline /></n-icon>
+                  自适应
                 </button>
               </div>
 
-              <!-- 刷新预览 -->
-              <n-tooltip trigger="hover">
-                <template #trigger>
-                  <n-button size="tiny" secondary @click="handleRefreshPreview">
-                    <template #icon>
-                      <n-icon><RefreshOutline /></n-icon>
-                    </template>
-                    刷新页面
-                  </n-button>
+              <!-- 刷新页面 -->
+              <n-button size="small" secondary @click="handleRefreshPreview">
+                <template #icon>
+                  <n-icon><RefreshOutline /></n-icon>
                 </template>
-                重新加载右侧网页
-              </n-tooltip>
+                刷新页面
+              </n-button>
             </n-space>
           </div>
         </div>
 
-        <!-- 预览内容舞台 -->
-        <div class="preview-viewport-container" :class="`device-${previewDevice}`">
-          <div class="iframe-card">
+        <!-- 预览主舞台 (包含按正常屏幕比例布局并缩放的网页 iframe) -->
+        <div class="preview-stage-container" ref="stageRef">
+          <!-- 模式一：固定正常屏幕比例 (通过工业级 transform 稳定缩放) -->
+          <div
+            v-if="!currentResolution.isFluid"
+            class="scaled-screen-outer-box"
+            :style="{
+              width: `${currentResolution.width * effectiveScale}px`,
+              height: `${currentResolution.height * effectiveScale}px`,
+            }"
+          >
+            <div
+              class="scaled-screen-viewport"
+              :style="{
+                width: `${currentResolution.width}px`,
+                height: `${currentResolution.height}px`,
+                transform: `scale(${effectiveScale})`,
+                transformOrigin: 'top left',
+              }"
+            >
+              <iframe
+                :key="iframeKey"
+                :src="projectLiveUrl"
+                class="fullscreen-live-iframe"
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
+              ></iframe>
+            </div>
+          </div>
+
+          <!-- 模式二：流式 100% 满铺 -->
+          <div v-else class="fluid-screen-viewport">
             <iframe
               :key="iframeKey"
               :src="projectLiveUrl"
-              class="live-iframe"
+              class="fullscreen-live-iframe"
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
             ></iframe>
           </div>
@@ -472,37 +631,37 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.project-manager-wrapper {
+.project-fullscreen-console {
   display: flex;
   flex-direction: column;
-  height: 80vh;
-  min-height: 600px;
+  height: 96vh;
+  min-height: 650px;
   background: var(--n-color);
   border-radius: 8px;
   overflow: hidden;
 }
 
-/* 顶部标题栏 */
-.manager-header {
+/* 顶部工作台标题栏 */
+.console-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 20px;
+  padding: 12px 24px;
   border-bottom: 1px solid var(--n-border-color);
   background: var(--n-color-embedded);
   flex-shrink: 0;
 }
 
-.header-left {
+.header-brand-group {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   min-width: 0;
 }
 
 .brand-avatar {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
   background: rgba(99, 102, 241, 0.12);
   display: flex;
@@ -515,33 +674,37 @@ onMounted(() => {
   min-width: 0;
 }
 
-.project-name-row {
+.brand-title-line {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-.project-name {
+.project-title {
   margin: 0;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--n-text-color);
   white-space: nowrap;
 }
 
-.meta-stat-pill {
-  font-size: 11px;
+.file-summary-badge {
+  font-size: 12px;
   color: var(--n-text-color-3);
 }
 
 .project-live-address {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--n-text-color-3);
   font-family: var(--font-mono, monospace);
-  margin-top: 2px;
+  margin-top: 3px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.address-label {
+  margin-right: 4px;
 }
 
 .project-live-address a {
@@ -554,16 +717,16 @@ onMounted(() => {
   color: #6366f1;
 }
 
-/* 主体分栏 */
-.manager-body {
+/* 双栏主体 */
+.console-body {
   display: flex;
   flex: 1;
   min-height: 0;
 }
 
-/* 左栏：文件列表 */
-.files-sidebar {
-  width: 340px;
+/* 左侧文件面板 */
+.files-panel {
+  width: 350px;
   border-right: 1px solid var(--n-border-color);
   background: var(--n-color);
   display: flex;
@@ -571,7 +734,7 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.sidebar-toolbar {
+.panel-toolbar {
   padding: 12px;
   border-bottom: 1px solid var(--n-border-color);
   display: flex;
@@ -579,29 +742,29 @@ onMounted(() => {
   gap: 8px;
 }
 
-.sidebar-action-buttons {
+.toolbar-button-group {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.sidebar-file-list {
+.panel-file-list {
   flex: 1;
   overflow-y: auto;
   padding: 8px;
 }
 
-.empty-status {
+.empty-hint-box {
   padding: 40px 0;
 }
 
-.file-rows-wrapper {
+.file-items-scroll {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.file-item-row {
+.file-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -611,11 +774,11 @@ onMounted(() => {
   user-select: none;
 }
 
-.file-item-row:hover {
+.file-row:hover {
   background: var(--n-color-embedded);
 }
 
-.item-left {
+.file-row-meta {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -623,7 +786,7 @@ onMounted(() => {
   flex: 1;
 }
 
-.item-filename {
+.file-row-name {
   font-size: 13px;
   font-family: var(--font-mono, monospace);
   color: var(--n-text-color-1);
@@ -632,7 +795,7 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-.entry-tag {
+.entry-badge {
   font-size: 10px;
   background: #10b981;
   color: #ffffff;
@@ -642,7 +805,7 @@ onMounted(() => {
   line-height: 1.2;
 }
 
-.item-right {
+.file-row-ops {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -650,12 +813,12 @@ onMounted(() => {
   margin-left: 8px;
 }
 
-.item-size {
+.file-row-size {
   font-size: 11px;
   color: var(--n-text-color-3);
 }
 
-.btn-item-delete {
+.btn-file-delete {
   border: none;
   background: transparent;
   padding: 2px;
@@ -669,17 +832,17 @@ onMounted(() => {
   transition: all 0.15s ease;
 }
 
-.file-item-row:hover .btn-item-delete {
+.file-row:hover .btn-file-delete {
   opacity: 1;
 }
 
-.btn-item-delete:hover {
+.btn-file-delete:hover {
   color: #ef4444;
   background: rgba(239, 68, 68, 0.1);
 }
 
-.sidebar-bottom-stat {
-  padding: 8px 12px;
+.panel-footer {
+  padding: 8px 14px;
   border-top: 1px solid var(--n-border-color);
   font-size: 11px;
   color: var(--n-text-color-3);
@@ -688,12 +851,12 @@ onMounted(() => {
   background: var(--n-color-embedded);
 }
 
-.dot-separator {
+.footer-separator {
   margin: 0 4px;
 }
 
-/* 右栏：预览舞台 */
-.preview-stage {
+/* 右侧预览面板 */
+.preview-panel {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -702,114 +865,154 @@ onMounted(() => {
   overflow: hidden;
 }
 
-.preview-control-bar {
+.preview-navbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
+  padding: 10px 18px;
   border-bottom: 1px solid var(--n-border-color);
   background: var(--n-color);
   flex-shrink: 0;
 }
 
-.control-bar-left {
+.navbar-left {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 0;
 }
 
-.preview-title-badge {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--n-text-color);
-  white-space: nowrap;
+.navbar-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--n-text-color-2);
 }
 
-.preview-url-text {
-  font-size: 11px;
-  font-family: var(--font-mono, monospace);
-  color: var(--n-text-color-3);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.control-bar-right {
+.navbar-right {
   display: flex;
   align-items: center;
   gap: 12px;
 }
 
-.device-switch-group {
+.zoom-controls {
   display: inline-flex;
+  align-items: center;
   border: 1px solid var(--n-border-color);
   border-radius: 6px;
-  padding: 2px;
   background: var(--n-color-embedded);
+  padding: 1px;
 }
 
-.btn-device {
+.btn-zoom {
   border: none;
   background: transparent;
-  padding: 3px 8px;
+  padding: 4px 6px;
   border-radius: 4px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--n-text-color-3);
+  color: var(--n-text-color-2);
   transition: all 0.15s ease;
 }
 
-.btn-device:hover {
+.btn-zoom:hover:not(:disabled) {
+  background: var(--n-color);
   color: var(--n-text-color);
 }
 
-.btn-device.is-active {
-  background: var(--n-color);
-  color: #6366f1;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+.btn-zoom:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
-.preview-viewport-container {
+.zoom-value-text {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 6px;
+  min-width: 44px;
+  text-align: center;
+  color: var(--n-text-color);
+  font-family: var(--font-mono, monospace);
+}
+
+.zoom-value-text.is-auto {
+  color: #6366f1;
+}
+
+.btn-zoom-fit {
+  border: none;
+  border-left: 1px solid var(--n-border-color);
+  background: transparent;
+  padding: 4px 8px;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  color: var(--n-text-color-2);
+  transition: all 0.15s ease;
+}
+
+.btn-zoom-fit:hover {
+  background: var(--n-color);
+  color: var(--n-text-color);
+}
+
+.btn-zoom-fit.is-active {
+  background: var(--n-color);
+  color: #6366f1;
+  font-weight: 500;
+}
+
+/* 预览舞台 */
+.preview-stage-container {
   flex: 1;
   min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 12px;
+  padding: 20px;
   overflow: hidden;
-  box-sizing: border-box;
+  position: relative;
+  background-image: radial-gradient(var(--n-border-color) 1px, transparent 1px);
+  background-size: 20px 20px;
 }
 
-.preview-viewport-container.device-desktop .iframe-card {
-  width: 100%;
-  height: 100%;
-  border-radius: 6px;
-}
-
-.preview-viewport-container.device-mobile .iframe-card {
-  width: 375px;
-  height: 100%;
-  max-height: 720px;
-  border-radius: 20px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  border: 4px solid var(--n-border-color);
-}
-
-.iframe-card {
+/* 固定正常屏幕比例下的真实包围盒 */
+.scaled-screen-outer-box {
+  position: relative;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  border: 1px solid var(--n-border-color);
   background: #ffffff;
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--n-border-color);
+  transition: width 0.2s ease, height 0.2s ease;
 }
 
-.live-iframe {
+/* 视口容器 */
+.scaled-screen-viewport {
+  background: #ffffff;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* 流式模式 */
+.fluid-screen-viewport {
+  width: 100%;
+  height: 100%;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  border: 1px solid var(--n-border-color);
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.fullscreen-live-iframe {
   width: 100%;
   height: 100%;
   border: none;
   background: #ffffff;
+  display: block;
 }
 </style>
