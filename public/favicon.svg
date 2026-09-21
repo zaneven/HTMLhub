@@ -1,127 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
-  <defs>
-    <!-- 背景流光渐变 -->
-    <linearGradient id="bgGrad" x1="16" y1="16" x2="112" y2="112" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0f172a" />
-      <stop offset="50%" stop-color="#1e1b4b" />
-      <stop offset="100%" stop-color="#090d16" />
-    </linearGradient>
-
-    <!-- 外边框流光 -->
-    <linearGradient id="borderGrad" x1="16" y1="16" x2="112" y2="112" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#818cf8" stop-opacity="0.8" />
-      <stop offset="45%" stop-color="#c084fc" stop-opacity="0.6" />
-      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.8" />
-    </linearGradient>
-
-    <!-- 左翼尖角渐变 (HTML Left) -->
-    <linearGradient id="leftWing" x1="28" y1="36" x2="62" y2="92" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#a78bfa" />
-      <stop offset="50%" stop-color="#6366f1" />
-      <stop offset="100%" stop-color="#4338ca" />
-    </linearGradient>
-
-    <!-- 右翼尖角渐变 (HTML Right) -->
-    <linearGradient id="rightWing" x1="66" y1="36" x2="100" y2="92" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#38bdf8" />
-      <stop offset="50%" stop-color="#06b6d4" />
-      <stop offset="100%" stop-color="#0d9488" />
-    </linearGradient>
-
-    <!-- 枢纽横桥渐变 (Hub Bridge) -->
-    <linearGradient id="bridgeGrad" x1="38" y1="64" x2="90" y2="64" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#818cf8" />
-      <stop offset="50%" stop-color="#38bdf8" />
-      <stop offset="100%" stop-color="#34d399" />
-    </linearGradient>
-
-    <!-- 核心光核 (Hub Core) -->
-    <radialGradient id="coreRadial" cx="64" cy="64" r="16" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#ffffff" />
-      <stop offset="35%" stop-color="#38bdf8" />
-      <stop offset="70%" stop-color="#818cf8" stop-opacity="0.8" />
-      <stop offset="100%" stop-color="#6366f1" stop-opacity="0" />
-    </radialGradient>
-
-    <!-- 弥散发光滤镜 -->
-    <filter id="glowFilter" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="5" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
-  </defs>
-
-  <style>
-    @media (prefers-color-scheme: light) {
-      .bg-plate {
-        fill: #0d1117;
-      }
-    }
-  </style>
-
-  <!-- 超椭圆底座 -->
-  <rect
-    class="bg-plate"
-    x="8"
-    y="8"
-    width="112"
-    height="112"
-    rx="32"
-    fill="url(#bgGrad)"
-    stroke="url(#borderGrad)"
-    stroke-width="2.5"
-  />
-
-  <!-- 弥散发光氛围底色 -->
-  <circle cx="64" cy="64" r="32" fill="url(#coreRadial)" opacity="0.4" filter="url(#glowFilter)" />
-
-  <!-- 核心图腾组合 -->
-  <g>
-    <!-- 枢纽连接桥 (Bridge connecting the wings to form H & Hub) -->
-    <line
-      x1="44"
-      y1="64"
-      x2="84"
-      y2="64"
-      stroke="url(#bridgeGrad)"
-      stroke-width="7"
-      stroke-linecap="round"
-      opacity="0.9"
-    />
-
-    <!-- 左翼尖角 (<) -->
-    <path
-      d="M54 36 L34 64 L54 92"
-      stroke="url(#leftWing)"
-      stroke-width="9"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-
-    <!-- 右翼尖角 (>) -->
-    <path
-      d="M74 36 L94 64 L74 92"
-      stroke="url(#rightWing)"
-      stroke-width="9"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-
-    <!-- Hub 核心晶核环 -->
-    <circle
-      cx="64"
-      cy="64"
-      r="9"
-      fill="#090d16"
-      stroke="url(#bridgeGrad)"
-      stroke-width="3"
-    />
-
-    <!-- Hub 核心发光质点 -->
-    <circle
-      cx="64"
-      cy="64"
-      r="4"
-      fill="#ffffff"
-    />
+  <!-- 纯扁平圆角微标底板 (Flat Squircle) -->
+  <rect x="8" y="8" width="112" height="112" rx="30" fill="#4f46e5" />
+  
+  <!-- 纯粹负空间代码标签 < / > -->
+  <g stroke="#ffffff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+    <!-- 左尖括号 < -->
+    <path d="M48 40 L28 64 L48 88" />
+    
+    <!-- 闭合斜杠 / -->
+    <path d="M71 36 L57 92" />
+    
+    <!-- 右尖括号 > -->
+    <path d="M80 40 L100 64 L80 88" />
   </g>
 </svg>

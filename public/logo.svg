@@ -1,191 +1,47 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 96" fill="none">
-  <defs>
-    <!-- 背景流光渐变 -->
-    <linearGradient id="logoBgGrad" x1="12" y1="12" x2="84" y2="84" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0f172a" />
-      <stop offset="50%" stop-color="#1e1b4b" />
-      <stop offset="100%" stop-color="#090d16" />
-    </linearGradient>
-
-    <!-- 外边框流光 -->
-    <linearGradient id="logoBorderGrad" x1="12" y1="12" x2="84" y2="84" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#818cf8" stop-opacity="0.8" />
-      <stop offset="50%" stop-color="#c084fc" stop-opacity="0.6" />
-      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.8" />
-    </linearGradient>
-
-    <!-- 左翼尖角渐变 (HTML Left) -->
-    <linearGradient id="logoLeftWing" x1="20" y1="26" x2="46" y2="70" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#a78bfa" />
-      <stop offset="50%" stop-color="#6366f1" />
-      <stop offset="100%" stop-color="#4338ca" />
-    </linearGradient>
-
-    <!-- 右翼尖角渐变 (HTML Right) -->
-    <linearGradient id="logoRightWing" x1="50" y1="26" x2="76" y2="70" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#38bdf8" />
-      <stop offset="50%" stop-color="#06b6d4" />
-      <stop offset="100%" stop-color="#0d9488" />
-    </linearGradient>
-
-    <!-- 枢纽横桥渐变 (Hub Bridge) -->
-    <linearGradient id="logoBridgeGrad" x1="30" y1="48" x2="66" y2="48" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#818cf8" />
-      <stop offset="50%" stop-color="#38bdf8" />
-      <stop offset="100%" stop-color="#34d399" />
-    </linearGradient>
-
-    <!-- 文字渐变 (HTML) -->
-    <linearGradient id="textHtmlGrad" x1="110" y1="36" x2="210" y2="60" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#ffffff" />
-      <stop offset="100%" stop-color="#e2e8f0" />
-    </linearGradient>
-
-    <!-- 文字渐变 (hub) -->
-    <linearGradient id="textHubGrad" x1="210" y1="36" x2="310" y2="60" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#a855f7" />
-      <stop offset="50%" stop-color="#6366f1" />
-      <stop offset="100%" stop-color="#06b6d4" />
-    </linearGradient>
-
-    <!-- 徽章渐变 -->
-    <linearGradient id="badgeBg" x1="310" y1="32" x2="360" y2="52" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="rgba(99, 102, 241, 0.2)" />
-      <stop offset="100%" stop-color="rgba(6, 182, 212, 0.2)" />
-    </linearGradient>
-    <linearGradient id="badgeBorder" x1="310" y1="32" x2="360" y2="52" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="rgba(129, 140, 248, 0.5)" />
-      <stop offset="100%" stop-color="rgba(34, 211, 238, 0.5)" />
-    </linearGradient>
-
-    <!-- 弥散发光 -->
-    <radialGradient id="logoGlow" cx="48" cy="48" r="28" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.5" />
-      <stop offset="100%" stop-color="#6366f1" stop-opacity="0" />
-    </radialGradient>
-  </defs>
-
-  <!-- 图标主体 -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
+  <!-- 纯扁平圆角微标 (Flat Squircle) -->
   <g transform="translate(4, 4)">
-    <!-- 超椭圆底座 -->
-    <rect
-      x="4"
-      y="4"
-      width="80"
-      height="80"
-      rx="22"
-      fill="url(#logoBgGrad)"
-      stroke="url(#logoBorderGrad)"
-      stroke-width="2"
-    />
-
-    <!-- 弥散氛围光 -->
-    <circle cx="44" cy="44" r="24" fill="url(#logoGlow)" opacity="0.6" />
-
-    <!-- 枢纽连接桥 -->
-    <line
-      x1="30"
-      y1="44"
-      x2="58"
-      y2="44"
-      stroke="url(#logoBridgeGrad)"
-      stroke-width="5"
-      stroke-linecap="round"
-      opacity="0.9"
-    />
-
-    <!-- 左翼尖角 (<) -->
-    <path
-      d="M37 24 L23 44 L37 64"
-      stroke="url(#logoLeftWing)"
-      stroke-width="6.5"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-
-    <!-- 右翼尖角 (>) -->
-    <path
-      d="M51 24 L65 44 L51 64"
-      stroke="url(#logoRightWing)"
-      stroke-width="6.5"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-    />
-
-    <!-- Hub 核心晶核环 -->
-    <circle
-      cx="44"
-      cy="44"
-      r="6.5"
-      fill="#090d16"
-      stroke="url(#logoBridgeGrad)"
-      stroke-width="2.5"
-    />
-
-    <!-- Hub 核心质点 -->
-    <circle
-      cx="44"
-      cy="44"
-      r="2.8"
-      fill="#ffffff"
-    />
+    <rect x="0" y="0" width="72" height="72" rx="20" fill="#4f46e5" />
+    <g stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M28 24 L16 36 L28 48" />
+      <path d="M40 22 L32 50" />
+      <path d="M44 24 L56 36 L44 48" />
+    </g>
   </g>
 
-  <!-- 品牌文字: HTMLhub -->
-  <g transform="translate(108, 0)">
+  <!-- 品牌文字: HTMLhub (纯粹扁平排版) -->
+  <g transform="translate(92, 0)">
     <!-- "HTML" 字样 -->
     <text
       x="0"
-      y="58"
-      font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif"
-      font-size="44"
+      y="50"
+      font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Plus Jakarta Sans', Roboto, sans-serif"
+      font-size="38"
       font-weight="900"
       letter-spacing="-1px"
-      fill="url(#textHtmlGrad)"
+      fill="#0f172a"
     >HTML</text>
 
     <!-- "hub" 字样 -->
     <text
-      x="126"
-      y="58"
-      font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif"
-      font-size="44"
+      x="108"
+      y="50"
+      font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Plus Jakarta Sans', Roboto, sans-serif"
+      font-size="38"
       font-weight="900"
-      letter-spacing="-1.5px"
-      fill="url(#textHubGrad)"
+      letter-spacing="-1px"
+      fill="#4f46e5"
     >hub</text>
 
-    <!-- PRO / PLATFORM 微章 -->
-    <rect
-      x="208"
-      y="30"
-      width="48"
-      height="20"
-      rx="6"
-      fill="url(#badgeBg)"
-      stroke="url(#badgeBorder)"
-      stroke-width="1"
-    />
-    <text
-      x="232"
-      y="44"
-      text-anchor="middle"
-      font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif"
-      font-size="10"
-      font-weight="700"
-      letter-spacing="0.5px"
-      fill="#38bdf8"
-    >HUB</text>
-
-    <!-- 品牌 Slogan -->
+    <!-- 极简副标 -->
     <text
       x="2"
-      y="78"
-      font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif"
-      font-size="12"
-      font-weight="500"
-      letter-spacing="1px"
-      fill="#94a3b8"
-    >STATIC SITE &amp; APP WORKSPACE</text>
+      y="66"
+      font-family="-apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Plus Jakarta Sans', Roboto, sans-serif"
+      font-size="10"
+      font-weight="700"
+      letter-spacing="1.5px"
+      fill="#64748b"
+    >WORKSPACE</text>
   </g>
 </svg>
