@@ -9,11 +9,22 @@ lerna-debug.log*
 
 node_modules
 .DS_Store
+Thumbs.db
+
+# Environment variables & secrets
 .env
+.env.*
+!.env.example
+*.local
+.dev.vars
+.dev.vars.*
+*.pem
+*.key
+*.cert
+
 dist
 dist-ssr
 coverage
-*.local
 
 # Editor directories and files
 .vscode/*

@@ -5,10 +5,8 @@ import type { ApiResponse } from '../types'
  * 优先从环境变量 ALLOWED_ORIGINS 读取（逗号分隔），否则使用默认值
  */
 function getAllowedOrigins(): string[] {
-  // Cloudflare Workers 不支持 import.meta.env，需要从全局或 env 传入
   // 回退到默认开发/生产域名列表
   return [
-    'https://html.getprompt.top',
     'https://htmlmanager.pages.dev',
     'http://localhost:5173',
     'http://localhost:4173',

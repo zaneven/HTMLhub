@@ -2,11 +2,10 @@ name = "htmlmanager-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 
-# 自定义域名绑定 (可选)
-# 如果你没有独立域名，可以注释掉下面 routes 块，直接使用默认分配的 *.workers.dev 免费域名
-routes = [
-  { pattern = "htmlmanager-api.getprompt.top", custom_domain = true }
-]
+# [可选] 自定义域名绑定 (如果不配置自定义域名，可直接使用 Cloudflare 分配的 *.workers.dev 免费域名)
+# routes = [
+#   { pattern = "htmlmanager-api.your-domain.com", custom_domain = true }
+# ]
 
 # 环境变量 - 在部署时通过 Cloudflare Dashboard 或 wrangler secret 设置
 [vars]
@@ -20,7 +19,7 @@ bucket_name = "htmlmanager-files"
 # KV 命名空间绑定 (执行 wrangler kv namespace create FILE_INDEX 获取到的 ID 替换此处)
 [[kv_namespaces]]
 binding = "FILE_INDEX"
-id = "7266aa1135814e9c805fe781c128fa5f"
+id = "YOUR_KV_NAMESPACE_ID"
 
 # 本地开发配置
 [dev]
