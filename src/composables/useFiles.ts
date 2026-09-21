@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useFilesStore } from '@/stores/files'
 import { useSearchStore } from '@/stores/search'
 import type { ProjectInfo } from '@/types'

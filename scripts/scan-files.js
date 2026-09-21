@@ -16,6 +16,57 @@ const config = {
 }
 
 /**
+ * 获取简单 MIME 类型
+ */
+function getMimeType(ext) {
+  const mimeMap = {
+    '.html': 'text/html',
+    '.htm': 'text/html',
+    '.css': 'text/css',
+    '.js': 'application/javascript',
+    '.json': 'application/json',
+    '.svg': 'image/svg+xml',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.webp': 'image/webp',
+    '.ico': 'image/x-icon',
+    '.txt': 'text/plain',
+  }
+  return mimeMap[ext.toLowerCase()] || 'application/octet-stream'
+}
+
+/**
+ * 递归扫描目录下的所有静态文件
+ */
+function scanDirectoryFiles(dir, projectBaseDir) {
+  const fileList = []
+  if (!fs.existsSync(dir)) return fileList
+
+  const entries = fs.readdirSync(dir, { withFileTypes: true })
+  for (const entry of entries) {
+    if (entry.name.startsWith('.') || config.ignoreDirs.includes(entry.name)) continue
+    const fullPath = path.join(dir, entry.name)
+    if (entry.isDirectory()) {
+      fileList.push(...scanDirectoryFiles(fullPath, projectBaseDir))
+    } else if (entry.isFile()) {
+      const stats = fs.statSync(fullPath)
+      const relToProject = path.relative(projectBaseDir, fullPath).replace(/\\/g, '/')
+      const ext = path.extname(entry.name)
+      fileList.push({
+        name: relToProject,
+        key: path.relative(process.cwd(), fullPath).replace(/\\/g, '/'),
+        size: stats.size,
+        type: getMimeType(ext),
+        modifiedAt: stats.mtime.toISOString(),
+      })
+    }
+  }
+  return fileList
+}
+
+/**
  * 扫描目录，生成分类和项目数据
  */
 function scanProjects(rootDir) {
@@ -56,6 +107,7 @@ function scanProjects(rootDir) {
           const indexStats = fs.statSync(indexPath)
           const relativePath = path.relative(process.cwd(), itemPath).replace(/\\/g, '/')
           const relativeIndexPath = path.relative(process.cwd(), indexPath).replace(/\\/g, '/')
+          const projectFiles = scanDirectoryFiles(itemPath, itemPath)
 
           categoryProjects.push({
             id: Buffer.from(relativePath).toString('base64'),
@@ -65,7 +117,8 @@ function scanProjects(rootDir) {
             indexPath: relativeIndexPath,
             type: 'directory',
             createdAt: itemStats.birthtime.toISOString(),
-            modifiedAt: indexStats.mtime.toISOString()
+            modifiedAt: indexStats.mtime.toISOString(),
+            files: projectFiles,
           })
         }
       } else if (itemStats.isFile()) {
@@ -83,7 +136,16 @@ function scanProjects(rootDir) {
             indexPath: relativePath,
             type: 'file',
             createdAt: itemStats.birthtime.toISOString(),
-            modifiedAt: itemStats.mtime.toISOString()
+            modifiedAt: itemStats.mtime.toISOString(),
+            files: [
+              {
+                name: item,
+                key: relativePath,
+                size: itemStats.size,
+                type: 'text/html',
+                modifiedAt: itemStats.mtime.toISOString(),
+              },
+            ],
           })
         }
       }

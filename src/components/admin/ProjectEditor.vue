@@ -35,6 +35,8 @@ import {
   AddOutline,
   RemoveOutline,
   ContractOutline,
+  LockClosedOutline,
+  CloudOutline,
 } from '@vicons/ionicons5'
 import { useFilesStore } from '@/stores/files'
 import type { ProjectInfo } from '@/types'
@@ -220,11 +222,14 @@ function getFileVisual(name: string) {
   return { icon: DocumentOutline, color: '#6b7280' }
 }
 
+// 是否为本地项目（静态管理，只读）
+const isLocalProject = computed(() => props.project.source === 'local')
+
 // 加载项目文件列表
 async function loadFiles() {
   loading.value = true
   try {
-    const result = await filesStore.listProjectFiles(props.project.path)
+    const result = await filesStore.listProjectFiles(props.project.path, props.project)
     rawFiles.value = result
   } catch {
     message.error('加载项目文件失败')
@@ -361,6 +366,32 @@ onBeforeUnmount(() => {
             <n-tag type="info" size="small" round :bordered="false">
               {{ project.category }}
             </n-tag>
+            <n-tag
+              v-if="isLocalProject"
+              size="small"
+              round
+              :bordered="false"
+              type="warning"
+              class="source-tag"
+            >
+              <template #icon>
+                <n-icon size="12"><LockClosedOutline /></n-icon>
+              </template>
+              本地静态 (只读)
+            </n-tag>
+            <n-tag
+              v-else
+              size="small"
+              round
+              :bordered="false"
+              type="success"
+              class="source-tag"
+            >
+              <template #icon>
+                <n-icon size="12"><CloudOutline /></n-icon>
+              </template>
+              云端 R2
+            </n-tag>
             <span class="file-summary-badge">
               {{ projectStats.totalFiles }} 个静态文件 · {{ projectStats.totalSizeStr }}
             </span>
@@ -414,18 +445,28 @@ onBeforeUnmount(() => {
           </n-input>
 
           <div class="toolbar-button-group">
-            <n-button size="tiny" secondary type="primary" @click="openUploadModal('file')">
-              <template #icon>
-                <n-icon><CloudUploadOutline /></n-icon>
-              </template>
-              添加文件
-            </n-button>
-            <n-button size="tiny" secondary type="info" @click="openUploadModal('directory')">
-              <template #icon>
-                <n-icon><FolderOpenOutline /></n-icon>
-              </template>
-              添加文件夹
-            </n-button>
+            <template v-if="!isLocalProject">
+              <n-button size="tiny" secondary type="primary" @click="openUploadModal('file')">
+                <template #icon>
+                  <n-icon><CloudUploadOutline /></n-icon>
+                </template>
+                添加文件
+              </n-button>
+              <n-button size="tiny" secondary type="info" @click="openUploadModal('directory')">
+                <template #icon>
+                  <n-icon><FolderOpenOutline /></n-icon>
+                </template>
+                添加文件夹
+              </n-button>
+            </template>
+            <div
+              v-else
+              class="local-readonly-pill"
+              title="本地静态项目文件存放在本地目录中，不支持在线添加或修改"
+            >
+              <n-icon size="13" color="#f59e0b"><LockClosedOutline /></n-icon>
+              <span>本地文件只读</span>
+            </div>
             <n-tooltip trigger="hover">
               <template #trigger>
                 <n-button size="tiny" quaternary circle @click="loadFiles">
@@ -473,7 +514,10 @@ onBeforeUnmount(() => {
 
                 <div class="file-row-ops">
                   <span class="file-row-size">{{ formatSize(file.size) }}</span>
-                  <n-popconfirm @positive-click="handleDeleteFile(file.key, file.name)">
+                  <n-popconfirm
+                    v-if="!isLocalProject"
+                    @positive-click="handleDeleteFile(file.key, file.name)"
+                  >
                     <template #trigger>
                       <button class="btn-file-delete" type="button" title="删除文件">
                         <n-icon size="13"><TrashOutline /></n-icon>
@@ -746,6 +790,20 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.local-readonly-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.28);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #f59e0b;
+  user-select: none;
 }
 
 .panel-file-list {

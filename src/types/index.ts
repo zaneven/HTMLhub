@@ -10,6 +10,14 @@ export interface ProjectInfo {
   modifiedAt: string
   /** 项目来源：local=本地静态文件，cloud=R2云端文件 */
   source?: 'local' | 'cloud'
+  /** 项目文件列表（本地静态项目或云端预置） */
+  files?: Array<{
+    name: string
+    key: string
+    size: number
+    type: string
+    modifiedAt: string
+  }>
 }
 
 // 分类信息接口

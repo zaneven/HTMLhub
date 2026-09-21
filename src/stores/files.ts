@@ -274,7 +274,7 @@ export const useFilesStore = defineStore('files', () => {
       for (const file of files) {
         formData.append('files', file)
         
-        let relativePath = (file as any).webkitRelativePath || file.name
+        let relativePath = file.webkitRelativePath || file.name
         
         // 如果是通过文件夹上传的，webkitRelativePath 会包含文件夹名作为第一级
         // 我们需要移除它，以保持项目内部的相对路径正确
@@ -436,9 +436,46 @@ export const useFilesStore = defineStore('files', () => {
   }
 
   /**
-   * 获取项目的文件列表 (仅云端模式)
+   * 获取项目的文件列表 (支持本地静态项目与云端 R2 项目)
    */
-  async function listProjectFiles(projectPath: string): Promise<ProjectFileInfo[]> {
+  async function listProjectFiles(
+    projectPath: string,
+    project?: ProjectInfo,
+  ): Promise<ProjectFileInfo[]> {
+    // 优先匹配传入的 project，或从已有索引项目列表中查找
+    const targetProject =
+      project ||
+      indexData.value?.projects.find(
+        (p) => p.path === projectPath || p.id === projectPath || p.indexPath === projectPath,
+      )
+
+    // 本地项目直接返回本地静态扫描的文件列表
+    if (targetProject?.source === 'local') {
+      if (targetProject.files && targetProject.files.length > 0) {
+        return targetProject.files.map((f) => ({
+          name: f.name,
+          key: f.key,
+          size: f.size,
+          type: f.type,
+          modifiedAt: f.modifiedAt,
+        }))
+      }
+      // 兜底返回主入口文件
+      const fileName =
+        targetProject.type === 'file'
+          ? `${targetProject.name}.html`
+          : 'index.html'
+      return [
+        {
+          name: fileName,
+          key: targetProject.indexPath || targetProject.path,
+          size: 0,
+          type: 'text/html',
+          modifiedAt: targetProject.modifiedAt || targetProject.createdAt,
+        },
+      ]
+    }
+
     if (!isCloudMode.value) {
       error.value = '当前为静态模式，无法获取项目文件'
       return []
@@ -467,6 +504,11 @@ export const useFilesStore = defineStore('files', () => {
    * 删除项目内的单个文件 (仅云端模式)
    */
   async function deleteProjectFile(fileKey: string): Promise<boolean> {
+    if (fileKey.startsWith('public/html-files/')) {
+      error.value = '本地项目文件不支持在线删除'
+      return false
+    }
+
     if (!isCloudMode.value) {
       error.value = '当前为静态模式，无法删除文件'
       return false
@@ -572,7 +614,7 @@ export const useFilesStore = defineStore('files', () => {
       // 添加所有文件及其相对路径
       for (const file of files) {
         formData.append('files', file)
-        const relativePath = (file as any).webkitRelativePath || file.name
+        const relativePath = file.webkitRelativePath || file.name
         formData.append('paths', relativePath)
       }
 

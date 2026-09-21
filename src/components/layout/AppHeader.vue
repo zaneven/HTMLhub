@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onUnmounted, h } from 'vue'
+import { computed, h } from 'vue'
 import {
   NLayoutHeader,
   NInput,
@@ -86,7 +86,6 @@ import {
   TimeOutline,
   TextOutline,
   ListOutline,
-  CodeSlashOutline,
 } from '@vicons/ionicons5'
 import { useRouter } from 'vue-router'
 import { useSearchStore } from '../../stores/search'
