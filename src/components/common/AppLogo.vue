@@ -3,6 +3,7 @@
     class="app-logo-wrapper"
     :class="[
       `size-${normalizedSize}`,
+      `theme-${theme}`,
       {
         'is-animated': animated,
         'is-clickable': clickable,
@@ -63,6 +64,7 @@ import { computed } from 'vue'
 
 interface Props {
   size?: 'sm' | 'md' | 'lg' | 'xl' | number
+  theme?: 'light' | 'dark' | 'auto'
   showText?: boolean
   subtitle?: string
   textOnly?: boolean
@@ -73,6 +75,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   size: 'md',
+  theme: 'auto',
   showText: true,
   subtitle: '',
   textOnly: false,
@@ -213,8 +216,9 @@ function handleClick() {
 
 :root[data-theme='dark'] .brand-html,
 .dark .brand-html,
-body[class*='dark'] .brand-html {
-  color: #f8fafc;
+body[class*='dark'] .brand-html,
+.theme-dark .brand-html {
+  color: #f8fafc !important;
 }
 
 .brand-hub {
@@ -225,8 +229,9 @@ body[class*='dark'] .brand-html {
 
 :root[data-theme='dark'] .brand-hub,
 .dark .brand-hub,
-body[class*='dark'] .brand-hub {
-  color: #818cf8;
+body[class*='dark'] .brand-hub,
+.theme-dark .brand-hub {
+  color: #818cf8 !important;
 }
 
 .brand-subtitle {
@@ -236,6 +241,22 @@ body[class*='dark'] .brand-hub {
   letter-spacing: 1.5px;
   color: var(--n-text-color-3, #94a3b8);
   margin-top: 3px;
+}
+
+.theme-dark .brand-subtitle {
+  color: #94a3b8 !important;
+}
+
+.theme-light .brand-html {
+  color: #0f172a !important;
+}
+
+.theme-light .brand-hub {
+  color: #4f46e5 !important;
+}
+
+.theme-light .brand-subtitle {
+  color: #64748b !important;
 }
 
 /* 简约动效 */
