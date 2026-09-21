@@ -1,89 +1,161 @@
-# HTML Manager - 静态HTML文件管理与预览系统
+# HTML Manager - 静态 HTML 站点与文件管理系统
 
-一个基于 Vue 3 + Vite + Naive UI 构建的现代化HTML文件管理和预览系统，支持静态部署和云端模式。
+HTML Manager 是一个专为静态网页、单页报告、前端 Demo 及多文件站点项目设计的现代化管理与沉浸式预览系统。基于 Vue 3、Vite、TypeScript 与 Naive UI 构建，支持「本地静态扫描」与「Cloudflare R2 云端托管」双通道架构。
 
-## ✨ 特性
+---
 
-- 🚀 **现代化技术栈**: Vue 3 + Vite + TypeScript + Naive UI
-- 📁 **智能文件管理**: 自动扫描和分类HTML文件，支持列表和卡片视图
-- 🔍 **强大搜索功能**: 支持关键词、分类多维度搜索和筛选
-- 👀 **实时预览**: 点击文件即可预览HTML内容
-- 📱 **响应式设计**: 完美适配桌面端和移动端
-- 🔐 **登录认证**: 管理后台需要登录，Token 过期自动跳转登录页
-- ☁️ **云端模式**: 支持 Cloudflare R2 存储和 Workers API
-- 📂 **文件夹上传**: 支持直接选择项目文件夹上传
+## 核心特性
 
-## 🏗️ 项目结构
+- **双通道数据架构**
+  - **本地静态模式**：自动递归扫描本地 `public/html-files/` 目录，单 HTML 文件或多层级站点文件夹均可自动建立完整索引与文件树。
+  - **云端 R2 模式**：集成 Cloudflare Workers + R2 对象存储，支持免运维的云端静态网站托管、在线上传与跨设备同步。
+  - **本地只读安全保护**：本地静态项目自动启用只读模式，展示完整文件目录与容量统计，禁用在线增删操作，确保本地资产安全。
 
-```
+- **灵活的项目上传机制**
+  - **多文件组合上传**：支持同时选取多个 HTML、CSS、JS、资源文件打包为项目。
+  - **整目录文件夹上传**：支持直接拖拽或选择站点文件夹，保留原始目录层级结构。
+  - **智能主入口探测**：自动识别 `index.html` 或项目内主入口 HTML，快速直达页面。
+
+- **沉浸式全屏预览工作台**
+  - **双栏工作台布局**：左侧展示项目静态文件树与大小明细，右侧提供高保真网页实时预览。
+  - **标准屏幕视口比例**：内置标准桌面（1440 × 900 · 16:10）、全高清大屏（1920 × 1080 · 16:9）、紧凑桌面（1280 × 720 · 16:9）、移动端（375 × 812 · 手机）及 100% 流式自适应多种视口。
+  - **智能等比缩放**：支持自适应屏幕尺寸缩放、手动步进缩放（20% ~ 150%）及无损页面刷新。
+
+- **管理与搜索体验**
+  - **多维搜索与筛选**：支持按项目名称、分类标签实时模糊搜索与分类聚合。
+  - **安全登录认证**：管理控制台配备 JWT 鉴权保护，Token 过期自动提示并重定向。
+  - **极简专业设计**：遵循现代无杂质设计风格，全界面使用标准化矢量图标，支持高对比度清晰交互。
+
+---
+
+## 目录结构
+
+```text
 html-manager/
-├── public/                     # 静态资源
-│   ├── data/                  # 数据文件
-│   │   └── file-index.json   # 文件索引数据
-│   └── html-files/           # HTML文件目录
-├── src/                       # 源代码
-│   ├── components/           # Vue组件
-│   ├── views/                # 页面视图
-│   ├── stores/               # Pinia状态管理
-│   ├── router/               # Vue Router路由
-│   └── types/                # TypeScript类型
-├── workers/                   # Cloudflare Workers API
-│   └── src/                  # Worker 源代码
-├── scripts/                   # 构建脚本
-│   └── scan-files.js        # 文件扫描脚本
-└── docs/                      # 文档
+├── public/
+│   ├── data/
+│   │   └── file-index.json       # 本地文件与项目全量索引数据
+│   └── html-files/               # 本地静态 HTML 项目放置目录（按分类归档）
+├── src/
+│   ├── components/
+│   │   ├── admin/                # 项目全屏预览与管理工作台
+│   │   ├── files/                # 项目卡片、上传弹窗与视图组件
+│   │   └── layout/               # 顶部导航栏、侧边栏及主布局
+│   ├── stores/                   # Pinia 状态中心（项目数据、搜索、认证等）
+│   ├── views/                    # 路由视图（首页、分类、管理后台、登录等）
+│   ├── types/                    # TypeScript 类型定义
+│   └── utils/                    # 文件解析与格式化工具函数
+├── workers/                      # Cloudflare Workers API 与 R2 存储后端
+│   ├── src/                      # Worker 路由与业务逻辑
+│   └── wrangler.jsonc            # Cloudflare Worker 配置文件
+├── scripts/
+│   └── scan-files.js             # 本地项目与静态文件扫描生成脚本
+├── requirements.md               # 详细需求与设计规范说明
+└── vite.config.ts                # Vite 构建与开发配置
 ```
 
-## 🚀 快速开始
+---
 
-### 环境要求
+## 快速开始
+
+### 1. 环境准备
 
 - Node.js >= 20.19.0 或 >= 22.12.0
+- npm 或 pnpm / yarn
 
-### 安装与开发
+### 2. 安装依赖
 
 ```bash
-# 安装依赖
 npm install
+```
 
-# 启动开发服务器
-npm run dev
+### 3. 本地项目放置与索引生成
 
-# 生成文件索引
+将你的 HTML 单文件或完整站点文件夹放置在 `public/html-files/` 对应的分类目录下，例如：
+
+```text
+public/html-files/
+├── 报告总结/
+│   └── 哈基米文化研究.html
+└── 数据可视化/
+    └── 运营大屏/
+        ├── index.html
+        ├── css/
+        └── js/
+```
+
+运行扫描脚本生成索引数据：
+
+```bash
 npm run scan
+```
 
-# 构建生产版本
+> 扫描脚本会自动识别单文件与多文件目录，收集所有静态文件列表（文件名、类型、大小、路径），并生成 `public/data/file-index.json`。
+
+### 4. 启动开发服务器
+
+```bash
+npm run dev
+```
+
+启动后可在终端给出的本地地址（如 `http://localhost:5173`）中访问使用。
+
+### 5. 构建生产产物
+
+```bash
 npm run build
 ```
 
-## 🔐 认证功能
+构建将依次执行 TypeScript 类型检查与 Vite 生产打包，输出至 `dist/` 目录。
 
-管理后台 (`/admin`) 需要登录才能访问：
+---
 
-- 进入管理页面时自动验证 Token 有效性
-- Token 过期时自动跳转到首页重新登录
-- 所有管理操作（上传、删除、刷新）都会检测 401 响应
+## 云端模式配置 (Cloudflare Workers + R2)
 
-## ☁️ 云端模式
+如需启用云端托管功能，请配合 Workers 后端使用：
 
-配置 `.env` 文件启用云端模式：
+1. **配置环境变量**：在项目根目录创建或修改 `.env` 文件：
+   ```env
+   VITE_API_URL=https://<your-worker-subdomain>.workers.dev
+   ```
 
-```env
-VITE_API_URL=https://htmlmanager-api.your-domain.workers.dev
-```
+2. **后端服务部署**：
+   进入 `workers/` 目录并根据配置指引完成部署：
+   ```bash
+   cd workers
+   npm install
+   npx wrangler r2 bucket create html-manager-files
+   npx wrangler deploy
+   ```
 
-详细部署指南请参考 [Cloudflare 部署文档](docs/cloudflare-deployment.md)。
+3. 更多后端环境细节可参阅 `docs/cloudflare-deployment.md`。
 
-## 📚 技术栈
+---
 
-- **前端框架**: Vue 3 (Composition API)
-- **构建工具**: Vite
-- **UI组件库**: Naive UI
-- **状态管理**: Pinia
-- **路由管理**: Vue Router
-- **类型系统**: TypeScript
-- **云端 API**: Cloudflare Workers + R2
+## 常用脚本命令
 
-## 📄 许可证
+| 命令 | 说明 |
+| :--- | :--- |
+| `npm run dev` | 启动本地前端开发热重载服务器 |
+| `npm run scan` | 扫描 `public/html-files/` 生成本地项目文件索引 |
+| `npm run build` | 执行类型检查并构建前端生产静态包 |
+| `npm run lint` | 运行 ESLint 进行代码规范检查与自动修复 |
+| `npm run type-check` | 执行 Vue 与 TypeScript 静态类型检查 |
 
-MIT License
+---
+
+## 核心技术栈
+
+- **前端架构**：Vue 3 (Composition API / `<script setup>`)
+- **构建工具**：Vite
+- **UI 组件库**：Naive UI
+- **图标系统**：@vicons/ionicons5 矢量图标库
+- **状态管理**：Pinia
+- **路由管理**：Vue Router 4
+- **云端服务**：Cloudflare Workers + Cloudflare R2 对象存储
+
+---
+
+## 许可证
+
+本项目基于 [MIT License](LICENSE) 协议开源。
