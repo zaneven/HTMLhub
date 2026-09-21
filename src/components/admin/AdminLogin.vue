@@ -4,7 +4,7 @@ import { NModal, NCard, NForm, NFormItem, NInput, NButton, NAlert, useMessage } 
 import { LockClosedOutline } from '@vicons/ionicons5'
 import { useAuthStore } from '@/stores/auth'
 
-const props = defineProps<{
+defineProps<{
   show: boolean
 }>()
 

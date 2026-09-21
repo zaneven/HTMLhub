@@ -33,5 +33,7 @@ coverage
 /cypress/videos/
 /cypress/screenshots/
 
-# Vitest
-__screenshots__/
+# Cloudflare Wrangler
+.wrangler/
+*/.wrangler/
+

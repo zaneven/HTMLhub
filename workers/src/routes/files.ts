@@ -307,7 +307,7 @@ export async function uploadMultipleFiles(request: Request, env: Env): Promise<R
     const uploadedKeys: string[] = []
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
-      let relativePath = paths[i] || file.name
+      const relativePath = paths[i] || file.name
 
       // 生成存储路径: html-files/{category}/{projectName}/{relativePath}
       const key = `html-files/${category}/${projectName}/${relativePath}`
@@ -638,7 +638,7 @@ export async function addProjectFile(request: Request, env: Env): Promise<Respon
     }
 
     // 获取相对路径并处理 (如果是从文件夹上传的)
-    let relativePath = (formData.get('path') as string) || file.name
+    const relativePath = (formData.get('path') as string) || file.name
 
     // 生成存储路径: {projectPath}/{relativePath}
     const key = projectPath.endsWith('/')

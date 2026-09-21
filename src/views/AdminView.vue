@@ -297,19 +297,17 @@ function handleUploadSuccess() {
   <n-modal
     v-model:show="showUploadModal"
     preset="card"
-    title="上传项目"
-    style="width: 500px; max-width: 90vw"
+    title="上传静态项目"
+    style="width: 580px; max-width: 92vw"
     :mask-closable="false"
   >
     <FileUpload @success="handleUploadSuccess" />
   </n-modal>
 
-  <!-- 编辑弹窗 -->
+  <!-- 编辑弹窗 (静态网站管理工作台) -->
   <n-modal
     v-model:show="showEditModal"
-    preset="card"
-    title="编辑项目"
-    style="width: 90vw; max-width: 1200px"
+    style="width: 94vw; max-width: 1380px"
     :mask-closable="false"
     @after-leave="editingProject = null"
   >
