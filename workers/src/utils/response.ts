@@ -7,6 +7,7 @@ import type { ApiResponse } from '../types'
 function getAllowedOrigins(): string[] {
   // 回退到默认开发/生产域名列表
   return [
+    'https://htmlhub.pages.dev',
     'https://htmlmanager.pages.dev',
     'http://localhost:5173',
     'http://localhost:4173',

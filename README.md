@@ -39,8 +39,8 @@
 #### 1. 克隆项目并安装依赖
 
 ```bash
-git clone https://github.com/zaneven/htmlManager.git
-cd htmlManager
+git clone https://github.com/zaneven/HTMLhub.git
+cd HTMLhub
 npm install
 ```
 
@@ -100,7 +100,7 @@ wrangler login
 
 ```bash
 # 1. 创建 R2 文件存储桶
-wrangler r2 bucket create htmlmanager-files
+wrangler r2 bucket create htmlhub-files
 
 # 2. 创建 KV 缓存命名空间（注意记下终端输出的 id）
 wrangler kv namespace create FILE_INDEX
@@ -127,7 +127,7 @@ npx wrangler deploy
 ```
 
 部署成功后，终端会打印出后端 API 访问地址，例如：
-`https://htmlmanager-api.<你的账号>.workers.dev`
+`https://htmlhub-api.<你的账号>.workers.dev`
 
 #### 4. 前端配置并启动
 
@@ -141,7 +141,7 @@ cp .env.example .env
 打开 `.env` 文件，填入第 3 步生成的后端 API 地址：
 
 ```env
-VITE_API_URL=https://htmlmanager-api.<你的账号>.workers.dev
+VITE_API_URL=https://htmlhub-api.<你的账号>.workers.dev
 ```
 
 现在启动前端：

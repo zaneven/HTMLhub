@@ -1,4 +1,4 @@
-# HTMLManager 全新 UI 风格与设计规范 (Design System Specification)
+# HTMLhub 全新 UI 风格与设计规范 (Design System Specification)
 
 > 版本：v2.0-Alpha  
 > 风格代号：**Nebula TechCraft（星云极客·流光质感工坊）**  
@@ -8,7 +8,7 @@
 
 ## 1. 设计哲学与愿景 (Design Philosophy)
 
-HTMLManager 作为一款面向开发者、技术创作者和独立开发者的静态/云端 HTML 资源管理系统，原有的 Naive UI 默认偏企业后台的朴素绿色风格缺乏灵感激发感和现代感。
+HTMLhub 作为一款面向开发者、技术创作者和独立开发者的静态/云端 HTML 资源管理系统，原有的 Naive UI 默认偏企业后台的朴素绿色风格缺乏灵感激发感和现代感。
 
 全新的 **Nebula TechCraft** 风格融合了 **Linear 的极简高质感**、**Vercel Geist 的硬朗排版** 与 **Raycast / Arc 的通透微光层级**，确立四大核心设计准则：
 
@@ -40,7 +40,7 @@ HTMLManager 作为一款面向开发者、技术创作者和独立开发者的�
 | `--color-gradient-primary` | `linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%)` | 动态主渐变 | 重点操作按钮、品牌标牌、流光边框 |
 
 ### 2.2 资产源与功能语义色 (Functional & Asset Semantics)
-针对 HTMLManager 的两大数据源（云端存储与本地静态文件），设计高辨识度的双色标识：
+针对 HTMLhub 的两大数据源（云端存储与本地静态文件），设计高辨识度的双色标识：
 
 | 语义类型 | 强调色 (Hex) | 渐变背景 (Glow) | 语义用途 |
 | :--- | :--- | :--- | :--- |
@@ -127,7 +127,7 @@ HTMLManager 作为一款面向开发者、技术创作者和独立开发者的�
 - 快速切换操作区：排序切换、视图模式（网格/列表分段胶囊按钮）、明暗模式切换器、云端登录状态头像/药丸指示。
 
 ### 5.2 侧边栏导航 (AppSidebar)
-- 品牌区：渐变动态 Logo 符号 + 渐变文字 `HTMLManager`。
+- 品牌区：渐变动态 Logo 符号 + 渐变文字 `HTMLhub`。
 - 快速仪表板部件：双指标迷你胶囊（总分类数 / 活跃项目数），采用轻质感玻璃卡片包装。
 - 分类树项：
   - 统一左侧目录矢量图标；
