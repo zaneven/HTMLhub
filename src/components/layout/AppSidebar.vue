@@ -232,10 +232,18 @@ function handleCategorySelect(category: string) {
   margin: 3px 0;
 }
 
+/* 彻底隐藏 Naive UI 内部缩进 8px 的 ::before 伪元素，防止出现多层重叠与周边溢出白框 */
+.refined-menu :deep(.n-menu-item-content::before) {
+  display: none !important;
+}
+
 .refined-menu :deep(.n-menu-item-content) {
   padding-left: 14px !important;
   padding-right: 12px !important;
   border-radius: 10px !important;
+  height: 42px !important;
+  line-height: 42px !important;
+  background: transparent !important;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -251,10 +259,9 @@ function handleCategorySelect(category: string) {
   transition: color 0.2s ease;
 }
 
-/* 未选中态悬停交互 */
-.refined-menu :deep(.n-menu-item-content:not(.n-menu-item-content--selected):hover::before) {
-  background-color: rgba(99, 102, 241, 0.09) !important;
-  border-radius: 10px !important;
+/* 未选中态悬停交互：单一平滑背景 */
+.refined-menu :deep(.n-menu-item-content:not(.n-menu-item-content--selected):hover) {
+  background-color: rgba(99, 102, 241, 0.08) !important;
 }
 
 .refined-menu :deep(.n-menu-item-content:not(.n-menu-item-content--selected):hover .n-menu-item-content-header) {
@@ -265,15 +272,10 @@ function handleCategorySelect(category: string) {
   color: #4f46e5 !important;
 }
 
-/* 选中项：高饱和深色主题渐变色块 + 立体光影 */
+/* 选中项：单一纯粹的主题渐变实体色块，严丝合缝、无任何周边重影 */
 .refined-menu :deep(.n-menu-item-content--selected) {
-  box-shadow: 0 6px 16px -3px rgba(79, 70, 229, 0.4) !important;
-}
-
-.refined-menu :deep(.n-menu-item-content--selected::before) {
   background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
-  opacity: 1 !important;
-  border-radius: 10px !important;
+  box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.35) !important;
 }
 
 /* 选中项文字：纯白、高清晰度、字重加深 */
