@@ -1,16 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
-  <!-- 纯扁平圆角微标底板 (Flat Squircle) -->
-  <rect x="8" y="8" width="112" height="112" rx="30" fill="#4f46e5" />
+  <!-- 贴边满铺无白底圆角基座 (0 Margin Edge-to-Edge) -->
+  <rect x="0" y="0" width="128" height="128" rx="28" fill="#4f46e5" />
   
-  <!-- 纯粹负空间代码标签 < / > -->
-  <g stroke="#ffffff" stroke-width="11" stroke-linecap="round" stroke-linejoin="round">
+  <!-- 居中高对比度纯白代码标签 < / > -->
+  <g stroke="#ffffff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
     <!-- 左尖括号 < -->
-    <path d="M48 40 L28 64 L48 88" />
+    <path d="M50 38 L26 64 L50 90" />
     
     <!-- 闭合斜杠 / -->
-    <path d="M71 36 L57 92" />
+    <path d="M72 34 L56 94" />
     
     <!-- 右尖括号 > -->
-    <path d="M80 40 L100 64 L80 88" />
+    <path d="M78 38 L102 64 L78 90" />
   </g>
 </svg>
