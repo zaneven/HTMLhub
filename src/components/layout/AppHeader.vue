@@ -203,9 +203,8 @@ function handleSortSelect(key: string) {
 }
 
 function toggleTheme() {
-  const currentMode = settingsStore.preferences.theme.mode
-  const newMode = currentMode === 'light' ? 'dark' : 'light'
-  settingsStore.setThemeMode(newMode)
+  const isDark = settingsStore.effectiveThemeMode === 'dark'
+  settingsStore.setThemeMode(isDark ? 'light' : 'dark')
 }
 
 async function handleLogout() {

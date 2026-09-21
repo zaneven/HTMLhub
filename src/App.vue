@@ -229,8 +229,14 @@ body {
   padding: 20px 24px;
   overflow-y: auto;
   height: calc(100vh - 56px);
-  background: var(--n-body-color, #f8fafc);
+  background: var(--bg-page, #f8fafc);
   font-variant-numeric: tabular-nums;
+  transition: background-color 0.25s ease;
+}
+
+:root[data-theme='dark'] .main-layout-content,
+.dark .main-layout-content {
+  background: var(--bg-page, #0b0f17);
 }
 
 /* 移动端适配 */

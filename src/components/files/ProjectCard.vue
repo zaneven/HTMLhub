@@ -189,17 +189,23 @@ async function handleCopyLink() {
 
 <style scoped>
 .project-card {
-  background: var(--n-card-color, #ffffff);
-  border: 1px solid var(--n-border-color, #e2e8f0);
+  background: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-subtle, #e2e8f0);
   border-radius: 12px;
   padding: 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
   user-select: none;
   height: 100%;
+}
+
+:root[data-theme='dark'] .project-card,
+.dark .project-card {
+  background: var(--bg-surface, #131b2e);
+  border-color: var(--border-subtle, rgba(255, 255, 255, 0.08));
 }
 
 .project-card:hover {
@@ -210,7 +216,8 @@ async function handleCopyLink() {
 :root[data-theme='dark'] .project-card:hover,
 .dark .project-card:hover {
   border-color: #6366f1;
-  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.4);
+  background: var(--bg-surface-elevated, #1e293b);
+  box-shadow: 0 6px 20px -2px rgba(0, 0, 0, 0.5);
 }
 
 /* 头部 */
@@ -270,21 +277,31 @@ async function handleCopyLink() {
 .card-title {
   font-size: 14px;
   font-weight: 700;
-  color: var(--n-text-color-1, #0f172a);
+  color: var(--text-main, #0f172a);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 1.3;
 }
 
+:root[data-theme='dark'] .card-title,
+.dark .card-title {
+  color: #f8fafc;
+}
+
 .card-subpath {
   font-size: 11px;
-  color: var(--n-text-color-3, #64748b);
+  color: var(--text-muted, #64748b);
   font-family: monospace;
   margin-top: 2px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+:root[data-theme='dark'] .card-subpath,
+.dark .card-subpath {
+  color: #94a3b8;
 }
 
 /* 来源微标 */
@@ -331,9 +348,14 @@ async function handleCopyLink() {
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  color: var(--n-text-color-3, #64748b);
+  color: var(--text-muted, #64748b);
   margin-bottom: 14px;
   font-variant-numeric: tabular-nums;
+}
+
+:root[data-theme='dark'] .card-meta-line,
+.dark .card-meta-line {
+  color: #94a3b8;
 }
 
 .meta-item {
@@ -359,7 +381,12 @@ async function handleCopyLink() {
   align-items: center;
   justify-content: space-between;
   padding-top: 10px;
-  border-top: 1px solid rgba(var(--n-text-color-rgb), 0.06);
+  border-top: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.06));
+}
+
+:root[data-theme='dark'] .card-footer,
+.dark .card-footer {
+  border-top-color: rgba(255, 255, 255, 0.08);
 }
 
 .footer-actions {
@@ -374,7 +401,7 @@ async function handleCopyLink() {
   border-radius: 6px;
   background: rgba(var(--n-text-color-rgb), 0.04);
   border: 1px solid rgba(var(--n-text-color-rgb), 0.08);
-  color: var(--n-text-color-2);
+  color: var(--text-secondary, #475569);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -384,7 +411,20 @@ async function handleCopyLink() {
 
 .icon-action-btn:hover {
   background: rgba(var(--n-text-color-rgb), 0.08);
-  color: var(--n-text-color-1);
+  color: var(--text-main, #0f172a);
+}
+
+:root[data-theme='dark'] .icon-action-btn,
+.dark .icon-action-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #94a3b8;
+}
+
+:root[data-theme='dark'] .icon-action-btn:hover,
+.dark .icon-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #f8fafc;
 }
 
 .icon-action-btn.btn-danger:hover {
