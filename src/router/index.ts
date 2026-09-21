@@ -7,7 +7,7 @@ const routes: RouteRecordRaw[] = [
     name: 'login',
     component: () => import('../views/LoginView.vue'),
     meta: {
-      title: 'HTML Manager - 登录',
+      title: 'HTMLhub - 登录',
       public: true, // 不需要登录
     },
   },
@@ -16,7 +16,7 @@ const routes: RouteRecordRaw[] = [
     name: 'home',
     component: () => import('../views/HomeView.vue'),
     meta: {
-      title: 'HTML Manager - 首页',
+      title: 'HTMLhub - 首页',
     },
   },
   {
@@ -24,7 +24,7 @@ const routes: RouteRecordRaw[] = [
     name: 'search',
     component: () => import('../views/SearchView.vue'),
     meta: {
-      title: 'HTML Manager - 搜索',
+      title: 'HTMLhub - 搜索',
     },
   },
   {
@@ -32,7 +32,7 @@ const routes: RouteRecordRaw[] = [
     name: 'settings',
     component: () => import('../views/SettingsView.vue'),
     meta: {
-      title: 'HTML Manager - 设置',
+      title: 'HTMLhub - 设置',
     },
   },
   {
@@ -40,7 +40,7 @@ const routes: RouteRecordRaw[] = [
     name: 'category',
     component: () => import('../views/CategoryView.vue'),
     meta: {
-      title: 'HTML Manager - 分类浏览',
+      title: 'HTMLhub - 分类浏览',
     },
   },
   {
@@ -48,7 +48,7 @@ const routes: RouteRecordRaw[] = [
     name: 'file',
     component: () => import('../views/FileDetailView.vue'),
     meta: {
-      title: 'HTML Manager - 文件详情',
+      title: 'HTMLhub - 文件详情',
     },
   },
   {
@@ -56,7 +56,7 @@ const routes: RouteRecordRaw[] = [
     name: 'admin',
     component: () => import('../views/AdminView.vue'),
     meta: {
-      title: 'HTML Manager - 管理后台',
+      title: 'HTMLhub - 管理后台',
     },
   },
   {
@@ -64,7 +64,7 @@ const routes: RouteRecordRaw[] = [
     name: 'notFound',
     component: () => import('../views/NotFoundView.vue'),
     meta: {
-      title: 'HTML Manager - 页面未找到',
+      title: 'HTMLhub - 页面未找到',
       public: true,
     },
   },

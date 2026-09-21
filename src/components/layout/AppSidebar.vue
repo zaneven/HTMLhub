@@ -9,6 +9,9 @@
   >
     <n-drawer-content closable>
       <div class="sidebar-inner">
+        <div class="sidebar-brand">
+          <AppLogo size="md" subtitle="WORKSPACE" clickable @click="goHome" />
+        </div>
         <div class="sidebar-nav">
           <div class="nav-group">
             <div class="group-label">主要导航</div>
@@ -33,15 +36,7 @@
   >
     <div class="sidebar-inner">
       <div class="sidebar-brand">
-        <div class="brand">
-          <div class="brand-logo">
-            <n-icon size="22"><CodeSlashOutline /></n-icon>
-          </div>
-          <div class="brand-text">
-            <span class="brand-main">HTML</span>
-            <span class="brand-sub">HUB</span>
-          </div>
-        </div>
+        <AppLogo size="md" subtitle="WORKSPACE" clickable @click="goHome" />
       </div>
 
       <div class="sidebar-top">
@@ -77,6 +72,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, h } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   NLayoutSider,
   NDrawer,
@@ -88,12 +84,20 @@ import {
 import { 
   FolderOutline, 
   AppsOutline,
-  CodeSlashOutline,
 } from '@vicons/ionicons5'
+import AppLogo from '@/components/common/AppLogo.vue'
 import { useFilesStore } from '../../stores/files'
 
+const router = useRouter()
 const drawerVisible = ref(false)
 const windowWidth = ref(window.innerWidth)
+
+function goHome() {
+  router.push('/')
+  if (isMobile.value) {
+    drawerVisible.value = false
+  }
+}
 
 const isMobile = computed(() => windowWidth.value < 768)
 const isTablet = computed(() => windowWidth.value >= 768 && windowWidth.value < 1024)
@@ -160,52 +164,9 @@ function handleCategorySelect(category: string) {
 }
 
 .sidebar-brand {
-  padding: 12px 12px 28px;
-}
-
-.brand {
+  padding: 12px 10px 24px;
   display: flex;
   align-items: center;
-  gap: 14px;
-}
-
-.brand-logo {
-  width: 38px;
-  height: 38px;
-  background: linear-gradient(135deg, #8b5cf6, #06b6d4);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  box-shadow: 0 8px 16px -4px rgba(139, 92, 246, 0.4);
-  transition: transform 0.3s ease;
-}
-
-.brand:hover .brand-logo {
-  transform: rotate(-5deg) scale(1.05);
-}
-
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.1;
-}
-
-.brand-main {
-  font-weight: 900;
-  font-size: 18px;
-  color: var(--n-text-color-1);
-  letter-spacing: -0.5px;
-}
-
-.brand-sub {
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--n-text-color-3);
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  opacity: 0.8;
 }
 
 .sidebar-top {

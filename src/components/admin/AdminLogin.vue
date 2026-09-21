@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { NModal, NCard, NForm, NFormItem, NInput, NButton, NAlert, useMessage } from 'naive-ui'
+import { NModal, NCard, NForm, NFormItem, NInput, NButton, NAlert, NIcon, useMessage } from 'naive-ui'
 import { LockClosedOutline } from '@vicons/ionicons5'
 import { useAuthStore } from '@/stores/auth'
+import AppLogo from '@/components/common/AppLogo.vue'
 
 defineProps<{
   show: boolean
@@ -50,14 +51,20 @@ function handleClose() {
     @update:show="emit('update:show', $event)"
   >
     <n-card
-      title="管理员登录"
       :bordered="false"
       size="medium"
-      style="width: 400px"
+      style="width: 420px; border-radius: 16px;"
       :segmented="{ content: true }"
     >
+      <template #header>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <AppLogo size="sm" :show-text="false" />
+          <span style="font-weight: 700; font-size: 16px; letter-spacing: -0.2px;">HTMLhub 管理员认证</span>
+        </div>
+      </template>
+
       <template #header-extra>
-        <n-icon size="24" color="#18a058">
+        <n-icon size="20" color="var(--n-primary-color, #6366f1)">
           <LockClosedOutline />
         </n-icon>
       </template>

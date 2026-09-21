@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { NCard, NForm, NFormItem, NInput, NButton, NAlert, NIcon, useMessage } from 'naive-ui'
-import { LockClosedOutline, FolderOpenOutline } from '@vicons/ionicons5'
+import { LockClosedOutline } from '@vicons/ionicons5'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppMode } from '@/composables/useAppMode'
+import AppLogo from '@/components/common/AppLogo.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -50,14 +51,9 @@ async function handleLogin() {
     <div class="login-container">
       <n-card class="login-card" :bordered="false">
         <!-- Logo -->
-        <div class="logo">
-          <div class="logo-icon">
-            <n-icon size="56" color="#18a058">
-              <FolderOpenOutline />
-            </n-icon>
-          </div>
-          <h1>HTMLManager</h1>
-          <p>静态HTML文件管理系统</p>
+        <div class="logo-hero">
+          <AppLogo size="xl" subtitle="STATIC SITE & APP WORKSPACE" />
+          <p class="logo-desc">轻量、极速的现代 HTML 站点与多应用聚合工作台</p>
         </div>
 
         <!-- 静态模式提示 -->
@@ -186,37 +182,21 @@ async function handleLogin() {
   padding: 20px;
 }
 
-.logo {
-  text-align: center;
-  margin-bottom: 36px;
-}
-
-.logo-icon {
-  width: 80px;
-  height: 80px;
-  margin: 0 auto 16px;
+.logo-hero {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: rgba(24, 160, 88, 0.15);
-  border-radius: 20px;
-  border: 1px solid rgba(24, 160, 88, 0.3);
+  margin-bottom: 28px;
+  text-align: center;
 }
 
-.logo h1 {
-  margin: 0 0 8px;
-  font-size: 28px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #18a058, #36d399);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.logo p {
-  margin: 0;
-  color: #888;
-  font-size: 14px;
+.logo-desc {
+  margin: 14px 0 0;
+  color: #94a3b8;
+  font-size: 13px;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .footer-info {
@@ -236,15 +216,6 @@ async function handleLogin() {
 
   .login-card {
     padding: 16px;
-  }
-
-  .logo h1 {
-    font-size: 24px;
-  }
-
-  .logo-icon {
-    width: 64px;
-    height: 64px;
   }
 }
 </style>
