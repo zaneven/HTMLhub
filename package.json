@@ -1,6 +1,7 @@
 {
   "name": "htmlhub",
   "version": "1.0.0",
+  "description": "现代化静态 HTML 原型与站点聚合托管工坊，支持纯静态/Cloudflare云端双模式与沉浸式多端预览",
   "private": true,
   "type": "module",
   "engines": {
