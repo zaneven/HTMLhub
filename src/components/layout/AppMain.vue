@@ -165,6 +165,9 @@ function handleUploadSuccess() {
 
 .main-content {
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px;
 }
 
 /* 工坊级响应式网格布局 */
