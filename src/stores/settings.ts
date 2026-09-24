@@ -16,7 +16,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const defaultPreferences: UserPreferences = {
     theme: defaultTheme,
     defaultViewMode: ViewMode.GRID,
-    defaultSortOption: SortOption.NAME_ASC,
+    defaultSortOption: SortOption.DATE_DESC,
     itemsPerPage: 20,
     showFileSize: true,
     showFileDate: true,

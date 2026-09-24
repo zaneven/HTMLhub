@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { ProjectInfo, CategoryInfo, ProjectIndexData } from '../types'
+import { SortOption } from '../types'
 import { retry } from '../utils/api'
 import { useSearchStore } from './search'
 import { useAppMode } from '@/composables/useAppMode'
@@ -40,10 +41,44 @@ export const useFilesStore = defineStore('files', () => {
     return projects.value.filter((project) => project.category === category)
   })
 
-  // 当前显示的项目（根据选中分类和搜索关键词过滤）
+  // 项目排序：默认最新上传在前，支持导航栏选择的排序方式
+  function projectSize(project: ProjectInfo): number {
+    if (!project.files || project.files.length === 0) return 0
+    return project.files.reduce((sum, file) => sum + (file.size || 0), 0)
+  }
+
+  function projectTime(project: ProjectInfo): number {
+    return Date.parse(project.createdAt) || Date.parse(project.modifiedAt) || 0
+  }
+
+  function compareProjects(a: ProjectInfo, b: ProjectInfo, sort: SortOption): number {
+    switch (sort) {
+      case SortOption.NAME_ASC:
+        return a.name.localeCompare(b.name, 'zh-CN')
+      case SortOption.NAME_DESC:
+        return b.name.localeCompare(a.name, 'zh-CN')
+      case SortOption.SIZE_ASC:
+        return projectSize(a) - projectSize(b)
+      case SortOption.SIZE_DESC:
+        return projectSize(b) - projectSize(a)
+      case SortOption.DATE_ASC:
+        return projectTime(a) - projectTime(b)
+      case SortOption.CATEGORY:
+        return (
+          a.category.localeCompare(b.category, 'zh-CN') ||
+          a.name.localeCompare(b.name, 'zh-CN')
+        )
+      case SortOption.DATE_DESC:
+      default:
+        return projectTime(b) - projectTime(a)
+    }
+  }
+
+  // 当前显示的项目（根据选中分类和搜索关键词过滤，并按排序选项排列）
   const filteredProjects = computed(() => {
     const searchStore = useSearchStore()
     const searchQuery = searchStore.searchQuery.toLowerCase().trim()
+    const sort = searchStore.sortOption
 
     let result = projects.value
 
@@ -61,7 +96,7 @@ export const useFilesStore = defineStore('files', () => {
       )
     }
 
-    return result
+    return [...result].sort((a, b) => compareProjects(a, b, sort))
   })
 
   // 获取项目统计信息
@@ -148,9 +183,9 @@ export const useFilesStore = defineStore('files', () => {
       }),
     )
 
-    // 排序
+    // 排序：分类按名称，项目默认最新上传在前
     allCategories.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
-    allProjects.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'))
+    allProjects.sort((a, b) => projectTime(b) - projectTime(a))
 
     return {
       version: '2.0.0',

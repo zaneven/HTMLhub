@@ -62,7 +62,12 @@
       <div class="header-right">
         <div class="actions-group">
           <!-- 排序筛选 -->
-          <n-dropdown :options="sortOptions" @select="handleSortSelect" trigger="click">
+          <n-dropdown
+            :options="sortOptions"
+            :value="searchStore.sortOption"
+            @select="handleSortSelect"
+            trigger="click"
+          >
             <n-button size="small" secondary class="action-btn">
               <template #icon>
                 <n-icon size="14"><SwapVerticalOutline /></n-icon>
@@ -174,17 +179,27 @@ const searchInput = computed({
 
 const sortOptions: DropdownOption[] = [
   {
+    label: '最新上传（默认）',
+    key: SortOption.DATE_DESC,
+    icon: () => h(NIcon, null, { default: () => h(TimeOutline) }),
+  },
+  {
     label: '按名称排序',
     key: SortOption.NAME_ASC,
     icon: () => h(NIcon, null, { default: () => h(TextOutline) }),
   },
   {
-    label: '按修改时间',
+    label: '按上传时间（旧→新）',
     key: SortOption.DATE_ASC,
     icon: () => h(NIcon, null, { default: () => h(TimeOutline) }),
   },
   {
-    label: '按体积大小',
+    label: '按体积（大→小）',
+    key: SortOption.SIZE_DESC,
+    icon: () => h(NIcon, null, { default: () => h(ListOutline) }),
+  },
+  {
+    label: '按体积（小→大）',
     key: SortOption.SIZE_ASC,
     icon: () => h(NIcon, null, { default: () => h(ListOutline) }),
   },

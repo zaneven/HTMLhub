@@ -1,8 +1,8 @@
 import { computed, ref, watch } from 'vue'
 import { useSearchStore } from '@/stores/search'
 import { useRouter } from 'vue-router'
-import type { SearchFilter, SortOption } from '@/types'
-import { ViewMode } from '@/types'
+import type { SearchFilter } from '@/types'
+import { SortOption, ViewMode } from '@/types'
 
 export function useSearch() {
   const searchStore = useSearchStore()
@@ -142,7 +142,7 @@ export function useSearch() {
       params.set('sizeMax', searchFilter.value.sizeRange.max.toString())
     }
     
-    if (sortOption.value !== 'name-asc') {
+    if (sortOption.value !== SortOption.DATE_DESC) {
       params.set('sort', sortOption.value)
     }
     

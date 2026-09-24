@@ -19,7 +19,7 @@ export const useSearchStore = defineStore('search', () => {
       max: undefined
     }
   })
-  const sortOption = ref<SortOption>(SortOption.NAME_ASC)
+  const sortOption = ref<SortOption>(SortOption.DATE_DESC)
   const viewMode = ref<ViewMode>(ViewMode.GRID)
   const currentPage = ref(1)
   const pageSize = ref(20)
