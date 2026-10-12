@@ -398,6 +398,70 @@ export const useFilesStore = defineStore('files', () => {
   }
 
   /**
+   * 修改项目所属分类 (仅云端模式)
+   *
+   * 分类由 R2 路径推导，迁移后项目的 id/path/indexPath 全部变化，
+   * 因此成功后返回新的项目对象供调用方重新指向；失败返回 null。
+   */
+  async function updateProjectCategory(
+    project: ProjectInfo,
+    newCategory: string,
+  ): Promise<ProjectInfo | null> {
+    if (!isCloudMode.value) {
+      error.value = '当前为静态模式，无法修改项目分类'
+      return null
+    }
+
+    if (project.source !== 'cloud') {
+      error.value = '本地静态项目不支持修改分类'
+      return null
+    }
+
+    const authStore = useAuthStore()
+    if (!authStore.isAuthenticated) {
+      error.value = '请先登录'
+      return null
+    }
+
+    error.value = null
+
+    try {
+      const response = await fetch(`${apiBaseUrl.value}/api/project/category`, {
+        method: 'POST',
+        headers: {
+          ...authStore.getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ path: project.path, newCategory }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        // 刷新索引：侧边栏分类列表与各分类计数需要随之更新
+        await reloadIndexData()
+
+        const moved =
+          (data.data?.project as ProjectInfo | undefined) ||
+          projects.value.find((p) => p.path === data.data?.newPath)
+
+        // 服务端返回的 ProjectInfo 不含 source 字段，必须补上，
+        // 否则 getFileUrl 会走本地路径分支，预览地址会拼错
+        return moved ? { ...moved, source: 'cloud' } : null
+      } else if (response.status === 401) {
+        await handleUnauthorized()
+        return null
+      } else {
+        error.value = data.error || '修改分类失败'
+        return null
+      }
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '修改分类失败'
+      return null
+    }
+  }
+
+  /**
    * 刷新索引 (仅云端模式，强制重新扫描 R2)
    */
   async function refreshIndex(): Promise<boolean> {
@@ -703,6 +767,7 @@ export const useFilesStore = defineStore('files', () => {
     uploadFile,
     uploadFiles,
     deleteProject,
+    updateProjectCategory,
     refreshIndex,
     getFileUrl,
     listProjectFiles,

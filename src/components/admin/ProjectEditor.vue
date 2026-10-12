@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, nextTick, type Component } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick, type Component } from 'vue'
 import {
   NIcon,
   NButton,
@@ -11,6 +11,7 @@ import {
   NUpload,
   NUploadDragger,
   NInput,
+  NSelect,
   NTooltip,
   NModal,
   useMessage,
@@ -36,6 +37,7 @@ import {
   ContractOutline,
   LockClosedOutline,
   CloudOutline,
+  CreateOutline,
   DesktopOutline,
   TvOutline,
   LaptopOutline,
@@ -56,6 +58,18 @@ const emit = defineEmits<{
 
 const filesStore = useFilesStore()
 const message = useMessage()
+
+// 编辑器内部持有项目引用
+// 修改分类后项目的 id / path / indexPath / category 都会变化，而父组件持有的
+// editingProject 仍是旧对象，因此由工作台自己维护当前项目，避免显示与上传路径错位
+const projectRef = ref<ProjectInfo>(props.project)
+
+watch(
+  () => props.project,
+  (next) => {
+    if (next) projectRef.value = next
+  },
+)
 
 // 状态
 const loading = ref(false)
@@ -213,7 +227,7 @@ const filteredFiles = computed(() => {
 
 // 项目入口直链地址（固定为当前项目根目录的 HTML 入口）
 const projectLiveUrl = computed(() => {
-  return filesStore.getFileUrl(props.project)
+  return filesStore.getFileUrl(projectRef.value)
 })
 
 // 格式化文件大小
@@ -263,13 +277,13 @@ function getFileVisual(name: string) {
 }
 
 // 是否为本地项目（静态管理，只读）
-const isLocalProject = computed(() => props.project.source === 'local')
+const isLocalProject = computed(() => projectRef.value.source === 'local')
 
 // 加载项目文件列表
 async function loadFiles() {
   loading.value = true
   try {
-    const result = await filesStore.listProjectFiles(props.project.path, props.project)
+    const result = await filesStore.listProjectFiles(projectRef.value.path, projectRef.value)
     rawFiles.value = result
   } catch {
     message.error('加载项目文件失败')
@@ -312,7 +326,7 @@ async function handleIncrementalUpload(options: UploadCustomRequestOptions) {
   uploading.value = true
   try {
     const relativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name
-    const success = await filesStore.addProjectFile(file, props.project.path, relativePath)
+    const success = await filesStore.addProjectFile(file, projectRef.value.path, relativePath)
     if (success) {
       message.success(`已添加: ${file.name}`)
       await loadFiles()
@@ -326,6 +340,86 @@ async function handleIncrementalUpload(options: UploadCustomRequestOptions) {
     message.error('上传发生异常')
   } finally {
     uploading.value = false
+  }
+}
+
+// 修改分类弹窗状态
+const showCategoryModal = ref(false)
+const categoryPick = ref('')
+const newCategoryName = ref('')
+const savingCategory = ref(false)
+
+// 分类下拉：已有分类 + 「新建分类」哨兵（与上传页保持一致的选择体验）
+const categoryOptions = computed(() => [
+  ...filesStore.categories.map((cat) => ({ label: cat.name, value: cat.name })),
+  { label: '+ 新建分类', value: '__new__' },
+])
+
+const isNewCategoryPick = computed(() => categoryPick.value === '__new__')
+
+const effectiveCategory = computed(() =>
+  isNewCategoryPick.value ? newCategoryName.value.trim() : categoryPick.value,
+)
+
+// 分类名规则，与 worker 侧 resolveCategoryName 保持一致
+function isValidCategoryName(name: string): boolean {
+  if (!name || name.length > 50) return false
+  if (name === '.' || name === '..') return false
+  return !/[/\\\u0000-\u001f]/.test(name)
+}
+
+const canSaveCategory = computed(() => {
+  const target = effectiveCategory.value
+  return !!target && target !== projectRef.value.category && isValidCategoryName(target)
+})
+
+// 打开修改分类弹窗
+function openCategoryModal() {
+  if (isLocalProject.value) return
+  categoryPick.value = projectRef.value.category
+  newCategoryName.value = ''
+  showCategoryModal.value = true
+}
+
+// 提交分类修改
+async function handleSaveCategory() {
+  if (!canSaveCategory.value) return
+
+  const oldCategory = projectRef.value.category
+  savingCategory.value = true
+
+  try {
+    const updated = await filesStore.updateProjectCategory(
+      projectRef.value,
+      effectiveCategory.value,
+    )
+
+    if (!updated) {
+      message.error(filesStore.error || '修改分类失败')
+      return
+    }
+
+    // 指向迁移后的新地址：id / path / indexPath / category 均已变化
+    projectRef.value = updated
+    showCategoryModal.value = false
+
+    await loadFiles()
+    iframeKey.value++ // 预览地址已变化，强制重载 iframe
+
+    // 旧分类若已被清空而侧边栏仍停留在它上面，退回「全部项目」，避免看到空列表
+    if (
+      filesStore.selectedCategory === oldCategory &&
+      filesStore.getProjectsByCategory(oldCategory).length === 0
+    ) {
+      filesStore.setSelectedCategory('')
+    }
+
+    message.success(`已移动到分类「${updated.category}」`)
+    emit('saved')
+  } catch {
+    message.error('修改分类操作异常')
+  } finally {
+    savingCategory.value = false
   }
 }
 
@@ -402,9 +496,29 @@ onBeforeUnmount(() => {
         </div>
         <div class="brand-info">
           <div class="brand-title-line">
-            <h3 class="project-title">{{ project.name }}</h3>
-            <n-tag type="info" size="small" round :bordered="false">
-              {{ project.category }}
+            <h3 class="project-title">{{ projectRef.name }}</h3>
+            <!-- 云端项目：分类标签可点击修改 -->
+            <n-tooltip v-if="!isLocalProject" trigger="hover">
+              <template #trigger>
+                <n-tag
+                  type="info"
+                  size="small"
+                  round
+                  :bordered="false"
+                  class="category-tag-editable"
+                  @click="openCategoryModal"
+                >
+                  {{ projectRef.category }}
+                  <n-icon size="11" class="category-edit-icon">
+                    <CreateOutline />
+                  </n-icon>
+                </n-tag>
+              </template>
+              点击修改项目分类
+            </n-tooltip>
+            <!-- 本地静态项目：分类只读 -->
+            <n-tag v-else type="info" size="small" round :bordered="false">
+              {{ projectRef.category }}
             </n-tag>
             <n-tag
               v-if="isLocalProject"
@@ -729,6 +843,55 @@ onBeforeUnmount(() => {
         </n-upload-dragger>
       </n-upload>
     </n-modal>
+
+    <!-- 修改项目分类弹窗 -->
+    <n-modal
+      v-model:show="showCategoryModal"
+      preset="card"
+      title="修改项目分类"
+      style="width: 440px; max-width: 90vw"
+    >
+      <n-space vertical size="medium">
+        <div class="category-modal-tip">
+          项目当前位于分类「{{ projectRef.category }}」。修改后项目的访问入口地址会同步变化；
+          原分类若已无其他项目，将自动从侧边栏消失。
+        </div>
+
+        <div class="category-form-item">
+          <div class="category-form-label">目标分类</div>
+          <n-select
+            v-model:value="categoryPick"
+            :options="categoryOptions"
+            placeholder="请选择或创建分类"
+            filterable
+          />
+        </div>
+
+        <div v-if="isNewCategoryPick" class="category-form-item">
+          <div class="category-form-label">新分类名称</div>
+          <n-input
+            v-model:value="newCategoryName"
+            placeholder="请输入新分类名称"
+            @keyup.enter="handleSaveCategory"
+          />
+        </div>
+
+        <n-space justify="end">
+          <n-button size="small" :disabled="savingCategory" @click="showCategoryModal = false">
+            取消
+          </n-button>
+          <n-button
+            size="small"
+            type="primary"
+            :disabled="!canSaveCategory"
+            :loading="savingCategory"
+            @click="handleSaveCategory"
+          >
+            确认修改
+          </n-button>
+        </n-space>
+      </n-space>
+    </n-modal>
   </div>
 </template>
 
@@ -798,6 +961,41 @@ onBeforeUnmount(() => {
 .file-summary-badge {
   font-size: 12px;
   color: var(--n-text-color-3);
+}
+
+/* 可编辑的分类标签 */
+.category-tag-editable {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.category-tag-editable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
+}
+
+.category-edit-icon {
+  margin-left: 3px;
+  vertical-align: -1px;
+}
+
+/* 修改分类弹窗 */
+.category-modal-tip {
+  font-size: 12px;
+  color: var(--n-text-color-3);
+  line-height: 1.6;
+}
+
+.category-form-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.category-form-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--n-text-color);
 }
 
 .project-live-address {
