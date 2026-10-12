@@ -2,13 +2,17 @@ import type { ApiResponse } from '../types'
 
 /**
  * 允许的 CORS 域名列表
- * 优先从环境变量 ALLOWED_ORIGINS 读取（逗号分隔），否则使用默认值
+ *
+ * 这一份列表同时承担两个职责：
+ *   1. 决定哪些前端源可以拿到「回显自身」的 CORS 头；
+ *   2. 决定哪些前端源可以以 iframe 嵌入 /r2/ 下的静态原型（见 getSecurityHeaders）。
+ * 新增前端域名时改这一处即可。
  */
-function getAllowedOrigins(): string[] {
-  // 回退到默认开发/生产域名列表
+export function getAllowedOrigins(): string[] {
   return [
     'https://htmlhub.pages.dev',
     'https://htmlmanager.pages.dev',
+    'https://html.getprompt.top',
     'http://localhost:5173',
     'http://localhost:4173',
   ]
@@ -33,10 +37,16 @@ function getCORSHeaders(origin: string | null): Record<string, string> {
 
 /**
  * 添加 CORS 头部到响应
+ *
+ * @param allowFramingBy 传入源列表时，该响应允许被这些源以 iframe 嵌入（见 getSecurityHeaders）
  */
-export function addCORSHeaders(response: Response, requestOrigin?: string | null): Response {
+export function addCORSHeaders(
+  response: Response,
+  requestOrigin?: string | null,
+  allowFramingBy?: string[],
+): Response {
   const corsHeaders = getCORSHeaders(requestOrigin || null)
-  const securityHeaders = getSecurityHeaders()
+  const securityHeaders = getSecurityHeaders(allowFramingBy)
   const headers = new Headers(response.headers)
 
   for (const [key, value] of Object.entries(corsHeaders)) {
@@ -57,15 +67,27 @@ export function addCORSHeaders(response: Response, requestOrigin?: string | null
 
 /**
  * 获取通用安全头
+ *
+ * @param allowFramingBy 传入源列表时，改用 CSP frame-ancestors 显式列出允许嵌入的源，
+ *   并省略 X-Frame-Options —— 后者只有 DENY / SAMEORIGIN 两个可用值，
+ *   表达不了「允许这几个跨域前端嵌入」。
+ *   /r2/ 下是用户上传的静态原型，前端工作台需要用 iframe 预览，因此走这个分支。
  */
-function getSecurityHeaders(): Record<string, string> {
-  return {
+function getSecurityHeaders(allowFramingBy?: string[]): Record<string, string> {
+  const headers: Record<string, string> = {
     'X-Content-Type-Options': 'nosniff',
-    'X-Frame-Options': 'SAMEORIGIN',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'X-XSS-Protection': '1; mode=block',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   }
+
+  if (allowFramingBy && allowFramingBy.length > 0) {
+    headers['Content-Security-Policy'] = `frame-ancestors ${allowFramingBy.join(' ')}`
+  } else {
+    headers['X-Frame-Options'] = 'SAMEORIGIN'
+  }
+
+  return headers
 }
 
 /**

@@ -1,5 +1,5 @@
 import type { Env } from './types'
-import { handleCORS, addCORSHeaders, notFound } from './utils/response'
+import { handleCORS, addCORSHeaders, getAllowedOrigins, notFound } from './utils/response'
 import { authenticate, logout } from './utils/auth'
 import {
   listFiles,
@@ -13,6 +13,7 @@ import {
   deleteProjectFile,
   addProjectFile,
   addProjectFiles,
+  moveProjectCategory,
 } from './routes/files'
 
 export default {
@@ -93,6 +94,11 @@ export default {
           response = await addProjectFiles(request, env)
           break
 
+        // 修改项目所属分类 (单项目重新归类：R2 复制 + 删除)
+        case request.method === 'POST' && path === '/api/project/category':
+          response = await moveProjectCategory(request, env)
+          break
+
         // 健康检查
         case request.method === 'GET' && path === '/api/health':
           response = new Response(
@@ -114,6 +120,12 @@ export default {
       })
     }
 
-    return addCORSHeaders(response, origin)
+    return addCORSHeaders(
+      response,
+      origin,
+      // /r2/ 下是用户上传的静态原型，前端工作台需要用 iframe 预览，
+      // 因此允许白名单内的前端源嵌入（其余路由保持 X-Frame-Options: SAMEORIGIN）
+      path.startsWith('/r2/') ? getAllowedOrigins() : undefined,
+    )
   },
 }

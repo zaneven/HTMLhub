@@ -1,5 +1,5 @@
 import type { Env, ProjectInfo, CategoryInfo, ProjectIndexData } from '../types'
-import { json, success, unauthorized, badRequest, serverError } from '../utils/response'
+import { json, success, error, unauthorized, badRequest, notFound, serverError } from '../utils/response'
 import { verifyAuth } from '../utils/auth'
 
 /**
@@ -183,6 +183,64 @@ function isHtmlFile(fileName: string): boolean {
 }
 
 /**
+ * 规范化并校验分类名称
+ *
+ * 分类名会成为 R2 key 的第二段（html-files/{分类}/...），而 scanR2Files 依赖
+ * 「parts[1] = 分类名」这个约定，所以必须禁止路径分隔符与控制字符，
+ * 否则路径段错位，项目会被索引到错误的分类或项目名下。
+ *
+ * @returns 规范化（已 trim）后的分类名；不合法时返回 null
+ */
+function resolveCategoryName(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null
+
+  const name = raw.trim()
+  if (!name || name.length > 50) return null
+  if (name === '.' || name === '..') return null
+  // 禁止 / \ 与控制字符（控制字符会出现在 key 中且无法在 URL 里正常表达）
+  if (/[/\\\u0000-\u001f]/.test(name)) return null
+
+  return name
+}
+
+/**
+ * 批量删除对象
+ * R2 单次 delete 最多接受 1000 个 key，超过需分批
+ */
+async function deleteKeys(env: Env, keys: string[]): Promise<void> {
+  for (let i = 0; i < keys.length; i += 1000) {
+    await env.HTML_FILES.delete(keys.slice(i, i + 1000))
+  }
+}
+
+/**
+ * 列出某个项目名下的全部对象（含分页）
+ * - 目录项目：html-files/{分类}/{项目}/ 前缀下的所有对象
+ * - 单文件项目：精确匹配该 key
+ *
+ * 注意：这里用 `${projectPath}/` 做前缀而不是直接用 projectPath，
+ * 否则项目 demo 会误匹配到兄弟项目 demo2 的对象
+ */
+async function listProjectObjects(env: Env, projectPath: string): Promise<R2Object[]> {
+  const objects: R2Object[] = []
+
+  let cursor: string | undefined
+  do {
+    const listed = await env.HTML_FILES.list({ prefix: `${projectPath}/`, cursor })
+    objects.push(...listed.objects)
+    cursor = listed.truncated ? listed.cursor : undefined
+  } while (cursor)
+
+  // 没匹配到目录对象时，回退为单文件项目
+  if (objects.length === 0) {
+    const single = await env.HTML_FILES.head(projectPath)
+    if (single) objects.push(single)
+  }
+
+  return objects
+}
+
+/**
  * 上传文件
  */
 export async function uploadFile(request: Request, env: Env): Promise<Response> {
@@ -194,11 +252,17 @@ export async function uploadFile(request: Request, env: Env): Promise<Response> 
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File | null
-    const category = (formData.get('category') as string) || '未分类'
+    const rawCategory = formData.get('category')
     const projectName = formData.get('projectName') as string | null
 
     if (!file) {
       return badRequest('未提供文件')
+    }
+
+    // 规范化并校验分类名称（未提供时沿用默认分类）
+    const category = rawCategory ? resolveCategoryName(rawCategory) : '未分类'
+    if (!category) {
+      return badRequest('分类名称不合法')
     }
 
     // 验证文件类型
@@ -278,11 +342,17 @@ export async function uploadMultipleFiles(request: Request, env: Env): Promise<R
 
   try {
     const formData = await request.formData()
-    const category = (formData.get('category') as string) || '未分类'
+    const rawCategory = formData.get('category')
     const projectName = formData.get('projectName') as string | null
 
     if (!projectName) {
       return badRequest('多文件上传必须提供项目名称')
+    }
+
+    // 规范化并校验分类名称（未提供时沿用默认分类）
+    const category = rawCategory ? resolveCategoryName(rawCategory) : '未分类'
+    if (!category) {
+      return badRequest('分类名称不合法')
     }
 
     // 获取所有文件和对应的路径
@@ -364,23 +434,23 @@ export async function deleteFile(request: Request, env: Env): Promise<Response> 
       return badRequest('无效的文件路径')
     }
 
-    // 如果是目录项目，需要删除整个目录
-    const listed = await env.HTML_FILES.list({ prefix: key })
+    // 目录项目删除整个目录，单文件项目删除该文件
+    // 使用严格的 key 匹配（而非裸前缀），避免误删同前缀的兄弟项目（如 demo 与 demo2）
+    const objects = await listProjectObjects(env, key)
 
-    if (listed.objects.length === 0) {
-      // 尝试作为单个文件删除
-      await env.HTML_FILES.delete(key)
-    } else {
-      // 删除目录下所有文件
-      for (const object of listed.objects) {
-        await env.HTML_FILES.delete(object.key)
-      }
+    if (objects.length === 0) {
+      return notFound('文件不存在')
     }
+
+    await deleteKeys(
+      env,
+      objects.map((object) => object.key),
+    )
 
     // 更新索引
     await updateFileIndex(env)
 
-    return success({ deleted: key })
+    return success({ deleted: key, deletedCount: objects.length })
   } catch (err) {
     console.error('Error deleting file:', err)
     return serverError('文件删除失败')
@@ -728,5 +798,140 @@ export async function addProjectFiles(request: Request, env: Env): Promise<Respo
   } catch (err) {
     console.error('Error adding multiple project files:', err)
     return serverError('添加文件失败')
+  }
+}
+
+/**
+ * 修改项目所属分类
+ *
+ * 分类完全由 R2 key 的第二段推导，没有独立元数据，所以「改分类」这个动作
+ * 在存储层就是：把项目下的对象整体复制到新分类前缀，再删除旧前缀。
+ * R2 没有服务端 copy / rename，只能逐个 get + put。
+ *
+ * 采用「先全量复制、再删除」，保证任何时刻至少存在一份完整数据；
+ * 复制阶段失败会回滚已写入的目标对象，使操作可以安全重试。
+ */
+export async function moveProjectCategory(request: Request, env: Env): Promise<Response> {
+  // 验证认证
+  if (!(await verifyAuth(request, env))) {
+    return unauthorized()
+  }
+
+  let body: { path?: unknown; newCategory?: unknown }
+  try {
+    body = (await request.json()) as { path?: unknown; newCategory?: unknown }
+  } catch {
+    return badRequest('请求格式错误')
+  }
+
+  const projectPath = typeof body.path === 'string' ? body.path.trim() : ''
+  const newCategory = resolveCategoryName(body.newCategory)
+
+  if (!projectPath.startsWith('html-files/')) {
+    return badRequest('无效的项目路径')
+  }
+  if (!newCategory) {
+    return badRequest('分类名称不合法')
+  }
+
+  // 从 html-files/{旧分类}/{项目后缀} 推导目标路径
+  const [, oldCategory, ...suffixSegments] = projectPath.split('/')
+  if (
+    !oldCategory ||
+    suffixSegments.length === 0 ||
+    suffixSegments.some((segment) => segment === '')
+  ) {
+    return badRequest('无效的项目路径')
+  }
+
+  const targetPath = `html-files/${newCategory}/${suffixSegments.join('/')}`
+
+  if (oldCategory === newCategory) {
+    return badRequest('分类未发生变化')
+  }
+
+  try {
+    // 1. 收集源对象（严格匹配，避免误伤 demo2 这类同前缀项目）
+    const sourceObjects = await listProjectObjects(env, projectPath)
+    if (sourceObjects.length === 0) {
+      return notFound('项目不存在')
+    }
+
+    // 2. 目标冲突检测
+    //    必须拦住：否则前端的 name + category 去重会让迁移后的项目在列表里静默消失
+    const conflictObjects = await listProjectObjects(env, targetPath)
+    if (conflictObjects.length > 0) {
+      return error('目标分类下已存在同名项目', 409)
+    }
+
+    // 3. 全量复制（流式透传，不把文件读进内存）
+    const copiedKeys: string[] = []
+    try {
+      for (const source of sourceObjects) {
+        const object = await env.HTML_FILES.get(source.key)
+        if (!object) {
+          throw new Error(`源对象读取失败: ${source.key}`)
+        }
+
+        // 目标 key = 目标项目路径 + 相对项目根目录的剩余部分
+        // 目录项目: .../demo + /assets/a.css ；单文件项目: .../demo.html + ''
+        const newKey = targetPath + source.key.slice(projectPath.length)
+
+        await env.HTML_FILES.put(newKey, object.body, {
+          httpMetadata: object.httpMetadata,
+          customMetadata: { ...object.customMetadata, category: newCategory },
+        })
+        copiedKeys.push(newKey)
+      }
+    } catch (err) {
+      // 复制阶段失败：源项目完好，回滚已写入的目标对象，保证可以干净重试
+      console.error('Error copying project objects:', err)
+
+      let rollbackFailed = false
+      if (copiedKeys.length > 0) {
+        try {
+          await deleteKeys(env, copiedKeys)
+        } catch (rollbackErr) {
+          rollbackFailed = true
+          console.error('Error rolling back copied objects:', rollbackErr)
+        }
+      }
+
+      return serverError(
+        rollbackFailed
+          ? '迁移失败，且回滚未完成，新分类下可能残留部分文件，请检查后重试'
+          : '迁移失败，原项目保持不变，请重试',
+      )
+    }
+
+    // 4. 复制全部成功后再删除源对象
+    try {
+      await deleteKeys(
+        env,
+        sourceObjects.map((object) => object.key),
+      )
+    } catch (err) {
+      console.error('Error deleting source objects:', err)
+      await updateFileIndex(env).catch(() => {})
+      return serverError('文件已复制到新分类，但旧文件清理失败，请刷新后检查是否有重复项目')
+    }
+
+    // 5. 重建索引缓存
+    const index = await updateFileIndex(env)
+    const project = index.projects.find((item) => item.path === targetPath) || null
+
+    return success({
+      oldPath: projectPath,
+      newPath: targetPath,
+      oldCategory,
+      newCategory,
+      movedObjects: copiedKeys.length,
+      // 顺带把新的项目对象返回给前端：改分类后 id/path/indexPath 全变了，
+      // 前端据此重新指向，避免依赖可能滞后的 KV 索引读取
+      project,
+    })
+  } catch (err) {
+    console.error('Error moving project category:', err)
+    return serverError('修改分类失败')
   }
 }
