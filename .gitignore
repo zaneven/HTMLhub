@@ -48,3 +48,6 @@ coverage
 .wrangler/
 */.wrangler/
 
+# 本地生产部署配置（含真实账号 ID / KV ID，不进仓库）
+workers/wrangler.prod.toml
+
