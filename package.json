@@ -1,6 +1,6 @@
 {
   "name": "htmlhub",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "description": "现代化静态 HTML 原型与站点聚合托管工坊，支持纯静态/Cloudflare云端双模式与沉浸式多端预览",
   "private": true,
   "type": "module",
@@ -16,6 +16,7 @@
     "lint": "eslint . --fix --cache",
     "format": "prettier --write src/",
     "test": "vitest",
+    "test:run": "vitest run",
     "test:ui": "vitest --ui",
     "scan": "node scripts/scan-files.js"
   },

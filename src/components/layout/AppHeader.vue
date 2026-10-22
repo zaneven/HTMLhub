@@ -86,6 +86,18 @@
             </template>
           </n-button>
 
+          <!-- 当前版本 / 更新日志入口 -->
+          <button
+            type="button"
+            class="version-chip"
+            :class="{ 'has-unseen': hasUnseenVersion }"
+            title="查看版本更新记录"
+            @click="router.push('/changelog')"
+          >
+            <span v-if="hasUnseenVersion" class="version-chip-dot"></span>
+            v{{ version }}
+          </button>
+
           <!-- 云端上传项目主按钮 -->
           <n-button
             v-if="isCloudMode && isAuthenticated"
@@ -151,6 +163,8 @@ import { useSettingsStore } from '@/stores/settings'
 import { useAuthStore } from '@/stores/auth'
 import { useFilesStore } from '@/stores/files'
 import { useAppMode } from '@/composables/useAppMode'
+import { APP_VERSION } from '@/data/changelog'
+import { hasUnseenRelease } from '@/composables/useVersion'
 import { SortOption } from '@/types'
 
 defineEmits<{
@@ -166,6 +180,8 @@ const { isCloudMode } = useAppMode()
 
 const searchInputRef = ref<InputInst | null>(null)
 const isMac = ref(true)
+const version = APP_VERSION
+const hasUnseenVersion = hasUnseenRelease
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const selectedCategory = computed(() => filesStore.selectedCategory)
@@ -424,6 +440,44 @@ onBeforeUnmount(() => {
 .action-btn {
   border-radius: 8px !important;
   font-weight: 500;
+}
+
+/* 版本号徽标 */
+.version-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: rgba(var(--n-text-color-rgb), 0.03);
+  color: var(--text-muted);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.version-chip:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.08);
+  color: #4f46e5;
+}
+
+.version-chip.has-unseen {
+  border-color: rgba(99, 102, 241, 0.35);
+  color: #4f46e5;
+}
+
+.version-chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
 }
 
 .upload-primary-btn {

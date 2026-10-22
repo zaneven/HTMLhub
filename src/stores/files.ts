@@ -27,6 +27,8 @@ export const useFilesStore = defineStore('files', () => {
   const error = ref<string | null>(null)
   const selectedCategory = ref<string>('')
   const showUploadModal = ref(false)
+  /** 正在下载的项目路径（为空表示空闲） */
+  const downloadingPath = ref<string | null>(null)
 
   // 计算属性
   const projects = computed(() => indexData.value?.projects || [])
@@ -525,6 +527,105 @@ export const useFilesStore = defineStore('files', () => {
   }
 
   /**
+   * 从 Content-Disposition 解析文件名（优先 RFC 5987 的 UTF-8 形式）
+   */
+  function parseDownloadFilename(header: string | null, fallback: string): string {
+    if (!header) return fallback
+
+    const utf8Match = /filename\*=UTF-8''([^;]+)/i.exec(header)
+    if (utf8Match?.[1]) {
+      try {
+        return decodeURIComponent(utf8Match[1].replace(/^"|"$/g, ''))
+      } catch {
+        // 解析失败时回退到普通 filename
+      }
+    }
+
+    const plainMatch = /filename="?([^";]+)"?/i.exec(header)
+    return plainMatch?.[1] || fallback
+  }
+
+  /**
+   * 用 Blob 触发浏览器下载
+   */
+  function triggerBrowserDownload(blob: Blob, filename: string): void {
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.rel = 'noopener'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    // 等待浏览器接管下载后再释放内存
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+
+  /**
+   * 下载云端项目
+   * - 单文件项目：直接下载原文件
+   * - 多文件项目：服务端打包为 ZIP（保留相对目录结构）
+   */
+  async function downloadProject(project: ProjectInfo): Promise<boolean> {
+    if (!isCloudMode.value) {
+      error.value = '当前为静态模式，无法下载云端项目'
+      return false
+    }
+
+    if (project.source !== 'cloud') {
+      error.value = '仅云端项目支持下载'
+      return false
+    }
+
+    if (downloadingPath.value) {
+      return false
+    }
+
+    downloadingPath.value = project.path
+    error.value = null
+
+    try {
+      const response = await fetch(
+        `${apiBaseUrl.value}/api/project/download?path=${encodeURIComponent(project.path)}`,
+      )
+
+      if (!response.ok) {
+        let message = response.status === 413 ? '项目过大，暂不支持打包下载' : '下载失败'
+        try {
+          const data = await response.json()
+          if (typeof data?.error === 'string' && data.error) {
+            message = data.error
+          }
+        } catch {
+          // 非 JSON 错误响应时沿用默认提示
+        }
+        error.value = message
+        return false
+      }
+
+      const blob = await response.blob()
+      const entryFileName = project.indexPath.split('/').pop() || ''
+      const fallback =
+        project.type === 'file'
+          ? entryFileName || `${project.name}.html`
+          : `${project.name}.zip`
+
+      const filename = parseDownloadFilename(
+        response.headers.get('Content-Disposition'),
+        fallback,
+      )
+
+      triggerBrowserDownload(blob, filename)
+      return true
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '下载失败'
+      return false
+    } finally {
+      downloadingPath.value = null
+    }
+  }
+
+  /**
    * 项目文件信息接口
    */
   interface ProjectFileInfo {
@@ -749,6 +850,7 @@ export const useFilesStore = defineStore('files', () => {
     error,
     selectedCategory,
     showUploadModal,
+    downloadingPath,
 
     // 计算属性
     projects,
@@ -770,6 +872,7 @@ export const useFilesStore = defineStore('files', () => {
     updateProjectCategory,
     refreshIndex,
     getFileUrl,
+    downloadProject,
     listProjectFiles,
     deleteProjectFile,
     addProjectFile,

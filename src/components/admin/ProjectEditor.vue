@@ -43,6 +43,7 @@ import {
   LaptopOutline,
   PhonePortraitOutline,
   ExpandOutline,
+  CloudDownloadOutline,
 } from '@vicons/ionicons5'
 import { useFilesStore } from '@/stores/files'
 import type { ProjectInfo } from '@/types'
@@ -279,6 +280,9 @@ function getFileVisual(name: string) {
 // 是否为本地项目（静态管理，只读）
 const isLocalProject = computed(() => projectRef.value.source === 'local')
 
+// 当前项目是否正在下载
+const isDownloading = computed(() => filesStore.downloadingPath === projectRef.value.path)
+
 // 加载项目文件列表
 async function loadFiles() {
   loading.value = true
@@ -455,6 +459,18 @@ function handleOpenExternal() {
   window.open(projectLiveUrl.value, '_blank', 'noopener,noreferrer')
 }
 
+// 下载当前云端项目
+async function handleDownloadProject() {
+  if (isDownloading.value) return
+
+  const ok = await filesStore.downloadProject(projectRef.value)
+  if (ok) {
+    message.success(`已开始下载 ${projectRef.value.name}`)
+  } else {
+    message.error(filesStore.error || '下载失败')
+  }
+}
+
 // 测量舞台尺寸
 function updateStageDimensions() {
   if (stageRef.value) {
@@ -572,6 +588,18 @@ onBeforeUnmount(() => {
               <n-icon><CopyOutline /></n-icon>
             </template>
             复制直链
+          </n-button>
+          <n-button
+            v-if="!isLocalProject"
+            size="small"
+            secondary
+            :loading="isDownloading"
+            @click="handleDownloadProject"
+          >
+            <template #icon>
+              <n-icon><CloudDownloadOutline /></n-icon>
+            </template>
+            下载项目
           </n-button>
           <n-button size="small" quaternary circle @click="$emit('close')">
             <template #icon>

@@ -10,6 +10,7 @@ import {
   getFileContent,
   serveR2File,
   listProjectFiles,
+  downloadProject,
   deleteProjectFile,
   addProjectFile,
   addProjectFiles,
@@ -82,6 +83,11 @@ export default {
         // 删除项目内的单个文件
         case request.method === 'DELETE' && path === '/api/project/file':
           response = await deleteProjectFile(request, env)
+          break
+
+        // 下载云端项目：单文件直接下载，多文件打包为 ZIP
+        case request.method === 'GET' && path === '/api/project/download':
+          response = await downloadProject(request, env)
           break
 
         // 向项目添加文件

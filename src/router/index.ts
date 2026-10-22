@@ -28,6 +28,14 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
+    path: '/changelog',
+    name: 'changelog',
+    component: () => import('../views/ChangelogView.vue'),
+    meta: {
+      title: 'HTMLhub - 更新日志',
+    },
+  },
+  {
     path: '/settings',
     name: 'settings',
     component: () => import('../views/SettingsView.vue'),

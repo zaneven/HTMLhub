@@ -53,6 +53,21 @@
           <n-icon size="13"><CopyOutline /></n-icon>
         </button>
 
+        <!-- 下载云端项目（单文件下载原文件，多文件打包 ZIP） -->
+        <button
+          v-if="project.source === 'cloud'"
+          class="icon-action-btn"
+          :class="{ 'is-loading': isDownloading }"
+          :disabled="isDownloading"
+          title="下载项目"
+          @click.stop="handleDownload"
+        >
+          <n-icon size="13">
+            <SyncOutline v-if="isDownloading" class="spin-icon" />
+            <CloudDownloadOutline v-else />
+          </n-icon>
+        </button>
+
         <!-- 管理员专属工具 -->
         <template v-if="project.source === 'cloud' && isAuthenticated">
           <button 
@@ -103,7 +118,9 @@ import {
   DesktopOutline,
   CopyOutline,
   CreateOutline,
-  TrashOutline
+  TrashOutline,
+  CloudDownloadOutline,
+  SyncOutline
 } from '@vicons/ionicons5'
 import type { ProjectInfo } from '@/types'
 import { useFilesStore } from '@/stores/files'
@@ -123,6 +140,7 @@ const authStore = useAuthStore()
 const message = useMessage()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
+const isDownloading = computed(() => filesStore.downloadingPath === props.project.path)
 
 const iconComponent = computed(() => {
   return props.project.type === 'directory' ? FolderOpenOutline : DocumentTextOutline
@@ -183,6 +201,17 @@ async function handleCopyLink() {
     message?.success(`已复制直链: ${props.project.name}`)
   } catch {
     message?.error('复制直链失败')
+  }
+}
+
+async function handleDownload() {
+  if (isDownloading.value) return
+
+  const ok = await filesStore.downloadProject(props.project)
+  if (ok) {
+    message?.success(`已开始下载 ${props.project.name}`)
+  } else {
+    message?.error(filesStore.error || '下载失败')
   }
 }
 </script>
@@ -412,6 +441,24 @@ async function handleCopyLink() {
 .icon-action-btn:hover {
   background: rgba(var(--n-text-color-rgb), 0.08);
   color: var(--text-main, #0f172a);
+}
+
+.icon-action-btn:disabled {
+  cursor: wait;
+  opacity: 0.75;
+}
+
+.spin-icon {
+  animation: download-spin 0.9s linear infinite;
+}
+
+@keyframes download-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 :root[data-theme='dark'] .icon-action-btn,

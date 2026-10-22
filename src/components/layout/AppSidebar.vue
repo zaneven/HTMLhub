@@ -23,6 +23,24 @@
             />
           </div>
         </div>
+
+        <div class="sidebar-footer">
+          <button
+            type="button"
+            class="version-entry"
+            :class="{ active: route.name === 'changelog' }"
+            title="查看版本更新记录"
+            @click="goChangelog"
+          >
+            <n-icon size="15" class="version-icon"><TimeOutline /></n-icon>
+            <span class="version-meta">
+              <span class="version-name">v{{ version }}</span>
+              <span class="version-sub">更新日志</span>
+            </span>
+            <span v-if="hasUnseenVersion" class="version-dot" aria-label="有新版本"></span>
+            <n-icon size="13" class="version-arrow"><ChevronForwardOutline /></n-icon>
+          </button>
+        </div>
       </div>
     </n-drawer-content>
   </n-drawer>
@@ -65,6 +83,23 @@
         </div>
       </div>
 
+      <div class="sidebar-footer">
+        <button
+          type="button"
+          class="version-entry"
+          :class="{ active: route.name === 'changelog' }"
+          title="查看版本更新记录"
+          @click="goChangelog"
+        >
+          <n-icon size="15" class="version-icon"><TimeOutline /></n-icon>
+          <span class="version-meta">
+            <span class="version-name">v{{ version }}</span>
+            <span class="version-sub">更新日志</span>
+          </span>
+          <span v-if="hasUnseenVersion" class="version-dot" aria-label="有新版本"></span>
+          <n-icon size="13" class="version-arrow"><ChevronForwardOutline /></n-icon>
+        </button>
+      </div>
 
     </div>
   </n-layout-sider>
@@ -72,7 +107,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, h } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   NLayoutSider,
   NDrawer,
@@ -84,19 +119,32 @@ import {
 import { 
   FolderOutline, 
   AppsOutline,
+  TimeOutline,
+  ChevronForwardOutline,
 } from '@vicons/ionicons5'
 import AppLogo from '@/components/common/AppLogo.vue'
 import { useFilesStore } from '../../stores/files'
+import { APP_VERSION } from '@/data/changelog'
+import { hasUnseenRelease } from '@/composables/useVersion'
 
+const route = useRoute()
 const router = useRouter()
 const drawerVisible = ref(false)
 const windowWidth = ref(window.innerWidth)
+
+const version = APP_VERSION
+const hasUnseenVersion = hasUnseenRelease
 
 function goHome() {
   router.push('/')
   if (isMobile.value) {
     drawerVisible.value = false
   }
+}
+
+function goChangelog() {
+  router.push('/changelog')
+  drawerVisible.value = false
 }
 
 const isMobile = computed(() => windowWidth.value < 768)
@@ -212,6 +260,92 @@ function handleCategorySelect(category: string) {
 .sidebar-nav {
   flex: 1;
   overflow-y: auto;
+}
+
+/* ========== 版本入口 ========== */
+.sidebar-footer {
+  margin-top: 10px;
+  padding: 12px 8px 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.version-entry {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: rgba(var(--n-text-color-rgb), 0.03);
+  color: var(--text-secondary);
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.version-entry:hover {
+  background: rgba(99, 102, 241, 0.08);
+  border-color: rgba(99, 102, 241, 0.18);
+}
+
+.version-entry:hover .version-icon,
+.version-entry:hover .version-name {
+  color: #4f46e5;
+}
+
+.version-entry.active {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.28);
+}
+
+.version-entry.active .version-icon,
+.version-entry.active .version-name,
+.version-entry.active .version-sub {
+  color: #4f46e5;
+}
+
+.version-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.version-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  line-height: 1.15;
+}
+
+.version-name {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  color: var(--text-main);
+}
+
+.version-sub {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.4px;
+}
+
+.version-arrow {
+  margin-left: auto;
+  color: var(--text-muted);
+  opacity: 0.5;
+  flex-shrink: 0;
+}
+
+.version-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.16);
+  flex-shrink: 0;
 }
 
 .nav-group {

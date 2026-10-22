@@ -1,6 +1,7 @@
 import type { Env, ProjectInfo, CategoryInfo, ProjectIndexData } from '../types'
 import { json, success, error, unauthorized, badRequest, notFound, serverError } from '../utils/response'
 import { verifyAuth } from '../utils/auth'
+import { zipSync } from 'fflate'
 
 /**
  * Base64 编码 (用于生成 ID)
@@ -238,6 +239,133 @@ async function listProjectObjects(env: Env, projectPath: string): Promise<R2Obje
   }
 
   return objects
+}
+
+/**
+ * 校验并规范化项目路径
+ *
+ * 只接受 html-files/{分类}/{项目}[/...] 形式，且不允许空段与 . / .. 段，
+ * 避免通过构造路径把下载范围放大到整个分类或越出 html-files 前缀。
+ */
+function resolveProjectPath(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null
+
+  const path = raw.trim().replace(/\/+$/, '')
+  if (!path.startsWith('html-files/')) return null
+
+  const segments = path.split('/')
+  if (segments.length < 3) return null
+  if (segments.some((segment) => segment === '' || segment === '.' || segment === '..')) {
+    return null
+  }
+
+  return path
+}
+
+/**
+ * 生成兼顾中文与旧浏览器的 Content-Disposition
+ */
+function buildContentDisposition(filename: string): string {
+  const fallback = filename
+    .replace(/[^\x20-\x7e]/g, '_')
+    .replace(/["\\]/g, '_')
+
+  return `attachment; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`
+}
+
+/** 单次打包下载的体积与文件数上限（避免 Worker 内存与 CPU 超限） */
+const DOWNLOAD_MAX_TOTAL_SIZE = 50 * 1024 * 1024
+const DOWNLOAD_MAX_FILES = 1000
+
+/**
+ * 下载云端项目
+ *
+ * - 单文件项目：直接回传原文件
+ * - 多文件项目：打包为 ZIP，保留项目内相对目录结构
+ *
+ * 不校验登录态：/r2/ 下的静态内容本身已对公网开放预览，
+ * 下载作为同等的读取能力处理，也方便浏览器直接通过链接下载。
+ */
+export async function downloadProject(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url)
+  const projectPath = resolveProjectPath(url.searchParams.get('path'))
+
+  if (!projectPath) {
+    return badRequest('无效的项目路径')
+  }
+
+  try {
+    const objects = await listProjectObjects(env, projectPath)
+
+    if (objects.length === 0) {
+      return notFound('项目不存在')
+    }
+
+    const projectName = projectPath.split('/').pop() || 'project'
+
+    // 单文件项目：直接回传该文件（即使它存放在以项目名命名的目录里）
+    if (objects.length === 1) {
+      const onlyObject = objects[0]!
+      const object = await env.HTML_FILES.get(onlyObject.key)
+      if (!object) {
+        return notFound('文件不存在')
+      }
+
+      const entryName = onlyObject.key.split('/').pop() || 'download'
+      // 目录项目的入口通常固定叫 index.html，用项目名作为下载文件名更友好
+      const fileName = entryName === 'index.html' ? `${projectName}.html` : entryName
+
+      return new Response(object.body, {
+        headers: {
+          'Content-Type': object.httpMetadata?.contentType || getMimeType(entryName),
+          'Content-Length': String(object.size),
+          'Content-Disposition': buildContentDisposition(fileName),
+          'Cache-Control': 'no-store',
+        },
+      })
+    }
+
+    // 多文件项目：先做体积与数量保护，再读取内容打包
+    if (objects.length > DOWNLOAD_MAX_FILES) {
+      return error('项目文件数量过多，暂不支持打包下载', 413)
+    }
+
+    const totalSize = objects.reduce((sum, object) => sum + object.size, 0)
+    if (totalSize > DOWNLOAD_MAX_TOTAL_SIZE) {
+      return error('项目体积超过 50 MB，暂不支持打包下载', 413)
+    }
+
+    const files: Record<string, Uint8Array> = {}
+
+    for (const object of objects) {
+      const body = await env.HTML_FILES.get(object.key)
+      if (!body) continue
+
+      // 保留项目内的相对目录结构，并统一放进以项目名命名的根目录
+      const relativePath = object.key.slice(projectPath.length + 1)
+      files[`${projectName}/${relativePath}`] = new Uint8Array(await body.arrayBuffer())
+    }
+
+    if (Object.keys(files).length === 0) {
+      return notFound('项目文件不存在')
+    }
+
+    // level: 0 为仅存储模式，避免在 Worker 里做压缩消耗 CPU
+    const zip = zipSync(files, { level: 0 })
+    const zipName = `${projectName}.zip`
+
+    return new Response(zip, {
+      headers: {
+        'Content-Type': 'application/zip',
+        'Content-Length': String(zip.byteLength),
+        'Content-Disposition': buildContentDisposition(zipName),
+        'Cache-Control': 'no-store',
+      },
+    })
+  } catch (err) {
+    console.error('Error downloading project:', err)
+    return serverError('项目下载失败')
+  }
 }
 
 /**

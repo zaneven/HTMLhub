@@ -31,6 +31,8 @@ function getCORSHeaders(origin: string | null): Record<string, string> {
     'Access-Control-Allow-Origin': allowedOrigin,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    // 允许前端读取下载文件名（跨域下 Content-Disposition 默认不可见）
+    'Access-Control-Expose-Headers': 'Content-Disposition',
     'Access-Control-Max-Age': '86400',
   }
 }
