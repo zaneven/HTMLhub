@@ -195,6 +195,11 @@ const categoryMenuOptions = computed((): MenuOption[] => {
 function handleCategorySelect(category: string) {
   filesStore.setSelectedCategory(category)
   if (isMobile.value) drawerVisible.value = false
+
+  // 切换项目目录时始终回到项目列表，避免停留在更新日志/设置等页面
+  if (route.name !== 'home') {
+    router.push('/')
+  }
 }
 </script>
 

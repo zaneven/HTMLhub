@@ -201,7 +201,7 @@ npm run dev
 
 ## 版本与更新日志
 
-当前版本 **v1.1.1**。每次迭代的变更内容统一记录在 `src/data/changelog.ts`，站内访问 `/changelog` 即可查看完整版本时间线。
+当前版本 **v1.1.2**。每次迭代的变更内容统一记录在 `src/data/changelog.ts`，站内访问 `/changelog` 即可查看完整版本时间线。
 
 发布新版本的步骤、记录规范与自动化校验说明见 **[docs/versioning.md](docs/versioning.md)**。
 

@@ -66,6 +66,24 @@ export const CHANGE_TYPE_META: Record<ChangeType, ChangeTypeMeta> = {
 /** 版本记录（倒序：最新版本在最前） */
 export const CHANGELOG: VersionRelease[] = [
   {
+    version: '1.1.2',
+    date: '2026-10-22',
+    title: '导航体验修复',
+    summary: '版本入口只留一处，切换项目目录时不再被更新日志页面「卡住」。',
+    changes: [
+      {
+        type: 'fix',
+        scope: '导航',
+        content: '在更新日志等页面切换左侧项目目录时，自动回到项目列表，不再停留在当前页面',
+      },
+      {
+        type: 'style',
+        scope: '界面',
+        content: '移除顶部导航重复的版本号，版本与更新日志入口统一收敛到左侧栏底部',
+      },
+    ],
+  },
+  {
     version: '1.1.1',
     date: '2026-10-22',
     title: '云端项目下载',
