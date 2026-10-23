@@ -527,6 +527,19 @@ export const useFilesStore = defineStore('files', () => {
   }
 
   /**
+   * 获取项目内任意文件的访问地址
+   * - 云端项目：走 Worker 的 /r2/ 静态代理
+   * - 本地项目：走前端静态资源路径（去掉 public 前缀）
+   */
+  function getProjectFileUrl(fileKey: string): string {
+    if (fileKey.startsWith('html-files/')) {
+      return `${apiBaseUrl.value}/r2/${fileKey}`
+    }
+
+    return `/${fileKey.replace(/^public\//, '')}`
+  }
+
+  /**
    * 从 Content-Disposition 解析文件名（优先 RFC 5987 的 UTF-8 形式）
    */
   function parseDownloadFilename(header: string | null, fallback: string): string {
@@ -872,6 +885,7 @@ export const useFilesStore = defineStore('files', () => {
     updateProjectCategory,
     refreshIndex,
     getFileUrl,
+    getProjectFileUrl,
     downloadProject,
     listProjectFiles,
     deleteProjectFile,

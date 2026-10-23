@@ -88,6 +88,7 @@ const supportedExtensions = [
   '.map',
   '.txt',
   '.xml',
+  '.md',
 ]
 
 // 计算总文件大小
@@ -343,6 +344,7 @@ function customRequest() {
                 <span class="file-badge">.css</span>
                 <span class="file-badge">.js</span>
                 <span class="file-badge">.json</span>
+                <span class="file-badge">.md</span>
                 <span class="file-badge">图片/字体</span>
               </div>
             </div>

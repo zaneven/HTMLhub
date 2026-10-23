@@ -165,6 +165,7 @@ const SUPPORTED_EXTENSIONS = [
   '.woff',
   '.woff2',
   '.ttf',
+  '.md',
 ]
 
 /**
@@ -396,7 +397,7 @@ export async function uploadFile(request: Request, env: Env): Promise<Response> 
     // 验证文件类型
     const fileName = file.name
     if (!isSupportedFile(fileName)) {
-      return badRequest('不支持的文件类型，支持: HTML, JS, CSS, JSON, 图片, 字体文件')
+      return badRequest('不支持的文件类型，支持: HTML, JS, CSS, JSON, Markdown, 图片, 字体文件')
     }
 
     // 生成存储路径
@@ -455,6 +456,7 @@ function getMimeType(fileName: string): string {
     woff: 'font/woff',
     woff2: 'font/woff2',
     ttf: 'font/ttf',
+    md: 'text/markdown; charset=utf-8',
   }
   return mimeTypes[ext] || 'application/octet-stream'
 }

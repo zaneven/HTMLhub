@@ -66,6 +66,42 @@ export const CHANGE_TYPE_META: Record<ChangeType, ChangeTypeMeta> = {
 /** 版本记录（倒序：最新版本在最前） */
 export const CHANGELOG: VersionRelease[] = [
   {
+    version: '1.2.0',
+    date: '2026-10-23',
+    title: '项目简介与 README 渲染',
+    summary: '每个项目都能带上一份 README：默认展示项目简介，随时切回文件管理。',
+    changes: [
+      {
+        type: 'feature',
+        scope: '项目简介',
+        content:
+          '支持在项目根目录放置 README.md / readme.md，并在预览工作台左侧渲染为项目简介',
+      },
+      {
+        type: 'feature',
+        scope: '界面',
+        content:
+          '工作台左侧新增「项目简介 / 项目文件」切换，有 README 时默认展示简介，无 README 时回到文件列表',
+      },
+      {
+        type: 'feature',
+        scope: '上传',
+        content:
+          '上传项目或增量添加文件时支持 .md 文档，识别到根目录 README 后自动切换到简介视图',
+      },
+      {
+        type: 'security',
+        scope: '渲染',
+        content: 'Markdown 经 DOMPurify 清洗后渲染，并自动补全 README 中的相对图片与链接地址',
+      },
+      {
+        type: 'docs',
+        scope: '文档',
+        content: 'README 补充项目简介与 README.md 使用说明',
+      },
+    ],
+  },
+  {
     version: '1.1.2',
     date: '2026-10-22',
     title: '导航体验修复',

@@ -44,8 +44,10 @@ import {
   PhonePortraitOutline,
   ExpandOutline,
   CloudDownloadOutline,
+  BookOutline,
 } from '@vicons/ionicons5'
 import { useFilesStore } from '@/stores/files'
+import { renderMarkdown } from '@/utils/markdown'
 import type { ProjectInfo } from '@/types'
 
 const props = defineProps<{
@@ -219,6 +221,33 @@ interface ProjectFileInfo {
 }
 const rawFiles = ref<ProjectFileInfo[]>([])
 
+// 左侧面板模式：项目简介（README）/ 项目文件管理
+type PanelMode = 'readme' | 'files'
+const panelMode = ref<PanelMode>('files')
+const readmeInitialized = ref(false)
+const readmeContent = ref('')
+const readmeLoading = ref(false)
+const readmeError = ref('')
+
+// 单文件项目没有独立项目目录，无法存放 README
+const supportsReadme = computed(() => projectRef.value.type === 'directory')
+const showIntroPanel = computed(() => supportsReadme.value && panelMode.value === 'readme')
+
+// 仅识别项目根目录下的 README.md（大小写不敏感）
+const readmeFile = computed(
+  () => rawFiles.value.find((file) => file.name.toLowerCase() === 'readme.md') || null,
+)
+
+const readmeHtml = computed(() => {
+  if (!readmeContent.value) return ''
+
+  const baseUrl = readmeFile.value
+    ? filesStore.getProjectFileUrl(readmeFile.value.key)
+    : undefined
+
+  return renderMarkdown(readmeContent.value, { baseUrl })
+})
+
 // 搜索过滤后的文件列表
 const filteredFiles = computed(() => {
   const q = searchPattern.value.trim().toLowerCase()
@@ -263,6 +292,9 @@ function getFileVisual(name: string) {
   if (lower.endsWith('.json')) {
     return { icon: CodeWorkingOutline, color: '#a855f7' }
   }
+  if (lower.endsWith('.md')) {
+    return { icon: BookOutline, color: '#6366f1' }
+  }
   if (
     lower.endsWith('.png') ||
     lower.endsWith('.jpg') ||
@@ -283,12 +315,51 @@ const isLocalProject = computed(() => projectRef.value.source === 'local')
 // 当前项目是否正在下载
 const isDownloading = computed(() => filesStore.downloadingPath === projectRef.value.path)
 
+// 加载 README 内容
+async function loadReadme() {
+  const file = readmeFile.value
+  readmeError.value = ''
+
+  if (!file) {
+    readmeContent.value = ''
+    return
+  }
+
+  readmeLoading.value = true
+  try {
+    const response = await fetch(filesStore.getProjectFileUrl(file.key), {
+      cache: 'no-store',
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
+
+    readmeContent.value = await response.text()
+  } catch {
+    readmeContent.value = ''
+    readmeError.value = 'README 加载失败，请稍后重试'
+  } finally {
+    readmeLoading.value = false
+  }
+}
+
 // 加载项目文件列表
 async function loadFiles() {
   loading.value = true
   try {
     const result = await filesStore.listProjectFiles(projectRef.value.path, projectRef.value)
     rawFiles.value = result
+
+    await loadReadme()
+
+    // 首次加载时：有 README 就默认展示项目简介
+    if (!readmeInitialized.value) {
+      readmeInitialized.value = true
+      if (supportsReadme.value && readmeFile.value) {
+        panelMode.value = 'readme'
+      }
+    }
   } catch {
     message.error('加载项目文件失败')
   } finally {
@@ -330,11 +401,17 @@ async function handleIncrementalUpload(options: UploadCustomRequestOptions) {
   uploading.value = true
   try {
     const relativePath = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name
+    const normalizedPath = relativePath.replace(/\\/g, '/')
+    const isRootReadme = /^readme\.md$/i.test(normalizedPath)
+
     const success = await filesStore.addProjectFile(file, projectRef.value.path, relativePath)
     if (success) {
       message.success(`已添加: ${file.name}`)
       await loadFiles()
       iframeKey.value++ // 刷新右侧预览
+      if (isRootReadme && supportsReadme.value) {
+        panelMode.value = 'readme'
+      }
       showUploadModal.value = false
       emit('saved')
     } else {
@@ -614,104 +691,196 @@ onBeforeUnmount(() => {
     <div class="console-body">
       <!-- 左栏：静态文件管理目录 (固定宽度) -->
       <aside class="files-panel">
-        <div class="panel-toolbar">
-          <n-input
-            v-model:value="searchPattern"
-            size="small"
-            placeholder="搜索项目文件..."
-            clearable
+        <!-- 面板模式切换：项目简介 / 项目文件 -->
+        <div v-if="supportsReadme" class="panel-mode-switch">
+          <button
+            type="button"
+            class="panel-mode-btn"
+            :class="{ 'is-active': panelMode === 'readme' }"
+            @click="panelMode = 'readme'"
           >
-            <template #prefix>
-              <n-icon size="14" color="#9ca3af"><SearchOutline /></n-icon>
-            </template>
-          </n-input>
+            <n-icon size="14"><BookOutline /></n-icon>
+            <span>项目简介</span>
+            <span v-if="readmeFile" class="mode-indicator"></span>
+          </button>
+          <button
+            type="button"
+            class="panel-mode-btn"
+            :class="{ 'is-active': panelMode === 'files' }"
+            @click="panelMode = 'files'"
+          >
+            <n-icon size="14"><FolderOpenOutline /></n-icon>
+            <span>项目文件</span>
+            <span class="mode-count">{{ projectStats.totalFiles }}</span>
+          </button>
+        </div>
 
-          <div class="toolbar-button-group">
-            <template v-if="!isLocalProject">
-              <n-button size="tiny" secondary type="primary" @click="openUploadModal('file')">
-                <template #icon>
-                  <n-icon><CloudUploadOutline /></n-icon>
-                </template>
-                添加文件
-              </n-button>
-              <n-button size="tiny" secondary type="info" @click="openUploadModal('directory')">
-                <template #icon>
-                  <n-icon><FolderOpenOutline /></n-icon>
-                </template>
-                添加文件夹
-              </n-button>
-            </template>
-            <div
-              v-else
-              class="local-readonly-pill"
-              title="本地静态项目文件存放在本地目录中，不支持在线添加或修改"
-            >
-              <n-icon size="13" color="#f59e0b"><LockClosedOutline /></n-icon>
-              <span>本地文件只读</span>
+        <!-- 项目简介：渲染项目根目录下的 README.md -->
+        <template v-if="showIntroPanel">
+          <div class="readme-toolbar">
+            <div class="readme-toolbar-title">
+              <n-icon size="14" color="#6366f1"><BookOutline /></n-icon>
+              <span class="readme-toolbar-name">{{ readmeFile?.name || 'README.md' }}</span>
+              <span v-if="readmeFile" class="readme-toolbar-size">
+                {{ formatSize(readmeFile.size) }}
+              </span>
             </div>
             <n-tooltip trigger="hover">
               <template #trigger>
-                <n-button size="tiny" quaternary circle @click="loadFiles">
+                <n-button
+                  size="tiny"
+                  quaternary
+                  circle
+                  :loading="readmeLoading"
+                  @click="loadReadme"
+                >
                   <template #icon>
                     <n-icon><RefreshOutline /></n-icon>
                   </template>
                 </n-button>
               </template>
-              刷新文件目录
+              刷新项目简介
             </n-tooltip>
           </div>
-        </div>
 
-        <!-- 文件列表 -->
-        <div class="panel-file-list">
-          <n-spin :show="loading">
-            <div v-if="rawFiles.length === 0 && !loading" class="empty-hint-box">
-              <n-empty description="当前项目暂无文件" size="small" />
-            </div>
+          <div class="readme-panel">
+            <n-spin :show="readmeLoading">
+              <div v-if="readmeError" class="empty-hint-box">
+                <n-empty :description="readmeError" size="small" />
+              </div>
 
-            <div v-else-if="filteredFiles.length === 0 && !loading" class="empty-hint-box">
-              <n-empty description="未找到匹配的文件" size="small" />
-            </div>
+              <div v-else-if="!readmeFile" class="readme-empty-box">
+                <n-icon size="34" color="#c7d2fe"><BookOutline /></n-icon>
+                <div class="readme-empty-title">暂无项目简介</div>
+                <p class="readme-empty-tip">
+                  在项目根目录添加 README.md 或 readme.md，即可在这里展示项目说明。
+                </p>
+                <n-button
+                  v-if="!isLocalProject"
+                  size="tiny"
+                  type="primary"
+                  secondary
+                  @click="openUploadModal('file')"
+                >
+                  <template #icon>
+                    <n-icon><CloudUploadOutline /></n-icon>
+                  </template>
+                  添加 README.md
+                </n-button>
+              </div>
 
-            <div v-else class="file-items-scroll">
+              <article v-else class="readme-article" v-html="readmeHtml"></article>
+            </n-spin>
+          </div>
+        </template>
+
+        <!-- 项目文件：搜索、上传与删除 -->
+        <template v-else>
+          <div class="panel-toolbar">
+            <n-input
+              v-model:value="searchPattern"
+              size="small"
+              placeholder="搜索项目文件..."
+              clearable
+            >
+              <template #prefix>
+                <n-icon size="14" color="#9ca3af"><SearchOutline /></n-icon>
+              </template>
+            </n-input>
+
+            <div class="toolbar-button-group">
+              <template v-if="!isLocalProject">
+                <n-button size="tiny" secondary type="primary" @click="openUploadModal('file')">
+                  <template #icon>
+                    <n-icon><CloudUploadOutline /></n-icon>
+                  </template>
+                  添加文件
+                </n-button>
+                <n-button size="tiny" secondary type="info" @click="openUploadModal('directory')">
+                  <template #icon>
+                    <n-icon><FolderOpenOutline /></n-icon>
+                  </template>
+                  添加文件夹
+                </n-button>
+              </template>
               <div
-                v-for="file in filteredFiles"
-                :key="file.key"
-                class="file-row"
+                v-else
+                class="local-readonly-pill"
+                title="本地静态项目文件存放在本地目录中，不支持在线添加或修改"
               >
-                <div class="file-row-meta">
-                  <n-icon size="16" :color="getFileVisual(file.name).color">
-                    <component :is="getFileVisual(file.name).icon" />
-                  </n-icon>
-                  <span class="file-row-name" :title="file.name">
-                    {{ file.name }}
-                  </span>
-                  <span
-                    v-if="file.name.toLowerCase() === 'index.html' || file.name.toLowerCase().endsWith('/index.html')"
-                    class="entry-badge"
-                  >
-                    入口
-                  </span>
-                </div>
-
-                <div class="file-row-ops">
-                  <span class="file-row-size">{{ formatSize(file.size) }}</span>
-                  <n-popconfirm
-                    v-if="!isLocalProject"
-                    @positive-click="handleDeleteFile(file.key, file.name)"
-                  >
-                    <template #trigger>
-                      <button class="btn-file-delete" type="button" title="删除文件">
-                        <n-icon size="13"><TrashOutline /></n-icon>
-                      </button>
+                <n-icon size="13" color="#f59e0b"><LockClosedOutline /></n-icon>
+                <span>本地文件只读</span>
+              </div>
+              <n-tooltip trigger="hover">
+                <template #trigger>
+                  <n-button size="tiny" quaternary circle @click="loadFiles">
+                    <template #icon>
+                      <n-icon><RefreshOutline /></n-icon>
                     </template>
-                    确定要删除 "{{ file.name }}" 吗？
-                  </n-popconfirm>
+                  </n-button>
+                </template>
+                刷新文件目录
+              </n-tooltip>
+            </div>
+          </div>
+
+          <!-- 文件列表 -->
+          <div class="panel-file-list">
+            <n-spin :show="loading">
+              <div v-if="rawFiles.length === 0 && !loading" class="empty-hint-box">
+                <n-empty description="当前项目暂无文件" size="small" />
+              </div>
+
+              <div v-else-if="filteredFiles.length === 0 && !loading" class="empty-hint-box">
+                <n-empty description="未找到匹配的文件" size="small" />
+              </div>
+
+              <div v-else class="file-items-scroll">
+                <div
+                  v-for="file in filteredFiles"
+                  :key="file.key"
+                  class="file-row"
+                >
+                  <div class="file-row-meta">
+                    <n-icon size="16" :color="getFileVisual(file.name).color">
+                      <component :is="getFileVisual(file.name).icon" />
+                    </n-icon>
+                    <span class="file-row-name" :title="file.name">
+                      {{ file.name }}
+                    </span>
+                    <span
+                      v-if="file.name.toLowerCase() === 'index.html' || file.name.toLowerCase().endsWith('/index.html')"
+                      class="entry-badge"
+                    >
+                      入口
+                    </span>
+                    <span
+                      v-if="file.name.toLowerCase() === 'readme.md'"
+                      class="entry-badge readme-badge"
+                    >
+                      简介
+                    </span>
+                  </div>
+
+                  <div class="file-row-ops">
+                    <span class="file-row-size">{{ formatSize(file.size) }}</span>
+                    <n-popconfirm
+                      v-if="!isLocalProject"
+                      @positive-click="handleDeleteFile(file.key, file.name)"
+                    >
+                      <template #trigger>
+                        <button class="btn-file-delete" type="button" title="删除文件">
+                          <n-icon size="13"><TrashOutline /></n-icon>
+                        </button>
+                      </template>
+                      确定要删除 "{{ file.name }}" 吗？
+                    </n-popconfirm>
+                  </div>
                 </div>
               </div>
-            </div>
-          </n-spin>
-        </div>
+            </n-spin>
+          </div>
+        </template>
 
         <footer class="panel-footer">
           <span>{{ projectStats.totalFiles }} 个静态文件</span>
@@ -855,6 +1024,7 @@ onBeforeUnmount(() => {
         :custom-request="handleIncrementalUpload"
         :show-file-list="false"
         :disabled="uploading"
+        accept=".html,.htm,.js,.mjs,.css,.json,.svg,.png,.jpg,.jpeg,.gif,.webp,.ico,.woff,.woff2,.ttf,.map,.txt,.xml,.md"
       >
         <n-upload-dragger>
           <div style="padding: 24px; text-align: center">
@@ -865,7 +1035,7 @@ onBeforeUnmount(() => {
               {{ uploadModalType === 'directory' ? '点击或拖拽文件夹到此处' : '点击或拖拽文件到此处' }}
             </div>
             <div style="margin-top: 6px; font-size: 12px; color: var(--n-text-color-3)">
-              文件将保存到当前项目目录下，上传后右侧预览将自动刷新
+              文件将保存到当前项目目录下，支持添加 README.md，上传后右侧预览将自动刷新
             </div>
           </div>
         </n-upload-dragger>
@@ -1059,12 +1229,278 @@ onBeforeUnmount(() => {
 
 /* 左侧文件面板 */
 .files-panel {
-  width: 340px;
+  width: 370px;
   border-right: 1px solid var(--n-border-color);
   background: var(--n-color);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+}
+
+/* 项目简介 / 项目文件 模式切换 */
+.panel-mode-switch {
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--n-border-color);
+  background: var(--n-color-embedded);
+}
+
+.panel-mode-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--n-text-color-3);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.panel-mode-btn:hover {
+  color: var(--n-text-color-1);
+  background: rgba(var(--n-text-color-rgb), 0.05);
+}
+
+.panel-mode-btn.is-active {
+  color: #4f46e5;
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.22);
+}
+
+.mode-count {
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 999px;
+  background: rgba(var(--n-text-color-rgb), 0.08);
+}
+
+.mode-indicator {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #6366f1;
+}
+
+/* README 工具条与内容 */
+.readme-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--n-border-color);
+}
+
+.readme-toolbar-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--n-text-color-2);
+}
+
+.readme-toolbar-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.readme-toolbar-size {
+  font-size: 10px;
+  font-family: var(--font-mono, monospace);
+  color: var(--n-text-color-3);
+}
+
+.readme-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 14px 28px;
+}
+
+.readme-panel :deep(.n-spin-container),
+.readme-panel :deep(.n-spin-content) {
+  min-height: 100%;
+}
+
+.readme-empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 44px 10px;
+  text-align: center;
+}
+
+.readme-empty-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--n-text-color-2);
+}
+
+.readme-empty-tip {
+  margin: 0 0 4px;
+  font-size: 11.5px;
+  line-height: 1.65;
+  color: var(--n-text-color-3);
+}
+
+/* README Markdown 排版（窄栏紧凑版） */
+.readme-article {
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--n-text-color-2);
+  word-break: break-word;
+}
+
+.readme-article :deep(h1),
+.readme-article :deep(h2),
+.readme-article :deep(h3),
+.readme-article :deep(h4) {
+  margin: 18px 0 8px;
+  color: var(--n-text-color);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.readme-article :deep(h1:first-child) {
+  margin-top: 0;
+}
+
+.readme-article :deep(h1) {
+  font-size: 18px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--n-border-color);
+}
+
+.readme-article :deep(h2) {
+  font-size: 15px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--n-border-color);
+}
+
+.readme-article :deep(h3) {
+  font-size: 13.5px;
+}
+
+.readme-article :deep(h4) {
+  font-size: 12.5px;
+}
+
+.readme-article :deep(p) {
+  margin: 0 0 10px;
+}
+
+.readme-article :deep(ul),
+.readme-article :deep(ol) {
+  margin: 0 0 10px;
+  padding-left: 18px;
+}
+
+.readme-article :deep(li) {
+  margin: 3px 0;
+}
+
+.readme-article :deep(li > p) {
+  margin: 0;
+}
+
+.readme-article :deep(a) {
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+:root[data-theme='dark'] .readme-article :deep(a) {
+  color: #a5b4fc;
+}
+
+.readme-article :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.readme-article :deep(code) {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 11.5px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(var(--n-text-color-rgb), 0.07);
+}
+
+.readme-article :deep(pre) {
+  margin: 0 0 12px;
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(var(--n-text-color-rgb), 0.06);
+  overflow-x: auto;
+}
+
+.readme-article :deep(pre code) {
+  padding: 0;
+  background: transparent;
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+
+.readme-article :deep(blockquote) {
+  margin: 0 0 12px;
+  padding: 4px 10px;
+  border-left: 3px solid rgba(99, 102, 241, 0.45);
+  background: rgba(99, 102, 241, 0.06);
+  color: var(--n-text-color-3);
+}
+
+.readme-article :deep(blockquote p:last-child) {
+  margin-bottom: 0;
+}
+
+.readme-article :deep(img) {
+  max-width: 100%;
+  height: auto;
+  margin: 4px 0;
+  border-radius: 8px;
+}
+
+.readme-article :deep(table) {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 12px;
+  border-collapse: collapse;
+  overflow-x: auto;
+  font-size: 11.5px;
+}
+
+.readme-article :deep(th),
+.readme-article :deep(td) {
+  padding: 4px 8px;
+  border: 1px solid var(--n-border-color);
+  text-align: left;
+}
+
+.readme-article :deep(th) {
+  background: rgba(var(--n-text-color-rgb), 0.05);
+  font-weight: 600;
+}
+
+.readme-article :deep(hr) {
+  margin: 16px 0;
+  border: none;
+  border-top: 1px solid var(--n-border-color);
+}
+
+.readme-article :deep(input[type='checkbox']) {
+  margin-right: 4px;
+  vertical-align: -1px;
 }
 
 .panel-toolbar {
@@ -1150,6 +1586,10 @@ onBeforeUnmount(() => {
   border-radius: 3px;
   font-weight: 500;
   line-height: 1.2;
+}
+
+.readme-badge {
+  background: #6366f1;
 }
 
 .file-row-ops {
