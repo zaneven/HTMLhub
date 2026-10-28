@@ -1,6 +1,14 @@
 import type { Env, ProjectInfo, CategoryInfo, ProjectIndexData } from '../types'
 import { json, success, error, unauthorized, badRequest, notFound, serverError } from '../utils/response'
 import { verifyAuth } from '../utils/auth'
+import {
+  decorateIndexWithProtection,
+  guardObjectKey,
+  guardProjectPath,
+  renderSharePage,
+  resolveAccessForKey,
+} from './share'
+import { isDocumentRequest } from '../utils/share'
 import { zipSync } from 'fflate'
 
 /**
@@ -135,12 +143,12 @@ export async function listFiles(env: Env): Promise<Response> {
     const cached = (await env.FILE_INDEX.get('index', 'json')) as ProjectIndexData | null
 
     if (cached) {
-      return json(cached)
+      return json(await decorateIndexWithProtection(cached, env))
     }
 
     // 从 R2 重新扫描
     const index = await updateFileIndex(env)
-    return json(index)
+    return json(await decorateIndexWithProtection(index, env))
   } catch (err) {
     console.error('Error listing files:', err)
     return serverError('获取文件列表失败')
@@ -294,6 +302,9 @@ export async function downloadProject(request: Request, env: Env): Promise<Respo
   if (!projectPath) {
     return badRequest('无效的项目路径')
   }
+
+  const denied = await guardProjectPath(request, env, projectPath)
+  if (denied) return denied
 
   try {
     const objects = await listProjectObjects(env, projectPath)
@@ -621,6 +632,10 @@ export async function getFileContent(request: Request, env: Env): Promise<Respon
     return badRequest('无效的文件路径')
   }
 
+  // 受保护项目的内容读取与 /r2/ 使用同一套判定
+  const denied = await guardObjectKey(request, env, key)
+  if (denied) return denied
+
   try {
     const object = await env.HTML_FILES.get(key)
 
@@ -631,7 +646,7 @@ export async function getFileContent(request: Request, env: Env): Promise<Respon
     return new Response(object.body, {
       headers: {
         'Content-Type': object.httpMetadata?.contentType || 'text/html',
-        'Cache-Control': 'public, max-age=3600',
+        'Cache-Control': 'private, no-store',
       },
     })
   } catch (err) {
@@ -643,15 +658,56 @@ export async function getFileContent(request: Request, env: Env): Promise<Respon
 /**
  * 直接通过路径提供 R2 文件（支持相对路径资源加载）
  * 路径格式: html-files/{category}/{project}/{filename}
+ *
+ * 受保护项目在这里统一拦截：
+ *   - 带合法 ?k=  → 种 Cookie 后 302 到干净 URL
+ *   - 文档导航     → 密码页 / 过期页
+ *   - 子资源       → 401，避免绕过入口直接拿资源
  */
-export async function serveR2File(key: string, env: Env): Promise<Response> {
+export async function serveR2File(request: Request, key: string, env: Env): Promise<Response> {
   // 验证路径安全性
   if (!key.startsWith('html-files/')) {
     return badRequest('无效的文件路径')
   }
 
   // 解码 URL 编码的路径（处理中文等）
-  const decodedKey = decodeURIComponent(key)
+  let decodedKey: string
+  try {
+    decodedKey = decodeURIComponent(key)
+  } catch {
+    return badRequest('无效的文件路径')
+  }
+
+  const access = await resolveAccessForKey(request, env, decodedKey)
+
+  if (access.kind === 'locked') {
+    if (isDocumentRequest(request)) {
+      return renderSharePage(access)
+    }
+    const response = json(
+      {
+        success: false,
+        error: access.reason === 'expired' ? '分享已结束' : '需要访问密码',
+      },
+      access.reason === 'expired' ? 410 : 401,
+    )
+    response.headers.set('Cache-Control', 'no-store')
+    return response
+  }
+
+  if (access.kind === 'granted' && access.redirectTo) {
+    const headers = new Headers({
+      Location: access.redirectTo,
+      'Cache-Control': 'no-store',
+      'Referrer-Policy': 'no-referrer',
+    })
+    if (access.setCookie) {
+      headers.set('Set-Cookie', access.setCookie)
+    }
+    return new Response(null, { status: 302, headers })
+  }
+
+  const protectedProject = access.kind === 'granted'
 
   try {
     const object = await env.HTML_FILES.get(decodedKey)
@@ -664,16 +720,21 @@ export async function serveR2File(key: string, env: Env): Promise<Response> {
     const contentType =
       object.httpMetadata?.contentType || getMimeType(decodedKey.split('/').pop() || '')
 
-    return new Response(object.body, {
-      headers: {
-        'Content-Type': contentType,
-        'Cache-Control': 'public, max-age=3600',
-        // CORS 头，允许跨域访问资源
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-      },
-    })
+    const headers: Record<string, string> = {
+      'Content-Type': contentType,
+      // 受保护项目必须禁止共享缓存，否则可能把内容缓存给未授权访问者
+      'Cache-Control': protectedProject ? 'private, no-store' : 'public, max-age=3600',
+    }
+
+    if (protectedProject) {
+      headers['Vary'] = 'Cookie'
+    } else {
+      headers['Access-Control-Allow-Origin'] = '*'
+      headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+      headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    }
+
+    return new Response(object.body, { headers })
   } catch (err) {
     console.error('Error serving R2 file:', err)
     return serverError('获取文件失败')
@@ -707,6 +768,9 @@ export async function listProjectFiles(request: Request, env: Env): Promise<Resp
   if (!projectPath.startsWith('html-files/')) {
     return badRequest('无效的项目路径')
   }
+
+  const denied = await guardProjectPath(request, env, projectPath.replace(/\/+$/, ''))
+  if (denied) return denied
 
   try {
     const files: ProjectFileInfo[] = []

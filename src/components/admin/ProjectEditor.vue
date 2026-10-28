@@ -45,8 +45,10 @@ import {
   ExpandOutline,
   CloudDownloadOutline,
   BookOutline,
+  KeyOutline,
 } from '@vicons/ionicons5'
 import { useFilesStore } from '@/stores/files'
+import { useShareStore } from '@/stores/share'
 import { renderMarkdown } from '@/utils/markdown'
 import type { ProjectInfo } from '@/types'
 
@@ -60,6 +62,7 @@ const emit = defineEmits<{
 }>()
 
 const filesStore = useFilesStore()
+const shareStore = useShareStore()
 const message = useMessage()
 
 // 编辑器内部持有项目引用
@@ -70,7 +73,10 @@ const projectRef = ref<ProjectInfo>(props.project)
 watch(
   () => props.project,
   (next) => {
-    if (next) projectRef.value = next
+    if (next) {
+      projectRef.value = next
+      void preparePreview()
+    }
   },
 )
 
@@ -259,6 +265,33 @@ const filteredFiles = computed(() => {
 const projectLiveUrl = computed(() => {
   return filesStore.getFileUrl(projectRef.value)
 })
+
+// 管理员预览地址：受保护项目自动附加 5 分钟免密令牌，避免在工作台里看到密码页
+const previewUrl = ref('')
+const previewReady = ref(false)
+
+async function preparePreview() {
+  previewReady.value = false
+  const project = projectRef.value
+  previewUrl.value =
+    project.source === 'cloud' && project.protected
+      ? await shareStore.buildPreviewUrl(project)
+      : filesStore.getFileUrl(project)
+  previewReady.value = true
+  iframeKey.value++
+}
+
+// 分享配置变更后（开启 / 重置 / 撤销），同步最新项目标记并刷新预览令牌
+watch(
+  () => shareStore.revision,
+  async () => {
+    const updated = filesStore.projects.find(
+      (item) => item.id === projectRef.value.id || item.path === projectRef.value.path,
+    )
+    if (updated) projectRef.value = updated
+    await preparePreview()
+  },
+)
 
 // 格式化文件大小
 function formatSize(bytes: number): string {
@@ -485,7 +518,7 @@ async function handleSaveCategory() {
     showCategoryModal.value = false
 
     await loadFiles()
-    iframeKey.value++ // 预览地址已变化，强制重载 iframe
+    await preparePreview() // 预览地址已变化，强制重载 iframe
 
     // 旧分类若已被清空而侧边栏仍停留在它上面，退回「全部项目」，避免看到空列表
     if (
@@ -525,15 +558,15 @@ async function handleCopyLink() {
   }
 }
 
-// 刷新右侧预览页面
-function handleRefreshPreview() {
-  iframeKey.value++
+// 刷新右侧预览页面（顺带续签管理员预览令牌）
+async function handleRefreshPreview() {
+  await preparePreview()
   message.success('预览页面已刷新')
 }
 
-// 在新标签页打开页面
+// 在新标签页打开页面（受保护项目带上管理员临时令牌）
 function handleOpenExternal() {
-  window.open(projectLiveUrl.value, '_blank', 'noopener,noreferrer')
+  window.open(previewUrl.value || projectLiveUrl.value, '_blank', 'noopener,noreferrer')
 }
 
 // 下载当前云端项目
@@ -558,6 +591,7 @@ function updateStageDimensions() {
 
 onMounted(() => {
   loadFiles()
+  void preparePreview()
   nextTick(() => {
     updateStageDimensions()
     if (stageRef.value) {
@@ -614,6 +648,19 @@ onBeforeUnmount(() => {
               {{ projectRef.category }}
             </n-tag>
             <n-tag
+              v-if="!isLocalProject && projectRef.protected"
+              size="small"
+              round
+              :bordered="false"
+              :type="projectRef.protectedExpired ? 'default' : 'warning'"
+              class="share-state-tag"
+            >
+              <template #icon>
+                <n-icon size="12"><LockClosedOutline /></n-icon>
+              </template>
+              {{ projectRef.protectedExpired ? '分享已过期' : '密码保护' }}
+            </n-tag>
+            <n-tag
               v-if="isLocalProject"
               size="small"
               round
@@ -645,7 +692,7 @@ onBeforeUnmount(() => {
           </div>
           <div class="project-live-address" :title="projectLiveUrl">
             <span class="address-label">访问入口:</span>
-            <a :href="projectLiveUrl" target="_blank" rel="noopener noreferrer">
+            <a :href="previewUrl || projectLiveUrl" target="_blank" rel="noopener noreferrer">
               {{ projectLiveUrl }}
             </a>
           </div>
@@ -665,6 +712,17 @@ onBeforeUnmount(() => {
               <n-icon><CopyOutline /></n-icon>
             </template>
             复制直链
+          </n-button>
+          <n-button
+            v-if="!isLocalProject"
+            size="small"
+            secondary
+            @click="shareStore.open(projectRef)"
+          >
+            <template #icon>
+              <n-icon><KeyOutline /></n-icon>
+            </template>
+            分享与密码
           </n-button>
           <n-button
             v-if="!isLocalProject"
@@ -973,7 +1031,7 @@ onBeforeUnmount(() => {
         <div class="preview-stage-container" ref="stageRef">
           <!-- 模式一：固定正常屏幕比例 (通过工业级 transform 稳定缩放) -->
           <div
-            v-if="!currentResolution.isFluid"
+            v-if="previewReady && !currentResolution.isFluid"
             class="scaled-screen-outer-box"
             :style="{
               width: `${currentResolution.width * effectiveScale}px`,
@@ -991,7 +1049,7 @@ onBeforeUnmount(() => {
             >
               <iframe
                 :key="iframeKey"
-                :src="projectLiveUrl"
+                :src="previewUrl"
                 class="fullscreen-live-iframe"
                 sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
               ></iframe>
@@ -999,13 +1057,19 @@ onBeforeUnmount(() => {
           </div>
 
           <!-- 模式二：流式 100% 满铺 -->
-          <div v-else class="fluid-screen-viewport">
+          <div v-else-if="previewReady" class="fluid-screen-viewport">
             <iframe
               :key="iframeKey"
-              :src="projectLiveUrl"
+              :src="previewUrl"
               class="fullscreen-live-iframe"
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
             ></iframe>
+          </div>
+
+          <!-- 预览地址准备中 -->
+          <div v-else class="preview-boot">
+            <n-spin size="medium" />
+            <span>正在准备预览访问凭证…</span>
           </div>
         </div>
       </main>
@@ -1861,5 +1925,17 @@ onBeforeUnmount(() => {
   border: none;
   background: #ffffff;
   display: block;
+}
+
+/* 预览访问凭证准备中 */
+.preview-boot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--n-text-color-3);
+  font-size: 13px;
+  padding: 24px;
 }
 </style>

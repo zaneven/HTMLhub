@@ -16,6 +16,14 @@ import {
   addProjectFiles,
   moveProjectCategory,
 } from './routes/files'
+import {
+  createPreviewToken,
+  createShareLink,
+  deleteShare,
+  getShareStatus,
+  unlockShare,
+  upsertShare,
+} from './routes/share'
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -63,6 +71,31 @@ export default {
           response = await refreshIndex(request, env)
           break
 
+        // 项目分享访问控制
+        case request.method === 'POST' && path === '/api/share/unlock':
+          response = await unlockShare(request, env)
+          break
+
+        case request.method === 'POST' && path === '/api/share/preview':
+          response = await createPreviewToken(request, env)
+          break
+
+        case request.method === 'POST' && path === '/api/share/link':
+          response = await createShareLink(request, env)
+          break
+
+        case request.method === 'GET' && path === '/api/share':
+          response = await getShareStatus(request, env)
+          break
+
+        case request.method === 'PUT' && path === '/api/share':
+          response = await upsertShare(request, env)
+          break
+
+        case request.method === 'DELETE' && path === '/api/share':
+          response = await deleteShare(request, env)
+          break
+
         // 文件内容获取 (用于预览)
         case request.method === 'GET' && path === '/api/content':
           response = await getFileContent(request, env)
@@ -71,7 +104,7 @@ export default {
         // R2 文件直接访问（支持相对路径资源加载）
         // 路径格式: /r2/html-files/{category}/{project}/{filename}
         case request.method === 'GET' && path.startsWith('/r2/'):
-          response = await serveR2File(path.slice(4), env) // 移除 '/r2/' 前缀
+          response = await serveR2File(request, path.slice(4), env) // 移除 '/r2/' 前缀
           break
 
         // 项目管理 API

@@ -66,6 +66,50 @@ export const CHANGE_TYPE_META: Record<ChangeType, ChangeTypeMeta> = {
 /** 版本记录（倒序：最新版本在最前） */
 export const CHANGELOG: VersionRelease[] = [
   {
+    version: '1.3.0',
+    date: '2026-10-28',
+    title: '项目级分享访问密码',
+    summary:
+      '每个项目都能单独设置访问密码：支持随机或自定义密码、有效期、免密链接，到期不会自动恢复公开。',
+    changes: [
+      {
+        type: 'feature',
+        scope: '分享',
+        content:
+          '新增项目级访问保护：可为每个云端项目设置 4–32 位随机或自定义密码，支持 1 小时 / 1 天 / 7 天 / 30 天 / 永久有效期，到期后访客看到「分享已结束」页面而非恢复公开',
+      },
+      {
+        type: 'feature',
+        scope: '分享',
+        content:
+          '支持生成免密链接：密码以 HMAC 签名令牌内置，访问时 302 去掉令牌并种 Cookie，令牌随分享到期或重置密码立即失效',
+      },
+      {
+        type: 'security',
+        scope: '分享',
+        content:
+          '密码仅存 PBKDF2（2 万次迭代 + AUTH_SECRET pepper）哈希，明文只在创建 / 重置时返回一次；解锁接口按 IP 与项目双向限流，超限 429',
+      },
+      {
+        type: 'feature',
+        scope: '工作台',
+        content:
+          '管理员工作台预览受保护项目时自动签发 5 分钟免密令牌，无需输入密码；项目卡片与工作台标题展示锁标识（保护中 / 已过期）',
+      },
+      {
+        type: 'feature',
+        scope: '界面',
+        content:
+          '新增全局分享面板：开启表单、状态展示、一次性密码与两种链接复制、重置密码、撤销分享，关闭面板后明文密码立即从内存清除',
+      },
+      {
+        type: 'docs',
+        scope: '文档',
+        content: 'README 与 Cloudflare 部署指南补充分享访问控制说明与 AUTH_SECRET 配置要求',
+      },
+    ],
+  },
+  {
     version: '1.2.0',
     date: '2026-10-23',
     title: '项目简介与 README 渲染',

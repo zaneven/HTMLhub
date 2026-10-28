@@ -29,6 +29,8 @@ function getCORSHeaders(origin: string | null): Record<string, string> {
 
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
+    // 带回凭据（分享解锁需要跨域种 Cookie）时，ACAO 不能是通配符
+    ...(allowedOrigin !== '*' ? { 'Access-Control-Allow-Credentials': 'true' } : {}),
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     // 允许前端读取下载文件名（跨域下 Content-Disposition 默认不可见）

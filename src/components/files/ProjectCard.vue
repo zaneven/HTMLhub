@@ -18,13 +18,28 @@
         </div>
       </div>
 
-      <!-- 来源硬核微标 -->
-      <div class="card-source-tag" :class="project.source === 'cloud' ? 'source-cloud' : 'source-local'">
-        <n-icon size="12" class="source-icon">
-          <CloudOutline v-if="project.source === 'cloud'" />
-          <DesktopOutline v-else />
-        </n-icon>
-        <span>{{ project.source === 'cloud' ? '云端 R2' : '本地' }}</span>
+      <!-- 来源硬核微标 + 分享状态 -->
+      <div class="card-badges">
+        <div class="card-source-tag" :class="project.source === 'cloud' ? 'source-cloud' : 'source-local'">
+          <n-icon size="12" class="source-icon">
+            <CloudOutline v-if="project.source === 'cloud'" />
+            <DesktopOutline v-else />
+          </n-icon>
+          <span>{{ project.source === 'cloud' ? '云端 R2' : '本地' }}</span>
+        </div>
+
+        <div
+          v-if="project.protected"
+          class="card-lock-tag"
+          :class="project.protectedExpired ? 'lock-expired' : 'lock-active'"
+          :title="project.protectedExpired ? '分享已过期，访客无法访问' : '已开启访问密码保护'"
+        >
+          <n-icon size="11">
+            <LockOpenOutline v-if="project.protectedExpired" />
+            <LockClosedOutline v-else />
+          </n-icon>
+          <span>{{ project.protectedExpired ? '分享已过期' : '密码保护' }}</span>
+        </div>
       </div>
     </div>
 
@@ -70,6 +85,15 @@
 
         <!-- 管理员专属工具 -->
         <template v-if="project.source === 'cloud' && isAuthenticated">
+          <button 
+            class="icon-action-btn" 
+            :class="{ 'is-protected': project.protected }"
+            :title="project.protected ? '分享与访问密码（已开启）' : '分享与访问密码'" 
+            @click.stop="handleOpenShare"
+          >
+            <n-icon size="13"><KeyOutline /></n-icon>
+          </button>
+
           <button 
             class="icon-action-btn" 
             title="管理项目与设置" 
@@ -120,11 +144,15 @@ import {
   CreateOutline,
   TrashOutline,
   CloudDownloadOutline,
-  SyncOutline
+  SyncOutline,
+  KeyOutline,
+  LockClosedOutline,
+  LockOpenOutline
 } from '@vicons/ionicons5'
 import type { ProjectInfo } from '@/types'
 import { useFilesStore } from '@/stores/files'
 import { useAuthStore } from '@/stores/auth'
+import { useShareStore } from '@/stores/share'
 
 const props = defineProps<{
   project: ProjectInfo
@@ -137,6 +165,7 @@ const emit = defineEmits<{
 
 const filesStore = useFilesStore()
 const authStore = useAuthStore()
+const shareStore = useShareStore()
 const message = useMessage()
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
@@ -178,9 +207,13 @@ function handleCardClick() {
   emit('edit', props.project)
 }
 
-function handleOpenExternal() {
-  const url = filesStore.getFileUrl(props.project)
+async function handleOpenExternal() {
+  const url = await shareStore.buildPreviewUrl(props.project)
   window.open(url, '_blank', 'noopener,noreferrer')
+}
+
+function handleOpenShare() {
+  shareStore.open(props.project)
 }
 
 async function handleCopyLink() {
@@ -334,6 +367,14 @@ async function handleDownload() {
 }
 
 /* 来源微标 */
+.card-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
 .card-source-tag {
   display: inline-flex;
   align-items: center;
@@ -369,6 +410,45 @@ async function handleDownload() {
   background: rgba(52, 211, 153, 0.12);
   color: #34d399;
   border-color: rgba(52, 211, 153, 0.25);
+}
+
+/* 分享锁标识 */
+.card-lock-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.lock-active {
+  background: rgba(245, 158, 11, 0.1);
+  color: #b45309;
+  border: 1px solid rgba(245, 158, 11, 0.28);
+}
+
+.lock-expired {
+  background: rgba(148, 163, 184, 0.12);
+  color: #64748b;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+:root[data-theme='dark'] .lock-active,
+.dark .lock-active {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.28);
+}
+
+:root[data-theme='dark'] .lock-expired,
+.dark .lock-expired {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.25);
 }
 
 /* 单行纯净元数据 */
@@ -478,6 +558,24 @@ async function handleDownload() {
   color: #ef4444;
   background: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.3);
+}
+
+.icon-action-btn.is-protected {
+  color: #b45309;
+  background: rgba(245, 158, 11, 0.08);
+  border-color: rgba(245, 158, 11, 0.24);
+}
+
+.icon-action-btn.is-protected:hover {
+  color: #92400e;
+  background: rgba(245, 158, 11, 0.14);
+}
+
+:root[data-theme='dark'] .icon-action-btn.is-protected,
+.dark .icon-action-btn.is-protected {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.26);
 }
 
 .open-external-btn {

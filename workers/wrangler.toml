@@ -10,6 +10,9 @@ compatibility_date = "2024-01-01"
 # 环境变量 - 在部署时通过 Cloudflare Dashboard 或 wrangler secret 设置
 [vars]
 # ADMIN_PASSWORD 应该通过 wrangler secret put ADMIN_PASSWORD 设置
+# AUTH_SECRET 用于给分享链接 / 会话 Cookie 签名，并通过 pepper 加固分享密码哈希
+# 未设置时会回退到 ADMIN_PASSWORD（此时修改管理员密码会让所有分享链接失效）
+# 建议：wrangler secret put AUTH_SECRET
 
 # R2 存储桶绑定 (对应执行 wrangler r2 bucket create htmlmanager-files)
 [[r2_buckets]]

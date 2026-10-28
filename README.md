@@ -23,6 +23,10 @@
 - **极简专业交互**
   - 纯矢量图标设计（`@vicons/ionicons5`），无杂质视觉干扰。
   - 支持按项目名、分类实时模糊搜索与分类聚合导航。
+- **项目级访问保护**
+  - 每个项目可单独开启分享密码（4 位随机码或自定义），支持 1 小时 / 1 天 / 7 天 / 30 天 / 永久有效期。
+  - 支持生成「免密链接」，把密码以签名令牌的形式内置到链接中，打开即看；令牌到期或密码重置后立即失效。
+  - 密码只以加盐哈希形式存储，未通过校验的访问连 CSS / JS / 图片等子资源也拿不到。
 - **版本系统与更新日志**
   - 每个版本号、发布日期与全部变更条目集中维护，站内「更新日志」页面按时间线完整呈现。
   - 支持按新功能 / 修复 / 视觉 / 重构等类型筛选，侧边栏与顶栏实时提示未读新版本。
@@ -127,9 +131,14 @@ cd workers
 # 设置登录密码（根据提示输入你自定义的管理员密码）
 npx wrangler secret put ADMIN_PASSWORD
 
+# 设置分享签名密钥（可选但强烈建议：用于给免密链接 / 会话 Cookie 签名）
+npx wrangler secret put AUTH_SECRET
+
 # 一键部署 API 后端
 npx wrangler deploy
 ```
+
+> `AUTH_SECRET` 未设置时会回退使用 `ADMIN_PASSWORD`。回退状态下，修改管理员密码会让所有已发出的分享链接与免密 Cookie 立即失效。
 
 部署成功后，终端会打印出后端 API 访问地址，例如：
 `https://htmlhub-api.<你的账号>.workers.dev`
@@ -183,6 +192,24 @@ npm run dev
 > ]
 > ```
 > 然后重新执行 `npx wrangler deploy` 即可自动完成 SSL 证书签发与 DNS 解析。
+
+### Q5: 如何给单个原型设置访问密码？
+> 云端模式下，分享接口已内置项目级访问控制（前端分享面板将在后续版本接入）。可通过 API 直接管理：
+> ```bash
+> # 开启 / 重置密码（password 省略则自动生成 4 位随机码）
+> curl -X PUT https://<你的 API>/api/share \
+>   -H "Authorization: Bearer <管理员 token>" \
+>   -H "Content-Type: application/json" \
+>   -d '{"path":"html-files/原型/Demo","password":"","ttlSeconds":604800}'
+>
+> # 撤销分享，项目恢复公开
+> curl -X DELETE "https://<你的 API>/api/share?path=html-files/原型/Demo" \
+>   -H "Authorization: Bearer <管理员 token>"
+> ```
+> - 返回的 `link` 是**免密链接**（密码以签名令牌内置，`ttlSeconds: 0` 表示永久分享）；
+> - 返回的 `passwordLink` 是**需要输入密码的普通链接**；
+> - 密码只存加盐哈希，创建后仅返回一次；重置密码会让旧链接和旧会话立即失效；
+> - 到期后访问会返回「分享已结束」，不会自动变回公开。
 
 ---
 

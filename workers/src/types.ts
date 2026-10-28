@@ -5,6 +5,8 @@ export interface Env {
   HTML_FILES: R2Bucket
   FILE_INDEX: KVNamespace
   ADMIN_PASSWORD: string
+  /** 分享令牌签名 / 密码 pepper，未设置时回退到 ADMIN_PASSWORD */
+  AUTH_SECRET?: string
 }
 
 /**
@@ -19,6 +21,12 @@ export interface ProjectInfo {
   type: 'directory' | 'file'
   createdAt: string
   modifiedAt: string
+  /** 是否存在访问密码（由 /api/files 动态附加，不写入缓存） */
+  protected?: boolean
+  /** 分享是否已过期 */
+  protectedExpired?: boolean
+  /** 分享到期时间（秒级时间戳），0/undefined 表示永久 */
+  shareExpiresAt?: number
 }
 
 /**

@@ -6,6 +6,7 @@ import { useSettingsStore } from './stores/settings'
 import { useFilesStore } from './stores/files'
 import AppSidebar from './components/layout/AppSidebar.vue'
 import AppHeader from './components/layout/AppHeader.vue'
+import ShareDialog from './components/files/ShareDialog.vue'
 
 const route = useRoute()
 const settingsStore = useSettingsStore()
@@ -170,6 +171,9 @@ onMounted(async () => {
           <div v-else class="fullscreen-layout">
             <RouterView />
           </div>
+
+          <!-- 全局分享设置面板 -->
+          <ShareDialog />
         </n-message-provider>
       </n-dialog-provider>
     </n-loading-bar-provider>

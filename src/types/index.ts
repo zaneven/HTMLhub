@@ -18,6 +18,49 @@ export interface ProjectInfo {
     type: string
     modifiedAt: string
   }>
+  /** 是否开启项目级访问密码 */
+  protected?: boolean
+  /** 分享是否已过期 */
+  protectedExpired?: boolean
+  /** 分享到期时间（秒级时间戳），0/undefined 表示永久 */
+  shareExpiresAt?: number
+}
+
+/** 项目分享状态 */
+export interface ShareStatus {
+  enabled: boolean
+  hasPassword: boolean
+  indexPath?: string
+  /** 到期时间（秒级时间戳），0 表示永久 */
+  expiresAt?: number
+  expired?: boolean
+  version?: number
+  hint?: string
+  createdAt?: number
+  updatedAt?: number
+  lastUsedAt?: number
+}
+
+/** 分享链接信息 */
+export interface ShareLinkInfo {
+  /** 免密链接：密码以签名令牌内置 */
+  link: string
+  /** 需要输入密码的普通链接 */
+  passwordLink: string
+  /** 免密令牌到期时间（秒级时间戳） */
+  tokenExpiresAt: number
+  /** 分享到期时间（秒级时间戳），0 表示永久 */
+  expiresAt: number
+}
+
+/** 创建 / 重置分享后的返回结果 */
+export interface ShareCreateResult extends ShareLinkInfo {
+  path: string
+  indexPath: string
+  /** 明文密码，仅在创建 / 重置时返回一次 */
+  password: string
+  generated: boolean
+  version: number
 }
 
 // 分类信息接口

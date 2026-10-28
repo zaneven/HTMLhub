@@ -61,7 +61,13 @@ cd workers
 wrangler secret put ADMIN_PASSWORD
 
 # 按提示输入你的管理密码
+
+# 设置分享签名密钥（建议单独设置，用于给免密链接 / 会话 Cookie 签名）
+wrangler secret put AUTH_SECRET
 ```
+
+> `AUTH_SECRET` 同时作为分享密码哈希的 pepper：即使 KV 数据泄露，没有该密钥也无法离线穷举 4 位短码。
+> 未设置时会回退到 `ADMIN_PASSWORD`，此时修改管理员密码会让所有分享链接立即失效。
 
 ## 步骤 5: 安装依赖并部署 Worker
 
@@ -138,6 +144,48 @@ npm run build
 5. 尝试上传一个 HTML 文件
 6. 返回首页，确认新上传的文件显示在列表中
 
+## 分享访问控制（项目级密码）
+
+Worker 已内置项目级访问保护，无需额外资源。核心行为：
+
+| 场景 | 结果 |
+| :--- | :--- |
+| 未设置分享 | `/r2/...` 公开访问，`Cache-Control: public` |
+| 已设置密码 | 文档导航返回密码页（401），CSS / JS / 图片等子资源返回 401 |
+| 输入正确密码 | 种 `HttpOnly; Secure; SameSite=Lax` Cookie，默认 7 天或跟随分享有效期 |
+| 访问带 `?k=` 的免密链接 | 校验签名 → 302 到去掉 `k` 的 URL，避免令牌留在地址栏与 Referer |
+| 分享到期 | 返回 410「分享已结束」，不会自动恢复公开 |
+| 重置密码 / 撤销 | 版本号递增，旧密码、旧链接、旧会话全部立即失效 |
+| 管理员工作台预览 | `POST /api/share/preview` 签发 5 分钟令牌，不受分享有效期影响 |
+
+接口一览（管理接口需 `Authorization: Bearer <管理员 token>`）：
+
+```bash
+# 创建 / 重置（password 省略即自动生成 4 位字母数字码；ttlSeconds: 0 为永久）
+curl -X PUT https://<API>/api/share \
+  -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{"path":"html-files/原型/Demo","ttlSeconds":604800}'
+
+# 查看状态（不返回明文密码）
+curl "https://<API>/api/share?path=html-files/原型/Demo" -H "Authorization: Bearer <token>"
+
+# 撤销
+curl -X DELETE "https://<API>/api/share?path=html-files/原型/Demo" -H "Authorization: Bearer <token>"
+
+# 访客解锁（无需鉴权）
+curl -X POST https://<API>/api/share/unlock \
+  -H "Content-Type: application/json" \
+  -d '{"path":"html-files/原型/Demo","password":"AB3K"}'
+```
+
+注意事项：
+
+- **同站部署**：Hub 与 API 应位于同一主域（如 `html.getprompt.top` + `htmlmanager-api.getprompt.top`）。跨站场景下 Safari 会拦截 iframe 内的第三方 Cookie，表现为「密码输对了但预览资源 401」。
+- **限流**：单 IP 10 次 / 10 分钟，单项目 30 次 / 10 分钟。4 位码约 105 万组合，务必保留限流与较短有效期。
+- **缓存**：受保护项目的响应为 `Cache-Control: private, no-store`，`/api/content` 同样改为 `no-store`。
+- **4 位码的边界**：它能挡住随手访问与链接扩散，但不是强密码；高敏内容请用 6 位以上或自定义长密码。
+- **静态模式不支持**：纯静态部署没有服务端，请使用 Cloudflare Pages Functions 做整站口令，或改用云端模式。
+
 ## 常见问题
 
 ### Q: 看不到「登录」按钮？
@@ -173,9 +221,11 @@ workers/
 │   ├── index.ts          # Worker 入口
 │   ├── types.ts          # 类型定义
 │   ├── routes/
-│   │   └── files.ts      # 文件操作路由
+│   │   ├── files.ts      # 文件操作路由
+│   │   └── share.ts      # 分享密码 / 免密链接 / 访问拦截
 │   └── utils/
 │       ├── auth.ts       # 认证工具
+│       ├── share.ts      # 密码哈希、令牌签名、Cookie、限流键
 │       └── response.ts   # 响应工具
 ├── wrangler.toml         # Cloudflare 配置
 ├── package.json
