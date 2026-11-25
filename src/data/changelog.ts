@@ -66,6 +66,32 @@ export const CHANGE_TYPE_META: Record<ChangeType, ChangeTypeMeta> = {
 /** 版本记录（倒序：最新版本在最前） */
 export const CHANGELOG: VersionRelease[] = [
   {
+    version: '1.3.1',
+    date: '2026-11-25',
+    title: '预览缓存与入口状态修复',
+    summary: '修复删除或重传 index.html 后预览仍显示旧内容的问题，操作即刻生效。',
+    changes: [
+      {
+        type: 'fix',
+        scope: 'workers',
+        content:
+          '公开原型 /r2/ 响应头由 1 小时强缓存改为 no-cache + ETag 条件协商（404 禁止缓存），删除或重传文件后刷新即可获取最新内容',
+      },
+      {
+        type: 'fix',
+        scope: 'workers',
+        content:
+          '项目内删除或增量上传文件后立即重建文件索引缓存，入口文件切换与项目列表保持实时一致',
+      },
+      {
+        type: 'fix',
+        scope: 'admin',
+        content:
+          '预览工作台在入口 HTML 被删除且无备用入口时隐藏旧画面并提示上传，重传后自动刷新预览缓存并重载页面',
+      },
+    ],
+  },
+  {
     version: '1.3.0',
     date: '2026-10-28',
     title: '项目级分享访问密码',
