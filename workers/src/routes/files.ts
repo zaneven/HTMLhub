@@ -664,6 +664,29 @@ export async function getFileContent(request: Request, env: Env): Promise<Respon
  *   - 文档导航     → 密码页 / 过期页
  *   - 子资源       → 401，避免绕过入口直接拿资源
  */
+/**
+ * 判断请求头 If-None-Match 是否命中目标 ETag
+ */
+function etagMatches(headerValue: string | null, httpEtag?: string): boolean {
+  if (!headerValue || !httpEtag) return false
+  const trimmed = headerValue.trim()
+  if (trimmed === '*') return true
+
+  const normalize = (tag: string) => tag.trim().replace(/^W\//i, '')
+  const target = normalize(httpEtag)
+  return trimmed.split(',').some((candidate) => normalize(candidate) === target)
+}
+
+/**
+ * 从对象 key 推导所属项目路径
+ * - 目录项目：html-files/{分类}/{项目}/... -> html-files/{分类}/{项目}
+ * - 单文件项目：html-files/{分类}/{file}.html -> 自身
+ */
+function deriveProjectPath(key: string): string {
+  const parts = key.split('/')
+  return parts.length >= 4 ? parts.slice(0, 3).join('/') : key
+}
+
 export async function serveR2File(request: Request, key: string, env: Env): Promise<Response> {
   // 验证路径安全性
   if (!key.startsWith('html-files/')) {
@@ -713,7 +736,9 @@ export async function serveR2File(request: Request, key: string, env: Env): Prom
     const object = await env.HTML_FILES.get(decodedKey)
 
     if (!object) {
-      return json({ success: false, error: '文件不存在' }, 404)
+      const response = json({ success: false, error: '文件不存在' }, 404)
+      response.headers.set('Cache-Control', 'no-store')
+      return response
     }
 
     // 根据文件扩展名确定 MIME 类型
@@ -722,16 +747,24 @@ export async function serveR2File(request: Request, key: string, env: Env): Prom
 
     const headers: Record<string, string> = {
       'Content-Type': contentType,
-      // 受保护项目必须禁止共享缓存，否则可能把内容缓存给未授权访问者
-      'Cache-Control': protectedProject ? 'private, no-store' : 'public, max-age=3600',
+      // 受保护项目禁止缓存；公开原型使用 no-cache + ETag，确保删除/重传后立即失效并可条件协商
+      'Cache-Control': protectedProject ? 'private, no-store' : 'no-cache',
     }
 
     if (protectedProject) {
       headers['Vary'] = 'Cookie'
     } else {
+      if (object.httpEtag) {
+        headers['ETag'] = object.httpEtag
+      }
       headers['Access-Control-Allow-Origin'] = '*'
       headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
       headers['Access-Control-Allow-Headers'] = 'Content-Type'
+
+      if (etagMatches(request.headers.get('If-None-Match'), object.httpEtag)) {
+        await object.body?.cancel?.()
+        return new Response(null, { status: 304, headers })
+      }
     }
 
     return new Response(object.body, { headers })
@@ -858,9 +891,15 @@ export async function deleteProjectFile(request: Request, env: Env): Promise<Res
     // 删除文件
     await env.HTML_FILES.delete(decodedKey)
 
+    // 重建索引缓存（删除入口 HTML 后可能切换入口或移除空项目）
+    const index = await updateFileIndex(env)
+    const projectPath = deriveProjectPath(decodedKey)
+    const project = index.projects.find((item) => item.path === projectPath) || null
+
     return success({
       deleted: decodedKey,
       name: decodedKey.split('/').pop() || '',
+      project,
     })
   } catch (err) {
     console.error('Error deleting project file:', err)
@@ -905,9 +944,8 @@ export async function addProjectFile(request: Request, env: Env): Promise<Respon
     const relativePath = (formData.get('path') as string) || file.name
 
     // 生成存储路径: {projectPath}/{relativePath}
-    const key = projectPath.endsWith('/')
-      ? `${projectPath}${relativePath}`
-      : `${projectPath}/${relativePath}`
+    const normalizedProjectPath = projectPath.replace(/\/+$/, '')
+    const key = `${normalizedProjectPath}/${relativePath}`
 
     // 上传到 R2
     await env.HTML_FILES.put(key, file.stream(), {
@@ -920,11 +958,16 @@ export async function addProjectFile(request: Request, env: Env): Promise<Respon
       },
     })
 
+    // 重建索引缓存（补传 index.html 后入口路径可能变更）
+    const index = await updateFileIndex(env)
+    const project = index.projects.find((item) => item.path === normalizedProjectPath) || null
+
     return success({
       key,
       name: file.name,
       size: file.size,
       type: getMimeType(fileName),
+      project,
     })
   } catch (err) {
     console.error('Error adding project file:', err)
@@ -961,15 +1004,14 @@ export async function addProjectFiles(request: Request, env: Env): Promise<Respo
     }
 
     // 上传所有文件
+    const normalizedProjectPath = projectPath.replace(/\/+$/, '')
     const uploadedKeys: string[] = []
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
       const relativePath = paths[i] || file.name
 
       // 生成存储路径: {projectPath}/{relativePath}
-      const key = projectPath.endsWith('/')
-        ? `${projectPath}${relativePath}`
-        : `${projectPath}/${relativePath}`
+      const key = `${normalizedProjectPath}/${relativePath}`
 
       await env.HTML_FILES.put(key, file.stream(), {
         httpMetadata: {
@@ -984,10 +1026,15 @@ export async function addProjectFiles(request: Request, env: Env): Promise<Respo
       uploadedKeys.push(key)
     }
 
+    // 重建索引缓存
+    const index = await updateFileIndex(env)
+    const project = index.projects.find((item) => item.path === normalizedProjectPath) || null
+
     return success({
       projectPath,
       filesUploaded: files.length,
       keys: uploadedKeys,
+      project,
     })
   } catch (err) {
     console.error('Error adding multiple project files:', err)

@@ -138,7 +138,7 @@ function handleEditClose() {
 }
 
 function handleEditSaved() {
-  filesStore.reloadIndexData()
+  // 索引已在 filesStore 的删除/上传/改分类动作中同步更新
 }
 
 async function handleDelete(project: ProjectInfo) {

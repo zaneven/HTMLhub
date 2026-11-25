@@ -746,6 +746,7 @@ export const useFilesStore = defineStore('files', () => {
       const data = await response.json()
 
       if (response.ok && data.success) {
+        await reloadIndexData()
         return true
       } else if (response.status === 401) {
         await handleUnauthorized()
@@ -792,6 +793,7 @@ export const useFilesStore = defineStore('files', () => {
       const data = await response.json()
 
       if (response.ok && data.success) {
+        await reloadIndexData()
         return true
       } else if (response.status === 401) {
         await handleUnauthorized()
@@ -841,6 +843,7 @@ export const useFilesStore = defineStore('files', () => {
       const data = await response.json()
 
       if (response.ok && data.success) {
+        await reloadIndexData()
         return true
       } else if (response.status === 401) {
         await handleUnauthorized()

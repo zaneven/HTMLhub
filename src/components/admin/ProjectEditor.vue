@@ -74,7 +74,9 @@ watch(
   () => props.project,
   (next) => {
     if (next) {
+      filesLoaded.value = false
       projectRef.value = next
+      void loadFiles()
       void preparePreview()
     }
   },
@@ -82,8 +84,10 @@ watch(
 
 // 状态
 const loading = ref(false)
+const filesLoaded = ref(false)
 const searchPattern = ref('')
 const iframeKey = ref(0)
+const previewBust = ref(Date.now())
 
 // 屏幕视口分辨率预设（正常屏幕比例与工业工坊预设）
 interface ScreenResolution {
@@ -266,17 +270,41 @@ const projectLiveUrl = computed(() => {
   return filesStore.getFileUrl(projectRef.value)
 })
 
-// 管理员预览地址：受保护项目自动附加 5 分钟免密令牌，避免在工作台里看到密码页
+// 管理员预览地址：受保护项目自动附加 5 分钟免密令牌，云端项目附加缓存破坏参数避免命中旧缓存
 const previewUrl = ref('')
 const previewReady = ref(false)
+
+// 当前入口 HTML 是否仍存在于项目文件列表中（删除 index.html 且无其他入口时为 false）
+const hasEntryFile = computed(() => {
+  if (!filesLoaded.value) return true
+  return rawFiles.value.some((file) => file.key === projectRef.value.indexPath)
+})
+
+function appendCacheBuster(url: string, bust: number): string {
+  if (!url) return url
+  const separator = url.includes('?') ? '&' : '?'
+  return `${url}${separator}_t=${bust}`
+}
+
+function syncProjectRefFromStore() {
+  const latest = filesStore.projects.find(
+    (item) => item.id === projectRef.value.id || item.path === projectRef.value.path,
+  )
+  if (latest) {
+    projectRef.value = latest
+  }
+}
 
 async function preparePreview() {
   previewReady.value = false
   const project = projectRef.value
-  previewUrl.value =
+  const basePreviewUrl =
     project.source === 'cloud' && project.protected
       ? await shareStore.buildPreviewUrl(project)
       : filesStore.getFileUrl(project)
+  previewBust.value = Date.now()
+  previewUrl.value =
+    project.source === 'cloud' ? appendCacheBuster(basePreviewUrl, previewBust.value) : basePreviewUrl
   previewReady.value = true
   iframeKey.value++
 }
@@ -383,6 +411,9 @@ async function loadFiles() {
   try {
     const result = await filesStore.listProjectFiles(projectRef.value.path, projectRef.value)
     rawFiles.value = result
+    if (!filesStore.error) {
+      filesLoaded.value = true
+    }
 
     await loadReadme()
 
@@ -407,8 +438,9 @@ async function handleDeleteFile(fileKey: string, fileName: string) {
     const success = await filesStore.deleteProjectFile(fileKey)
     if (success) {
       message.success(`已删除 ${fileName}`)
+      syncProjectRefFromStore()
       await loadFiles()
-      iframeKey.value++ // 刷新右侧预览
+      await preparePreview()
       emit('saved')
     } else {
       message.error(filesStore.error || '删除失败')
@@ -440,8 +472,9 @@ async function handleIncrementalUpload(options: UploadCustomRequestOptions) {
     const success = await filesStore.addProjectFile(file, projectRef.value.path, relativePath)
     if (success) {
       message.success(`已添加: ${file.name}`)
+      syncProjectRefFromStore()
       await loadFiles()
-      iframeKey.value++ // 刷新右侧预览
+      await preparePreview()
       if (isRootReadme && supportsReadme.value) {
         panelMode.value = 'readme'
       }
@@ -558,8 +591,10 @@ async function handleCopyLink() {
   }
 }
 
-// 刷新右侧预览页面（顺带续签管理员预览令牌）
+// 刷新右侧预览页面（同步最新文件列表、入口地址并续签管理员预览令牌）
 async function handleRefreshPreview() {
+  await loadFiles()
+  syncProjectRefFromStore()
   await preparePreview()
   message.success('预览页面已刷新')
 }
@@ -1029,9 +1064,31 @@ onBeforeUnmount(() => {
 
         <!-- 预览主舞台 (包含按正常屏幕比例布局并缩放的网页 iframe) -->
         <div class="preview-stage-container" ref="stageRef">
+          <!-- 入口 HTML 已删除或缺失 -->
+          <div v-if="!hasEntryFile" class="preview-missing-entry">
+            <div class="missing-entry-icon">
+              <n-icon size="32" color="#6366f1"><DocumentTextOutline /></n-icon>
+            </div>
+            <div class="missing-entry-title">暂无可预览的 HTML 入口文件</div>
+            <p class="missing-entry-desc">
+              入口文件已被删除或不存在，请上传 index.html 或其他 HTML 文件后即可恢复预览。
+            </p>
+            <n-button
+              v-if="!isLocalProject"
+              type="primary"
+              size="small"
+              @click="openUploadModal('file')"
+            >
+              <template #icon>
+                <n-icon><CloudUploadOutline /></n-icon>
+              </template>
+              上传 HTML 文件
+            </n-button>
+          </div>
+
           <!-- 模式一：固定正常屏幕比例 (通过工业级 transform 稳定缩放) -->
           <div
-            v-if="previewReady && !currentResolution.isFluid"
+            v-else-if="previewReady && !currentResolution.isFluid"
             class="scaled-screen-outer-box"
             :style="{
               width: `${currentResolution.width * effectiveScale}px`,
@@ -1928,7 +1985,8 @@ onBeforeUnmount(() => {
 }
 
 /* 预览访问凭证准备中 */
-.preview-boot {
+.preview-boot,
+.preview-missing-entry {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1937,5 +1995,29 @@ onBeforeUnmount(() => {
   color: var(--n-text-color-3);
   font-size: 13px;
   padding: 24px;
+  text-align: center;
+}
+
+.missing-entry-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 14px;
+  background: rgba(99, 102, 241, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.missing-entry-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--n-text-color-1);
+}
+
+.missing-entry-desc {
+  margin: 0;
+  max-width: 340px;
+  line-height: 1.6;
+  color: var(--n-text-color-3);
 }
 </style>
